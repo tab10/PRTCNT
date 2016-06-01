@@ -58,7 +58,7 @@ def plot_two_d_random_walk_setup(tube_coords, grid_size):
     plt.xlim(-grid_size, grid_size)
     plt.ylim(-grid_size, grid_size)
     plt.grid()
-    plt.savefig('setup.pdf')
+    plt.savefig('plots/setup.pdf')
     plt.show()
 
 
@@ -93,7 +93,7 @@ def generate_2d_tube(x_c, y_c, radius, grid_size,
             y_l = y_c - sols[choice][1]
             y_r = y_c + sols[choice][1]
         else:
-            angle = np.pi / 2.0 * np.random.random_sample()  # randomly chosen
+            angle = 2.0 * np.pi * np.random.random_sample()  # randomly chosen
             x_vect = radius * np.cos(angle)
             y_vect = np.sqrt(radius ** 2 - x_vect ** 2)
             x_l = x_c - int(round(x_vect))
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='.')
     parser.add_argument('--grid_size', type=int, default=100, help='Size of square grid of use')
     parser.add_argument('--tube_length', type=float, default=20, help='Length of nanotube')
-    parser.add_argument('--num_tubes', type=int, default=5, help='How many tubes are there for random walker to use')
+    parser.add_argument('--num_tubes', type=int, default=20, help='How many tubes are there for random walker to use')
     parser.add_argument('--mean_dist_tubes', type=int, default=40,
                         help='Mean distance between centers of tubes')
     args = parser.parse_args()
