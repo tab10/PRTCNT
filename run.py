@@ -4,6 +4,7 @@ import plots
 import setup
 import randomwalk
 
+
 def yesno():
     response = raw_input('    Continue? (y/n) ')
     if len(response) == 0:  # [CR] returns true
@@ -24,7 +25,15 @@ if __name__ == "__main__":
                                                                       'positions of nanotubes. Otherwise x and y values'
                                                                       ' rounded.')
     parser.add_argument('--orientation', type=str, default='random', help='Orientation of nanotubes in medium. random, '
-                                                                          'horizontal, or vertical.')
+                                                                          'horizontal, vertical, or angle in DEGREES')
+    parser.add_argument('--walker_start_dir', type=str, default='left', help='Direction positive walkers come in from. '
+                                                                         'top, bottom, left, right for 2D or '
+                                                                         'Miller Index for 3D')
+    parser.add_argument('--num_walkers', type=int, default=50, help='How many total walkers (pos and neg) are used')
+    parser.add_argument('--timesteps', type=int, default=50, help='How many steps to run the simulation for')
+    parser.add_argument('--bd_condition', type=str, default='exit', help='What happens when walkers hit the wall.'
+                                                                               'reflect - isothermal,'
+                                                                            'exit - constant flux')
     args = parser.parse_args()
 
     tube_length = args.tube_length
@@ -32,7 +41,15 @@ if __name__ == "__main__":
     num_tubes = args.num_tubes
     exact_sol = args.exact_sol
     orientation = args.orientation
+    num_walkers = args.num_walkers
     mean_dist_tubes = np.abs(args.mean_dist_tubes)
+    walker_start_dir = args.walker_start_dir
+    bd_condition = args.bd_condition
+    timesteps = args.timesteps
 
-    grid = setup.Grid2D(grid_size, tube_length, num_tubes, mean_dist_tubes)
+    grid = setup.Grid2D(grid_size, tube_length, num_tubes, mean_dist_tubes, exact_sol, orientation)
     plots.plot_two_d_random_walk_setup(grid.tube_coords, grid_size)
+    walkers_pos = setup.setupwalkers2d(num_walkers, grid_size, walker_start_dir) # list of walker object list
+    #  at every timestep
+    randomwalk.runrandomwalk2d(walkers_pos, grid_size, timesteps, bd_condition, walker_start_dir)
+
