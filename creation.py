@@ -1,5 +1,12 @@
 import numpy as np
 import logging
+import os
+
+
+def check_for_folder(folder):
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+
 
 class Grid2D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation):

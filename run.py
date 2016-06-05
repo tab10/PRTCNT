@@ -4,6 +4,9 @@ import randomwalk
 import ConfigParser
 import os
 import logging
+import numpy as np
+import analysis
+
 # from mpi4py import MPI
 # import platform
 # import multiprocessing as mp
@@ -35,7 +38,6 @@ def logging_setup(save_dir):
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
 
-
 if __name__ == "__main__":
     Config = ConfigParser.ConfigParser()
 
@@ -55,6 +57,7 @@ if __name__ == "__main__":
     num_walkers = Config.getint('config','num_walkers')
     timesteps = Config.getint('config','timesteps')
     save_dir = Config.get('config', 'save_dir')
+    quiet = Config.getboolean('config', 'quiet')
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
 
@@ -64,7 +67,7 @@ if __name__ == "__main__":
     os.chdir(save_dir)
     logging.info("Setting up grid and tubes")
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-    plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size)
+    plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet)
 
     # logging.info("Initializing MPI")
     # comm = MPI.COMM_WORLD
@@ -74,29 +77,34 @@ if __name__ == "__main__":
     # print("Hello MPI from %s %d of %d" % (machine, rank, size))
 
     grid_range = [[0, grid.size], [0, grid.size]]
+    bins = grid.size
+    H = np.zeros((grid.size, grid.size))
 
     for i in range(num_walkers):
         # run hot walkers
         logging.info("Start hot walker %d out of %d" % (i+1,num_walkers))
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'hot')
-        if i == 0:
-            H, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'hot')
-            # bin_edges should stay consistent since range is fixed
+        if quiet:
+            if i == 0:
+                plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1)
         else:
-            H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'hot')
-            H += H_temp
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1)
+        H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'hot', bins)
+        H += H_temp
 
     for i in range(num_walkers):
         # run cold walkers
         logging.info("Start cold walker %d out of %d" % (i+1,num_walkers))
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'cold')
-        if i == 0:
-            H, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'cold')
-            # bin_edges should stay consistent since range is fixed
+        if quiet:
+            if i == 0:
+                plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1)
         else:
-            H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'cold')
-            H -= H_temp
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1)
+        H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'cold', bins)
+        H -= H_temp
 
     logging.info("Finished random walks")
-    plots.plot_histogram_walkers_2d_onlat(walker, timesteps, num_walkers, H, xedges, yedges)
-
+    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet)
+    temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet)
+    analysis.calc_conductivity_2d_onlat(num_walkers, temp_gradient_x, grid.size, timesteps)
