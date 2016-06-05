@@ -8,4 +8,4 @@ setup(name='conduction',
       author_email='timcantango@gmail.com ',
       url='https://github.com/tab10/conduction',
       packages=find_packages(),
-      install_requires=['numpy','matplotlib'],)
+      install_requires=['numpy', 'matplotlib', 'numericalunits'], )

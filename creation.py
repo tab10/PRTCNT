@@ -35,6 +35,9 @@ class Grid2D_onlat(object):
             angle_range = [90, 270]
         elif orientation == 'horizontal':
             angle_range = [0, 180]
+        else:
+            logging.error("Invalid orientation specified")
+            raise SystemExit
         for i in angle_range:
             x_test = radius * np.cos(np.deg2rad(i)) + x_l
             y_test = radius * np.sin(np.deg2rad(i)) + y_l

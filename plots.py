@@ -11,7 +11,7 @@ matplotlib.rcParams['text.usetex'] = True
 def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
-    logging.info("Histrogramming positions")
+    logging.info("Histogramming positions")
     walker_pos_xarr = np.zeros(len(walker.pos))
     walker_pos_yarr = np.zeros(len(walker.pos))
     for i in range(len(walker.pos)):
@@ -23,7 +23,7 @@ def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
     return H, xedges, yedges
 
 
-def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet):
+def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     """Plots setup and orientation of nanotubes"""
     logging.info("Plotting setup")
     colors = itertools.cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
@@ -40,18 +40,19 @@ def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet):
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.grid()
-    creation.check_for_folder('plots')
-    plt.savefig('plots/setup.pdf')
+    creation.check_for_folder(save_dir)
+    plt.savefig('%s/setup.pdf' % save_dir)
     if not quiet:
         plt.show()
     plt.close()
 
 
-def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet):
+def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir):
     """Plots temperature profile for all walkers"""
     logging.info("Plotting temperature profile")
     H_tot /= float(timesteps)  # normalization condition
-    np.savetxt('plots/temp.txt', H_tot, fmt='%d')
+    creation.check_for_folder(save_dir)
+    np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     plt.title('Temperature profile (dimensionless units)')
     X, Y = np.meshgrid(xedges, yedges)
     temp_profile = H_tot
@@ -61,14 +62,14 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet):
     plt.xlim(xedges[0], xedges[-1])
     plt.ylim(yedges[0], yedges[-1])
     plt.colorbar()
+    plt.savefig('%s/temp.pdf' % save_dir)
     if not quiet:
         plt.show()
-    plt.savefig('plots/temp.pdf')
     plt.close()
     return temp_profile
 
 
-def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label):
+def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     """Plots path taken by a single walker"""
     logging.info("Plotting walker path")
     pos = walker.pos
@@ -87,16 +88,18 @@ def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label):
     plt.ylabel('Y')
     plt.grid()
     plt.title('Walker %d path taken (%s)' % (label, temp))
-    plt.savefig('plots/%s_walker_%d_path_sample.pdf' % (temp, label))
+    creation.check_for_folder(save_dir)
+    plt.savefig('%s/%s_walker_%d_path.pdf' % (save_dir, temp, label))
     if not quiet:
         plt.show()
     plt.close()
 
 
-def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet):
+def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir):
     """Plots temperature gradient for all walkers"""
     logging.info("Plotting temperature gradient")
     temp_gradient_x, temp_gradient_y = np.gradient(temp_profile)
+    np.savetxt('%s/temp_gradient.txt' % save_dir, temp_gradient_x, fmt='%.1E')
     plt.title('Temperature gradient $\\frac{dT(x)}{dx}$ (dimensionless units)')
     # Y gradient is irrelevant since we have periodic bd conditions in that direction
     X, Y = np.meshgrid(xedges, yedges)
@@ -106,8 +109,35 @@ def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet):
     plt.xlim(xedges[0], xedges[-1])
     plt.ylim(yedges[0], yedges[-1])
     plt.colorbar()
-    plt.savefig('plots/temp_gradient.pdf')
+    creation.check_for_folder(save_dir)
+    plt.savefig('%s/temp_gradient.pdf' % save_dir)
     if not quiet:
         plt.show()
     plt.close()
     return temp_gradient_x
+
+
+def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
+    logging.info("Plotting temperature gradient noise floor")
+    conv = []
+    size = len(temp_gradient_x)
+    for i in range(size):
+        conv.append(float(np.mean(temp_gradient_x[i:])))
+    d_conv = []
+    for i in range(len(conv) - 1):
+        temp = np.abs(conv[i + 1] - conv[i])
+        d_conv.append(temp)
+    noise_floor_vals = d_conv[2:size / 2]  # these are rough bounds that should work
+    plt.plot(d_conv)
+    noise_floor = np.mean(noise_floor_vals)
+    x_floor = range(2, 50)
+    y_floor = [noise_floor for number in range(2, 50)]
+    plt.plot(x_floor, y_floor)
+    plt.title(
+        "Convergence of $\\frac{dT(x)}{dx}$ calculation sweeping from x to the end\nNoise floor: %.4E" % noise_floor)
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.savefig('%s/temp_gradient_conv.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()

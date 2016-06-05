@@ -18,7 +18,7 @@ def runrandomwalk_2d_onlat(grid, timesteps, temp):
 
 def applytubejumps2d(walker, grid):
     # This code is slow, refactor to reduce load.
-    jump_moves = [[0, 1], [1, 0], [0, -1], [-1, 0],[0, 1], [1, 0], [0, -1], [-1, 0]]
+    jump_moves = [[0, 1], [1, 0], [0, -1], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]
     # 8 possible jump positions for now if at tube end, 4 at left (first 4) and 4 at right (second 4)
     tube_l = []
     tube_r = []  # left and right coords of tubes (x,y)
@@ -29,7 +29,7 @@ def applytubejumps2d(walker, grid):
     cur_pos_rev = list(np.flipud(walker.pos[-1]))
     for i in range(len(tube_l)):
         if tube_l[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            logging.debug("Jump found")
+            # logging.debug("Jump found")
             choice = np.random.randint(0, 8)
             d_pos = jump_moves[choice]
             if choice <= 3:  # stay at left end
@@ -38,7 +38,7 @@ def applytubejumps2d(walker, grid):
                 newpos = np.array(tube_r[i]) + np.array(d_pos)
                 walker.replace_pos(newpos)
         elif tube_r[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            logging.debug("Jump found")
+            # logging.debug("Jump found")
             choice = np.random.randint(0, 8)
             d_pos = jump_moves[choice]
             if choice <= 3:  # stay at left end

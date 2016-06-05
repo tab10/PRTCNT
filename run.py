@@ -30,13 +30,24 @@ def logging_setup(save_dir):
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
-                        filename='%s/run.log' % save_dir,
+                        filename='%s/log.txt' % save_dir,
                         filemode='w')
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
+
+
+def save_walker_loc(walker, save_dir, walker_index, temp):
+    header = "timestep [x,y]\n"
+    creation.check_for_folder(save_dir)
+    f = open("%s/%s_walker_%d_traj.txt" % (save_dir, temp, walker_index + 1), "w")
+    f.write(header)
+    for i in range(len(walker.pos)):
+        f.write(str(i) + " " + str(walker.pos[i]) + "\n")
+    f.close()
+
 
 if __name__ == "__main__":
     Config = ConfigParser.ConfigParser()
@@ -58,16 +69,27 @@ if __name__ == "__main__":
     timesteps = Config.getint('config','timesteps')
     save_dir = Config.get('config', 'save_dir')
     quiet = Config.getboolean('config', 'quiet')
+    save_loc_plots = Config.getboolean('config', 'save_loc_plots')
+    save_loc_data = Config.getboolean('config', 'save_loc_data')
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
+
+    # Check if inputs valid
+    if num_walkers <= 0:
+        logging.error('Invalid number of walkers')
+        raise SystemExit
 
     logging_setup(save_dir)
     logging.info(config_used)
 
     os.chdir(save_dir)
+    plot_save_dir = save_dir + "/plots"
+    walker_data_save_dir = save_dir + "/walker_locations"
+    walker_plot_save_dir = save_dir + "/walker_plots"
+
     logging.info("Setting up grid and tubes")
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-    plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet)
+    plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
 
     # logging.info("Initializing MPI")
     # comm = MPI.COMM_WORLD
@@ -81,30 +103,33 @@ if __name__ == "__main__":
     H = np.zeros((grid.size, grid.size))
 
     for i in range(num_walkers):
-        # run hot walkers
+        # run hot walker
         logging.info("Start hot walker %d out of %d" % (i+1,num_walkers))
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'hot')
-        if quiet:
-            if i == 0:
-                plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1)
-        else:
-            plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1)
+        if save_loc_data:
+            save_walker_loc(walker, walker_data_save_dir, i, 'hot')
+        if i == 0 & save_loc_plots == False:  # always save one example trajectory plot
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, plot_save_dir)
+        elif save_loc_plots:
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, walker_plot_save_dir)
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'hot', bins)
         H += H_temp
 
-    for i in range(num_walkers):
-        # run cold walkers
+        # run cold walker
         logging.info("Start cold walker %d out of %d" % (i+1,num_walkers))
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'cold')
-        if quiet:
-            if i == 0:
-                plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1)
-        else:
-            plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1)
+        if save_loc_data:
+            save_walker_loc(walker, walker_data_save_dir, i, 'cold')
+        if i == 0 & save_loc_plots == False:
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, plot_save_dir)
+        elif save_loc_plots:
+            plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, walker_plot_save_dir)
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, 'cold', bins)
         H -= H_temp
 
+
     logging.info("Finished random walks")
-    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet)
-    temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet)
+    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
+    temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, plot_save_dir)
+    plots.plot_check_gradient_noise_floor(temp_gradient_x, quiet, plot_save_dir)
     analysis.calc_conductivity_2d_onlat(num_walkers, temp_gradient_x, grid.size, timesteps)
