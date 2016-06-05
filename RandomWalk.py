@@ -2,6 +2,7 @@ import numpy as np
 import creation
 import logging
 
+
 def runrandomwalk_2d_onlat(grid, timesteps, temp):
     # Start the random walk, for one walker
     walker = creation.Walker2D_onlat(grid.size, temp)
@@ -52,13 +53,13 @@ def applybdconditions2d(walker, grid):
     # periodic bd conditions for y=0 and y=grid.size
     # reflective bd conditions for x=0 and x=grid.size
     cur_pos = walker.pos[-1]
-    if cur_pos[0] == grid.size:  # x coordinate
+    if cur_pos[0] >= grid.size:  # x coordinate
         cur_pos[0] -= 1
-    elif cur_pos[0] == 0:
+    elif cur_pos[0] <= 0:
         cur_pos[0] += 1
     if cur_pos[1] > grid.size: # y coordinate
         cur_pos[1] = 1
     elif cur_pos[1] < 0:
-        cur_pos[1] = grid.size-1
+        cur_pos[1] = grid.size - 1
     walker.replace_pos(cur_pos)
     return walker
