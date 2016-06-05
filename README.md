@@ -3,7 +3,7 @@
 
 Program implements a random walk in a medium to calculate its conductivity.
 Options are set and specified in default.ini, and the program should be called with "python run.py".
-Currenly only 2D on-lattice simulations are supported.
+Currently only 2D on-lattice simulations are supported.
 
 ##### References
 
