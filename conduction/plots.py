@@ -1,8 +1,12 @@
 import itertools
-import matplotlib.pyplot as plt
-import matplotlib
-import numpy as np
 import logging
+
+import matplotlib
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+import numpy as np
+from scipy import stats
+
 import creation
 
 matplotlib.rcParams['text.usetex'] = True
@@ -11,7 +15,7 @@ matplotlib.rcParams['text.usetex'] = True
 def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
-    logging.info("Histogramming positions")
+    # logging.info("Histogramming positions")
     walker_pos_xarr = np.zeros(len(walker.pos))
     walker_pos_yarr = np.zeros(len(walker.pos))
     for i in range(len(walker.pos)):
@@ -33,7 +37,7 @@ def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
         tube_x.append(tube_coords[i][0::2])
         tube_y.append(tube_coords[i][1::2])
     for i in range(len(tube_x)):
-        plt.plot(tube_x[i], tube_y[i], c=next(colors), linestyle='--')
+        plt.plot(tube_x[i], tube_y[i], c=next(colors))
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
     plt.title('Nanotube locations')
@@ -47,13 +51,47 @@ def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     plt.close()
 
 
+def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
+    """Plots setup and orientation of nanotubes"""
+    logging.info("Plotting setup")
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    colors = itertools.cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
+    tube_x = []
+    tube_y = []
+    tube_z = []
+    for i in range(len(tube_coords)):
+        tube_x.append(tube_coords[i][0::3])
+        tube_y.append(tube_coords[i][1::3])
+        tube_z.append(tube_coords[i][2::3])
+    print tube_x
+    print tube_y
+    print tube_z
+    for i in range(len(tube_x)):
+        ax.plot(tube_x[i], tube_y[i], tube_z[i], c=next(colors))
+    ax.set_xlim(0, grid_size)
+    ax.set_ylim(0, grid_size)
+    ax.set_zlim(0, grid_size)
+    ax.set_title('Nanotube locations')
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.grid()
+    creation.check_for_folder(save_dir)
+    plt.savefig('%s/setup.pdf' % save_dir)
+    plt.show()
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
 def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir):
     """Plots temperature profile for all walkers"""
     logging.info("Plotting temperature profile")
     H_tot /= float(timesteps)  # normalization condition
     creation.check_for_folder(save_dir)
     np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
-    plt.title('Temperature profile (dimensionless units)')
+    plt.title('Temperature density (dimensionless units)')
     X, Y = np.meshgrid(xedges, yedges)
     temp_profile = H_tot
     plt.pcolormesh(X, Y, temp_profile.T)  # transpose since pcolormesh reverses axes
@@ -68,6 +106,25 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
     plt.close()
     return temp_profile
 
+
+def plot_linear_temp(temp_profile, quiet, save_dir):
+    test_mean = np.mean(temp_profile[1:], axis=1)
+    test_std = np.std(temp_profile[1:], axis=1, ddof=1)
+    x = np.arange(1, len(test_mean) + 1)
+    plt.errorbar(x, test_mean, yerr=test_std)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)
+    gradient_err = np.mean(test_std)
+    line = slope * x + intercept
+    plt.plot(x, line, color='black')
+    plt.title("Temperature density (normalized by time) (dimensionless units)\n"
+              "$R^2=%.4f$, $\\frac{dT(x)}{dx}$=%.4E$\\pm$%.4E" % (r_value ** 2, slope, std_err))
+    plt.xlabel('x')
+    plt.ylabel('T(x)')
+    plt.savefig('%s/temp_fit.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()
+    return slope, std_err
 
 def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     """Plots path taken by a single walker"""
@@ -98,12 +155,16 @@ def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
 def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir):
     """Plots temperature gradient for all walkers"""
     logging.info("Plotting temperature gradient")
+    gradient_cutoff = 2
+    # disregard first few x= slices as close to the wall and values have large errors
+    # gradient_cutoff = 2 seems to work well. Don't change.
     temp_gradient_x, temp_gradient_y = np.gradient(temp_profile)
     np.savetxt('%s/temp_gradient.txt' % save_dir, temp_gradient_x, fmt='%.1E')
-    plt.title('Temperature gradient $\\frac{dT(x)}{dx}$ (dimensionless units)')
+    plt.title('Temperature gradient $\\frac{dT(x)}{dx}$ (dimensionless units)\nExcluding first %d x=bins'
+              % gradient_cutoff)
     # Y gradient is irrelevant since we have periodic bd conditions in that direction
-    X, Y = np.meshgrid(xedges, yedges)
-    plt.pcolormesh(X, Y, temp_gradient_x.T)  # transpose since pcolormesh reverses axes
+    X, Y = np.meshgrid(xedges[gradient_cutoff:], yedges)
+    plt.pcolormesh(X, Y, temp_gradient_x[gradient_cutoff:].T)  # transpose since pcolormesh reverses axes
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.xlim(xedges[0], xedges[-1])
@@ -114,7 +175,7 @@ def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir):
     if not quiet:
         plt.show()
     plt.close()
-    return temp_gradient_x
+    return temp_gradient_x, gradient_cutoff
 
 
 def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
@@ -133,11 +194,36 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     x_floor = range(2, 50)
     y_floor = [noise_floor for number in range(2, 50)]
     plt.plot(x_floor, y_floor)
-    plt.title(
-        "Convergence of $\\frac{dT(x)}{dx}$ calculation sweeping from x to the end\nNoise floor: %.4E" % noise_floor)
+    plt.title("Convergence of $\\frac{dT(x)}{dx}$ calculation sweeping from x to the end\n"
+              "Noise floor: %.4E" % noise_floor)
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.savefig('%s/temp_gradient_conv.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
+def plot_k_convergence(quantity, quiet, save_dir):
+    logging.info("Plotting k convergence")
+    plt.plot(quantity)
+    plt.title("Convergence of conductivity k")
+    plt.xlabel('Timesteps')
+    plt.ylabel('Conductivity k')
+    plt.savefig('%s/k_convergence.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
+def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
+    logging.info("Plotting k convergence error")
+    x = range(begin_cov_check, len(quantity) + begin_cov_check)
+    plt.plot(x, quantity)
+    plt.title("Error in convergence of conductivity k")
+    plt.xlabel('Timesteps')
+    plt.ylabel('Conductivity k error')
+    plt.savefig('%s/k_convergence_err.pdf' % save_dir)
     if not quiet:
         plt.show()
     plt.close()

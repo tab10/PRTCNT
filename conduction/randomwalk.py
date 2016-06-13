@@ -1,18 +1,20 @@
-import numpy as np
-import creation
 import logging
+
+import numpy as np
+
+import creation
 
 
 def runrandomwalk_2d_onlat(grid, timesteps, temp):
     # Start the random walk, for one walker
     walker = creation.Walker2D_onlat(grid.size, temp)
     moves = [[0, 1], [1, 0], [0, -1], [-1, 0]]
-    for i in range(1,timesteps+1):
+    for i in range(1, timesteps + 1):
         d_pos = moves[np.random.randint(0, 4)]
         walker.add_dpos(d_pos)
         walker = applytubejumps2d(walker, grid)
         walker = applybdconditions2d(walker, grid)
-    logging.info('Done in %d steps' % i)
+    # logging.info('Done in %d steps' % i)
     return walker
 
 
@@ -57,7 +59,7 @@ def applybdconditions2d(walker, grid):
         cur_pos[0] -= 1
     elif cur_pos[0] <= 0:
         cur_pos[0] += 1
-    if cur_pos[1] > grid.size: # y coordinate
+    if cur_pos[1] > grid.size:  # y coordinate
         cur_pos[1] = 1
     elif cur_pos[1] < 0:
         cur_pos[1] = grid.size - 1
