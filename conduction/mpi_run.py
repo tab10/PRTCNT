@@ -61,12 +61,12 @@ if __name__ == "__main__":
         else:
             Config.read("default.ini")
             config_used = 'Using default.ini'
+    else:
+        Config = None
+        config_used = None
 
-        comm.Scatter(Config, root=0)
-        comm.Scatter(config_used, root=0)
-
-    # comm.Gather(Config, root=0)
-    # comm.Gather(config_used, root=0)
+    Config = comm.bcast(Config, root=0)
+    config_used = comm.bcast(config_used, root=0)
 
     dim = Config.getint('config', 'dim')
     grid_size = Config.getint('config', 'grid_size')
@@ -113,9 +113,10 @@ if __name__ == "__main__":
         plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
         logging_setup(plot_save_dir)
         logging.info(config_used)
-        comm.Scatter(plot_save_dir, root=0)
+    else:
+        plot_save_dir = None
 
-    comm.Gather(plot_save_dir, root=0)
+    plot_save_dir = comm.bcast(plot_save_dir, root=0)
 
     #  all processes have control now
     if (on_lattice == True) & (dim == 2):
