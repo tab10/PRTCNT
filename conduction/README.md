@@ -3,7 +3,12 @@
 
 Program implements a random walk in a medium to calculate its conductivity.
 Options are set and specified in default.ini, and the program should be called with "python run.py".
-Currently only 2D on-lattice simulations are supported.
+
+Options are implemented by setting up a config.ini in your choice of save directory
+or else default.ini will be read.
+
+Serial code is ran by running "python run.py", for the MPI implementation
+run "mpiexec -n X python mpi_run.py" with X the number of cores available.
 
 ##### References
 

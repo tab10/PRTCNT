@@ -27,6 +27,17 @@ def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
     return H, xedges, yedges
 
 
+def histogram_walker_3d_onlat(walker, grid_range, temp, bins):
+    """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
+    (for 1 walker only)"""
+    H, edges = np.histogramdd(np.asarray(walker.pos), range=grid_range, bins=bins)
+    x_edges = edges[0]
+    y_edges = edges[1]
+    z_edges = edges[2]
+    if H == 'cold':
+        H = -H  # make walker visit site negative times
+    return H, x_edges, y_edges, z_edges
+
 def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     """Plots setup and orientation of nanotubes"""
     logging.info("Plotting setup")
@@ -64,9 +75,6 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
         tube_x.append(tube_coords[i][0::3])
         tube_y.append(tube_coords[i][1::3])
         tube_z.append(tube_coords[i][2::3])
-    print tube_x
-    print tube_y
-    print tube_z
     for i in range(len(tube_x)):
         ax.plot(tube_x[i], tube_y[i], tube_z[i], c=next(colors))
     ax.set_xlim(0, grid_size)
@@ -79,7 +87,6 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     ax.grid()
     creation.check_for_folder(save_dir)
     plt.savefig('%s/setup.pdf' % save_dir)
-    plt.show()
     if not quiet:
         plt.show()
     plt.close()
@@ -105,6 +112,7 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
         plt.show()
     plt.close()
     return temp_profile
+
 
 
 def plot_linear_temp(temp_profile, quiet, save_dir):
@@ -152,10 +160,41 @@ def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     plt.close()
 
 
-def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir):
+def plot_walker_path_3d_onlat(walker, grid_size, temp, quiet, label, save_dir):
+    """Plots path taken by a single walker 3D"""
+    logging.info("Plotting walker path")
+    pos = walker.pos
+    pos_x = np.zeros(len(pos))
+    pos_y = np.zeros(len(pos))
+    pos_z = np.zeros(len(pos))
+    for i in range(len(pos)):
+        pos_x[i] = pos[i][0]
+        pos_y[i] = pos[i][1]
+        pos_z[i] = pos[i][2]
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.set_xlim(0, grid_size)
+    ax.set_ylim(0, grid_size)
+    ax.set_zlim(0, grid_size)
+    ax.set_title('Walker %d path taken (%s)' % (label, temp))
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    ax.grid()
+    ax.plot(pos_x, pos_y, pos_z, label="Path", zorder=1)
+    ax.scatter(pos_x[0], pos_y[0], pos_z[0], 'o', c='red', s=200, label="Start", zorder=2)
+    ax.scatter(pos_x[-1], pos_y[-1], pos_z[-1], 'o', c='yellow', s=200, label="End", zorder=3)
+    plt.legend()
+    creation.check_for_folder(save_dir)
+    plt.savefig('%s/%s_walker_%d_path.pdf' % (save_dir, temp, label))
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
+def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir, gradient_cutoff):
     """Plots temperature gradient for all walkers"""
     logging.info("Plotting temperature gradient")
-    gradient_cutoff = 2
     # disregard first few x= slices as close to the wall and values have large errors
     # gradient_cutoff = 2 seems to work well. Don't change.
     temp_gradient_x, temp_gradient_y = np.gradient(temp_profile)
@@ -175,7 +214,7 @@ def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir):
     if not quiet:
         plt.show()
     plt.close()
-    return temp_gradient_x, gradient_cutoff
+    return temp_gradient_x
 
 
 def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):

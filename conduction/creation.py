@@ -1,11 +1,26 @@
 import numpy as np
 import logging
 import os
+import glob
 
 
 def check_for_folder(folder):
     if not os.path.exists(folder):
         os.mkdir(folder)
+
+
+def get_plot_save_dir(folder, num_tubes, orientation, tube_length):
+    ends = []
+    for file in glob.glob("%d_%s_%d_*" % (num_tubes, orientation, tube_length)):
+        ends.append(file.strip("%d_%s_%d_" % (num_tubes, orientation, tube_length)))
+    if not ends:  # empty list is false
+        maxnum = 1
+    else:
+        maxnum = max(map(int, ends)) + 1
+        print maxnum
+    plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum)
+    os.mkdir(plot_save_dir)
+    return plot_save_dir
 
 
 class Grid2D_onlat(object):
@@ -94,38 +109,39 @@ class Grid3D_onlat(object):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
         good_theta_angles = []
         good_phi_angles = []
-        if orientation == 'random':
-            x_l = np.random.randint(radius, self.size + 1 - radius)
-            y_l = np.random.randint(radius, self.size + 1 - radius)
-            z_l = np.random.randint(radius, self.size + 1 - radius)
-            theta_angle_range = range(0, 360)  # y-z plane
-            phi_angle_range = range(0, 360)  # x-y plane
-            theta_angle = np.random.choice(theta_angle_range)
-            phi_angle = np.random.choice(phi_angle_range)
-        elif orientation == 'vertical':
-            x_l = np.random.randint(0, self.size + 1)
-            y_l = np.random.randint(0, self.size + 1)
-            z_l = np.random.randint(radius, self.size + 1 - radius)
-            phi_angle = 0
-            theta_angle_range = [180]
-            theta_angle = np.random.choice(theta_angle_range)
-        elif orientation == 'horizontal':
-            x_l = np.random.randint(radius, self.size + 1 - radius)
-            y_l = np.random.randint(0, self.size + 1)
-            z_l = np.random.randint(0, self.size + 1)
-            phi_angle = 0
-            theta_angle_range = [90, 270]
-            theta_angle = np.random.choice(theta_angle_range)
-        else:
-            logging.error("Invalid orientation specified")
-            raise SystemExit
-        x_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle)) + x_l)
-        y_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle)) + y_l)
-        z_r = round(radius * np.cos(np.deg2rad(phi_angle)) + z_l)
-        if not ((x_l >= 0) & (x_r <= self.size) & (y_l >= 0) & (y_r <= self.size) &
-                    (z_l >= 0) & (z_r <= self.size)):
-            logging.error("Point found outside box.")
-            raise SystemExit
+        inside_box = False  # keeps track of if tube is in box
+        while inside_box == False:
+            if orientation == 'random':
+                x_l = np.random.randint(radius, self.size + 1 - radius)
+                y_l = np.random.randint(radius, self.size + 1 - radius)
+                z_l = np.random.randint(radius, self.size + 1 - radius)
+                theta_angle_range = range(0, 360)  # y-z plane
+                phi_angle_range = range(0, 360)  # x-y plane
+                theta_angle = np.random.choice(theta_angle_range)
+                phi_angle = np.random.choice(phi_angle_range)
+            elif orientation == 'vertical':
+                x_l = np.random.randint(0, self.size + 1)
+                y_l = np.random.randint(0, self.size + 1)
+                z_l = np.random.randint(radius, self.size + 1 - radius)
+                phi_angle = 0
+                theta_angle_range = [0, 180]
+                theta_angle = np.random.choice(theta_angle_range)
+            elif orientation == 'horizontal':
+                x_l = np.random.randint(radius, self.size + 1 - radius)
+                y_l = np.random.randint(0, self.size + 1)
+                z_l = np.random.randint(0, self.size + 1)
+                phi_angle = 0
+                theta_angle_range = [90]
+                theta_angle = np.random.choice(theta_angle_range)
+            else:
+                logging.error("Invalid orientation specified")
+                raise SystemExit
+            x_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle)) + x_l)
+            y_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle)) + y_l)
+            z_r = round(radius * np.cos(np.deg2rad(phi_angle)) + z_l)
+            if (x_l >= 0) and (x_r <= self.size) and (y_l >= 0) and (y_r <= self.size) and (z_l >= 0) \
+                    and (z_r <= self.size):
+                inside_box = True
         x_c = round(radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle)) + x_l) / 2
         y_c = round(radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle)) + y_l) / 2
         z_c = round(radius * np.cos(np.deg2rad(phi_angle)) + z_l) / 2
@@ -177,6 +193,37 @@ class Walker2D_onlat(object):
         arr2 = np.array(newpos)
         self.pos[-1] = list(arr1 + arr2)
 
+
+class Walker3D_onlat(object):
+    def __init__(self, grid_size, temp):
+        if temp == 'hot':
+            start_x = 0
+        elif temp == 'cold':
+            start_x = grid_size
+        else:
+            logging.error('Invalid walker temperature')
+            raise SystemExit
+        start_y = np.random.randint(0, grid_size + 1)
+        start_z = np.random.randint(0, grid_size + 1)
+        start = [start_x, start_y, start_z]
+        self.pos = [start]
+
+    def add_dpos(self, newpos):  # add incremented position
+        arr1 = np.array(self.pos[-1])
+        arr2 = np.array(newpos)
+        # print arr1, arr2
+        self.pos.append(list(arr1 + arr2))
+
+    def add_pos(self, newpos):  # add new position
+        self.pos.append(list(newpos))
+
+    def replace_pos(self, newpos):  # replace current position
+        self.pos[-1] = list(newpos)
+
+    def replace_dpos(self, newpos):  # replace incremented position
+        arr1 = np.array(self.pos[-1])
+        arr2 = np.array(newpos)
+        self.pos[-1] = list(arr1 + arr2)
 
 def int_on_circle(radius):  # finds all integer solutions on the circumference of a circle
     # centered at origin for a given radius

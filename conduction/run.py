@@ -6,10 +6,7 @@ import creation
 import onlat_2d
 import onlat_3d
 
-
 # from mpi4py import MPI
-# import platform
-# import multiprocessing as mp
 
 
 def ConfigSectionMap(section):
@@ -69,7 +66,6 @@ if __name__ == "__main__":
     timesteps = Config.getint('config','timesteps')
     save_dir = Config.get('config', 'save_dir')
     quiet = Config.getboolean('config', 'quiet')
-    mpi = Config.get('config', 'MPI')
     num_tubes = Config.getint('config', 'num_tubes')
     k_convergence_tolerance = Config.getfloat('config', 'k_convergence_tolerance')
     begin_cov_check = Config.getint('config', 'begin_cov_check')
@@ -98,19 +94,22 @@ if __name__ == "__main__":
         logging.error('Invalid timesteps')
         raise SystemExit
 
-    plot_save_dir = save_dir + "/%d_%s_%d" % (num_tubes, orientation, tube_length)
+    os.chdir(save_dir)
+
+    plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
     logging_setup(plot_save_dir)
     logging.info(config_used)
 
-    os.chdir(save_dir)
-
-    if (on_lattice == True) & (dim == 2) & (mpi == 'off'):
+    if (on_lattice == True) & (dim == 2):
         logging.info("Starting 2D on-lattice simulation")
         onlat_2d.sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
                               k_conv_error_buffer, plot_save_dir)
-    elif (on_lattice == True) & (dim == 3) & (mpi == 'off'):
+    elif (on_lattice == True) & (dim == 3):
         tube_diameter = Config.getfloat('config', 'tube_diameter')
-
-        onlat_3d.sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, tube_diameter, save_loc_data,
-                              quiet, save_loc_plots, save_dir, plot_save_dir)
+        logging.info("Starting 3D on-lattice simulation")
+        onlat_3d.sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
+                              quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
+                              k_conv_error_buffer, plot_save_dir, tube_diameter)
+    else:
+        raise SystemExit
