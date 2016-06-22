@@ -41,8 +41,8 @@ def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
     logging.info("Heat flux: %.4E" % heat_flux)
     logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
-    f = open("%s/k.txt" % cur_dir, 'a')
-    f.write("%d %.4E %.4E\n" % (num_tubes, k, k_err))
+    f = open("%s/k.txt" % cur_dir, 'w')
+    f.write("%.4E\n" % k)
     f.close()
     return k
 
@@ -66,8 +66,8 @@ def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
     logging.info("Heat flux: %.4E" % heat_flux)
     logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
-    f = open("%s/k.txt" % cur_dir, 'a')
-    f.write("%d %.4E %.4E\n" % (num_tubes, k, k_err))
+    f = open("%s/k.txt" % cur_dir, 'w')
+    f.write("%.4E\n" % k)
     f.close()
     return k
 

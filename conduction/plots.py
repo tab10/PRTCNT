@@ -12,7 +12,7 @@ import creation
 matplotlib.rcParams['text.usetex'] = True
 
 
-def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
+def histogram_walker_2d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
     # logging.info("Histogramming positions")
@@ -22,20 +22,16 @@ def histogram_walker_2d_onlat(walker, grid_range, temp, bins):
         walker_pos_xarr[i] = walker.pos[i][0]  # converts list of lists to list of arrays
         walker_pos_yarr[i] = walker.pos[i][1]
     H, xedges, yedges = np.histogram2d(walker_pos_xarr, walker_pos_yarr, range=grid_range, bins=bins)
-    if H == 'cold':
-        H = -H  # make walker visit site negative times
     return H, xedges, yedges
 
 
-def histogram_walker_3d_onlat(walker, grid_range, temp, bins):
+def histogram_walker_3d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
     H, edges = np.histogramdd(np.asarray(walker.pos), range=grid_range, bins=bins)
     x_edges = edges[0]
     y_edges = edges[1]
     z_edges = edges[2]
-    if H == 'cold':
-        H = -H  # make walker visit site negative times
     return H, x_edges, y_edges, z_edges
 
 def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):

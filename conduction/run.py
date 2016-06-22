@@ -84,7 +84,7 @@ if __name__ == "__main__":
     if grid_size < 5:
         logging.error('Invalid grid size')
         raise SystemExit
-    if tube_length <= 0:
+    if tube_length < 0:
         logging.error('Invalid tube length')
         raise SystemExit
     if num_tubes < 0:

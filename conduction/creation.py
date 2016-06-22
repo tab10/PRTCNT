@@ -12,12 +12,12 @@ def check_for_folder(folder):
 def get_plot_save_dir(folder, num_tubes, orientation, tube_length):
     ends = []
     for file in glob.glob("%d_%s_%d_*" % (num_tubes, orientation, tube_length)):
-        ends.append(file.strip("%d_%s_%d_" % (num_tubes, orientation, tube_length)))
+        name_temp = file.split('_')
+        ends.append(name_temp[3])
     if not ends:  # empty list is false
         maxnum = 1
     else:
         maxnum = max(map(int, ends)) + 1
-        print maxnum
     plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum)
     os.mkdir(plot_save_dir)
     return plot_save_dir

@@ -42,7 +42,7 @@ def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
             plots.plot_walker_path_3d_onlat(walker, grid_size, 'hot', quiet, i + 1, plot_save_dir)
         elif save_loc_plots:
             plots.plot_walker_path_3d_onlat(walker, grid_size, 'hot', quiet, i + 1, walker_plot_save_dir)
-        H_temp, x_edges, y_edges, z_edges = plots.histogram_walker_3d_onlat(walker, grid_range, 'hot', bins)
+        H_temp, x_edges, y_edges, z_edges = plots.histogram_walker_3d_onlat(walker, grid_range, bins)
         H += H_temp
 
         # run cold walker
@@ -54,7 +54,7 @@ def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
             plots.plot_walker_path_3d_onlat(walker, grid_size, 'cold', quiet, i + 1, plot_save_dir)
         elif save_loc_plots:
             plots.plot_walker_path_3d_onlat(walker, grid_size, 'cold', quiet, i + 1, walker_plot_save_dir)
-        H_temp, x_edges, y_edges, z_edges = plots.histogram_walker_3d_onlat(walker, grid_range, 'cold', bins)
+        H_temp, x_edges, y_edges, z_edges = plots.histogram_walker_3d_onlat(walker, grid_range, bins)
 
         H -= H_temp
 
