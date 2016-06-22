@@ -1,7 +1,9 @@
 import itertools
 import logging
 
-import matplotlib
+import matplotlib as mpl
+
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -9,7 +11,7 @@ from scipy import stats
 
 import creation
 
-matplotlib.rcParams['text.usetex'] = True
+mpl.rcParams['text.usetex'] = True
 
 
 def histogram_walker_2d_onlat(walker, grid_range, bins):
