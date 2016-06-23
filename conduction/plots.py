@@ -90,25 +90,26 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     plt.close()
 
 
-def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir):
+def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
     """Plots temperature profile for all walkers"""
     logging.info("Plotting temperature profile")
     H_tot /= float(timesteps)  # normalization condition
     creation.check_for_folder(save_dir)
     np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
-    plt.title('Temperature density (dimensionless units)')
-    X, Y = np.meshgrid(xedges, yedges)
     temp_profile = H_tot
-    plt.pcolormesh(X, Y, temp_profile.T)  # transpose since pcolormesh reverses axes
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.xlim(xedges[0], xedges[-1])
-    plt.ylim(yedges[0], yedges[-1])
-    plt.colorbar()
-    plt.savefig('%s/temp.pdf' % save_dir)
-    if not quiet:
-        plt.show()
-    plt.close()
+    if gen_plots:
+        plt.title('Temperature density (dimensionless units)')
+        X, Y = np.meshgrid(xedges, yedges)
+        plt.pcolormesh(X, Y, temp_profile.T)  # transpose since pcolormesh reverses axes
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.xlim(xedges[0], xedges[-1])
+        plt.ylim(yedges[0], yedges[-1])
+        plt.colorbar()
+        plt.savefig('%s/temp.pdf' % save_dir)
+        if not quiet:
+            plt.show()
+        plt.close()
     return temp_profile
 
 

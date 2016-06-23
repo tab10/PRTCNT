@@ -79,7 +79,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     logging.info("Serial simulation time was %.4f s" % (end - start))
     walk_sec = (i * 2) / (end - start)
     logging.info("Crunched %.4f walkers/second" % walk_sec)
-    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
+    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir, gen_plots)
     if gen_plots == True:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
@@ -192,7 +192,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
         walk_sec = (i * 2 * size) / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
+        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, tot_H, xedges, yedges, quiet, plot_save_dir,
+                                                             gen_plots)
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
