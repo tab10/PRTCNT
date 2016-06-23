@@ -11,7 +11,7 @@ import run
 
 def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                 k_conv_error_buffer, plot_save_dir, tube_radius):
+                 k_conv_error_buffer, plot_save_dir, tube_radius, plots):
     walker_data_save_dir = save_dir + "/walker_locations"
     walker_plot_save_dir = save_dir + "/walker_plots"
 

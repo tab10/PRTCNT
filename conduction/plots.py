@@ -112,25 +112,26 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
     return temp_profile
 
 
-
-def plot_linear_temp(temp_profile, quiet, save_dir):
+def plot_linear_temp(temp_profile, quiet, save_dir, plots):
     test_mean = np.mean(temp_profile[1:], axis=1)
     test_std = np.std(temp_profile[1:], axis=1, ddof=1)
     x = np.arange(1, len(test_mean) + 1)
-    plt.errorbar(x, test_mean, yerr=test_std)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)
     gradient_err = np.mean(test_std)
     line = slope * x + intercept
-    plt.plot(x, line, color='black')
-    plt.title("Temperature density (normalized by time) (dimensionless units)\n"
-              "$R^2=%.4f$, $\\frac{dT(x)}{dx}$=%.4E$\\pm$%.4E" % (r_value ** 2, slope, std_err))
-    plt.xlabel('x')
-    plt.ylabel('T(x)')
-    plt.savefig('%s/temp_fit.pdf' % save_dir)
-    if not quiet:
-        plt.show()
-    plt.close()
+    if plots == True:
+        plt.errorbar(x, test_mean, yerr=test_std)
+        plt.plot(x, line, color='black')
+        plt.title("Temperature density (normalized by time) (dimensionless units)\n"
+                  "$R^2=%.4f$, $\\frac{dT(x)}{dx}$=%.4E$\\pm$%.4E" % (r_value ** 2, slope, std_err))
+        plt.xlabel('x')
+        plt.ylabel('T(x)')
+        plt.savefig('%s/temp_fit.pdf' % save_dir)
+        if not quiet:
+            plt.show()
+        plt.close()
     return slope, std_err
+
 
 def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     """Plots path taken by a single walker"""
