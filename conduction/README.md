@@ -10,6 +10,9 @@ or else default.ini will be read.
 Serial code is ran by running "python run.py", for the MPI implementation
 run "mpiexec -n X python mpi_run.py" with X the number of cores available.
 
+On OU's Schooner, add this line to your .profile:
+`module load OpenMPI mpi4py numpy matplotlib`
+
 ##### References
 
 * Computational modeling of the thermal conductivity of single-walled carbon nanotube-polymer composites

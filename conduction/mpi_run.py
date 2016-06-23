@@ -83,7 +83,7 @@ if __name__ == "__main__":
     k_conv_error_buffer = Config.getint('config', 'k_conv_error_buffer')
     save_loc_plots = Config.getboolean('config', 'save_loc_plots')
     save_loc_data = Config.getboolean('config', 'save_loc_data')
-    plots = Config.getboolean('config', 'plots')
+    gen_plots = Config.getboolean('config', 'gen_plots')
     # mean_dist_tubes = Config.get('config','mean_dist_tubes')
     # std_dist_tubes = Config.get('config', 'std_dist_tubes')
 
@@ -125,13 +125,13 @@ if __name__ == "__main__":
         comm.Barrier()
         onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, plots, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, rank, size)
     elif (on_lattice == True) & (dim == 3):
         tube_diameter = Config.getfloat('config', 'tube_diameter')
         logging.info("Starting MPI 3D on-lattice simulation")
         comm.Barrier()
         onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, tube_diameter, plots, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, tube_diameter, gen_plots, rank, size)
     else:
         raise SystemExit

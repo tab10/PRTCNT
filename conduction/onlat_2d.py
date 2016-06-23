@@ -12,13 +12,13 @@ from mpi4py import MPI
 
 def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                 k_conv_error_buffer, plot_save_dir, plots):
+                 k_conv_error_buffer, plot_save_dir, gen_plots):
     walker_data_save_dir = save_dir + "/walker_locations"
     walker_plot_save_dir = save_dir + "/walker_plots"
 
     logging.info("Setting up grid and tubes")
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-    if plots == True:
+    if gen_plots == True:
         plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
     fill_fract = analysis.filling_fraction(grid.tube_coords, grid.size)
     logging.info("Filling fraction is %.2f" % fill_fract)
@@ -42,9 +42,9 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'hot')
         if save_loc_data:
             run.save_walker_loc(walker, walker_data_save_dir, i, 'hot')
-        if i == 0 & save_loc_plots == False & plots == True:  # always save one example trajectory plot
+        if i == 0 & save_loc_plots == False & gen_plots == True:  # always save one example trajectory plot
             plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, plot_save_dir)
-        elif save_loc_plots & plots == True:
+        elif save_loc_plots & gen_plots == True:
             plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, walker_plot_save_dir)
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
         H += H_temp
@@ -54,9 +54,9 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
         walker = randomwalk.runrandomwalk_2d_onlat(grid, timesteps, 'cold')
         if save_loc_data:
             run.save_walker_loc(walker, walker_data_save_dir, i, 'cold')
-        if i == 0 & save_loc_plots == False & plots == True:
+        if i == 0 & save_loc_plots == False & gen_plots == True:
             plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, plot_save_dir)
-        elif save_loc_plots & plots == True:
+        elif save_loc_plots & gen_plots == True:
             plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, walker_plot_save_dir)
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
         H -= H_temp
@@ -79,7 +79,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     logging.info("Serial simulation time was %.4f s" % (end - start))
     walk_sec = (i * 2) / (end - start)
     logging.info("Crunched %.4f walkers/second" % walk_sec)
-    if plots == True:
+    if gen_plots == True:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
         temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
@@ -94,7 +94,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
 
 def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                      quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                     k_conv_error_buffer, plot_save_dir, plots, rank, size):
+                     k_conv_error_buffer, plot_save_dir, gen_plots, rank, size):
 
     comm = MPI.COMM_WORLD
     walker_data_save_dir = save_dir + "/walker_locations"
@@ -103,7 +103,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     if rank == 0:
         logging.info("Setting up grid and tubes")
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-        if plots == True:
+        if gen_plots == True:
             plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
         fill_fract = analysis.filling_fraction(grid.tube_coords, grid.size)
         logging.info("Filling fraction is %.2f" % fill_fract)
@@ -134,9 +134,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if rank == 0:
             if save_loc_data:
                 run.save_walker_loc(walker, walker_data_save_dir, i, 'hot')
-            if i == 0 & save_loc_plots == False & plots == True:  # always save one example trajectory plot
+            if i == 0 & save_loc_plots == False & gen_plots == True:  # always save one example trajectory plot
                 plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, plot_save_dir)
-            elif save_loc_plots & plots == True:
+            elif save_loc_plots & gen_plots == True:
                 plots.plot_walker_path_2d_onlat(walker, grid_size, 'hot', quiet, i + 1, walker_plot_save_dir)
 
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
@@ -149,9 +149,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if rank == 0:
             if save_loc_data:
                 run.save_walker_loc(walker, walker_data_save_dir, i, 'cold')
-            if i == 0 & save_loc_plots == False & plots == True:
+            if i == 0 & save_loc_plots == False & gen_plots == True:
                 plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, plot_save_dir)
-            elif save_loc_plots & plots == True:
+            elif save_loc_plots & gen_plots == True:
                 plots.plot_walker_path_2d_onlat(walker, grid_size, 'cold', quiet, i + 1, walker_plot_save_dir)
 
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
@@ -195,7 +195,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
         walk_sec = (i * 2 * size) / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        if plots == True:
+        if gen_plots == True:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
             temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
