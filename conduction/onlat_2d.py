@@ -165,11 +165,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
 
         if rank == 0:
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
-                                                                                            grid.size,
-                                                                                            timesteps)
+                                                                                            grid.size, timesteps)
             k_list.append(k)
-
-        if rank == 0:
             logging.info("%d: R squared: %.4f, k: %.4E" % ((i * size), r2, k))
 
         if (i * size) > begin_cov_check:
@@ -198,9 +195,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if gen_plots == True:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-            temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet,
                                                             plot_save_dir, gradient_cutoff=2)
+        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
         gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, plots)
         analysis.final_conductivity_2d_onlat(i * 2, grid.size, timesteps, gradient_avg, gradient_std,
                                              k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
