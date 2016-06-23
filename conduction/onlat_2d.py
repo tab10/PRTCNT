@@ -18,7 +18,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
 
     logging.info("Setting up grid and tubes")
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-    if gen_plots == True:
+    if gen_plots:
         plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
     fill_fract = analysis.filling_fraction(grid.tube_coords, grid.size)
     logging.info("Filling fraction is %.2f" % fill_fract)
@@ -79,13 +79,13 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     logging.info("Serial simulation time was %.4f s" % (end - start))
     walk_sec = (i * 2) / (end - start)
     logging.info("Crunched %.4f walkers/second" % walk_sec)
+    temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
     if gen_plots == True:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet,
                                                         plot_save_dir, gradient_cutoff=2)
-    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, plots)
+    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, gen_plots)
     analysis.final_conductivity_2d_onlat(i * 2, grid.size, timesteps, gradient_avg, gradient_std,
                                          k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
                                          gradient_cutoff=2)
@@ -103,7 +103,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     if rank == 0:
         logging.info("Setting up grid and tubes")
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
-        if gen_plots == True:
+        if gen_plots:
             plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
         fill_fract = analysis.filling_fraction(grid.tube_coords, grid.size)
         logging.info("Filling fraction is %.2f" % fill_fract)
@@ -192,14 +192,14 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
         walk_sec = (i * 2 * size) / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        if gen_plots == True:
+        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
+        if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet,
                                                             plot_save_dir, gradient_cutoff=2)
-        temp_profile = plots.plot_histogram_walkers_2d_onlat(timesteps, H, xedges, yedges, quiet, plot_save_dir)
-        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, plots)
-        analysis.final_conductivity_2d_onlat(i * 2, grid.size, timesteps, gradient_avg, gradient_std,
+        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, gen_plots)
+        analysis.final_conductivity_2d_onlat(i * 2 * size, grid.size, timesteps, gradient_avg, gradient_std,
                                              k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
                                              gradient_cutoff=2)
         logging.info("Complete")
