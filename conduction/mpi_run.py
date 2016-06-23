@@ -119,6 +119,10 @@ if __name__ == "__main__":
 
     plot_save_dir = comm.bcast(plot_save_dir, root=0)
 
+    k_conv_error_buffer /= size  # accounts for extra processors
+    if k_conv_error_buffer < 5:  # imposes minimum steps to check convergence at
+        k_conv_error_buffer = 5
+
     #  all processes have control now
     if (on_lattice == True) & (dim == 2):
         logging.info("Starting MPI 2D on-lattice simulation")
