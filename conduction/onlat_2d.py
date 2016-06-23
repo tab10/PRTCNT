@@ -117,7 +117,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     H = np.zeros((grid.size, grid.size))
 
     i = 0
-    # these will be used on core 0 only
+
     k_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
@@ -157,9 +157,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
         H -= H_temp
 
-        comm.Barrier()
+        tot_H = comm.allreduce(H, op=MPI.SUM)
 
-        tot_H = comm.reduce(H, op=MPI.SUM)
+        comm.Barrier()
 
         i += 1
 
@@ -167,7 +167,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
                                                                                             grid.size, timesteps)
             k_list.append(k)
-            logging.info("%d: R squared: %.4f, k: %.4E" % ((i * size), r2, k))
+            logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
         if (i * size) > begin_cov_check:
             if rank == 0:
