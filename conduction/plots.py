@@ -1,8 +1,8 @@
 import itertools
 import logging
-
+import glob
 import matplotlib as mpl
-
+import os
 mpl.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -265,4 +265,33 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     plt.savefig('%s/k_convergence_err.pdf' % save_dir)
     if not quiet:
         plt.show()
+    plt.close()
+
+
+def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size):
+    all_num_tubes = []
+    folds = []
+    for file in glob.glob("*_%s_%d_*" % (orientation, tube_length)):
+        name_temp = file.split('_')
+        all_num_tubes.append(name_temp[0])
+        folds.append(file)
+    folds = sorted(folds)
+    uni_num_tubes = list(set(all_num_tubes))
+    all_k_vals = np.zeros(len(folds))
+    for i in range(len(folds)):
+        os.chdir(folds[i])
+        all_k_vals[i] = np.loadtxt('k.txt')
+        os.chdir('..')
+    k_vals = []
+    k_err = []
+    for i in range(len(uni_num_tubes)):
+        k_vals.append(np.mean(all_k_vals[i * num_configs:(i + 1) * num_configs]))
+        k_err.append(np.std(all_k_vals[i * num_configs:(i + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
+    plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, label=orientation)
+    plt.title('Tubes of length %d in a %d box\n%d configurations' % (tube_length, grid_size, num_configs))
+    plt.xlabel('Number of tubes')
+    plt.ylabel('Conductivity k')
+    plt.legend()
+    plt.savefig('k_num_tubes.pdf')
+    plt.show()
     plt.close()

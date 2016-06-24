@@ -99,7 +99,10 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     comm = MPI.COMM_WORLD
     walker_data_save_dir = save_dir + "/walker_locations"
     walker_plot_save_dir = save_dir + "/walker_plots"
-
+    if size < 12:
+        logging.info("Less than 12 cores detected. Using serial convergence algorithm")
+    elif size >= 12:
+        logging.info("12 or more cores detected. Using parallel convergence algorithm")
     if rank == 0:
         logging.info("Setting up grid and tubes")
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
@@ -121,6 +124,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     k_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
+    k_core = np.zeros(size)
 
     start = MPI.Wtime()
 
@@ -158,16 +162,29 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         H -= H_temp
 
         tot_H = comm.allreduce(H, op=MPI.SUM)
-
-        comm.Barrier()
-
+        # H is updated on every core for every i independently
+        # tot_H is the total across all cores
         i += 1
 
-        if rank == 0:
-            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
+        if size >= 12:
+            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2 * (rank + 1),
                                                                                             grid.size, timesteps)
-            k_list.append(k)
-            logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
+            if rank != 0:
+                comm.Send(k, dest=0, tag=rank)
+            else:
+                for j in range(len(size)):
+                    k_core[j] = comm.Recv(k, tag=rank)
+                k_core[0] = k
+                k_error = np.std(k_core, ddof=1)
+                k_mean = np.mean(k_core)
+        elif size < 12:
+            if rank == 0:
+                dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
+                                                                                                grid.size, timesteps)
+                k_list.append(k)
+                logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
+
+        comm.Barrier()
 
         if (i * size) > begin_cov_check:
             if rank == 0:
