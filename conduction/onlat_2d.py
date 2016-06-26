@@ -179,6 +179,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                     r2_core[j] = comm.recv(source=j, tag=15)
                 k_core[0] = k
                 r2_core[0] = r2
+                print k_core
+                print r2_core
                 k_error = np.std(k_core, ddof=1)
                 k_mean = np.mean(k_core)
                 r2_error = np.std(r2_core, ddof=1)
@@ -192,8 +194,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                     logging.info("k error: %.4E" % k_error)
                     k_convergence_err = k_error
                     k_convergence_val = k_mean
-                k_convergence_err = comm.bcast(k_convergence_err, root=0)
-                k_convergence_val = comm.bcast(k_convergence_val, root=0)
+                else:
+                    k_convergence_err = None
+                    k_convergence_val = None
 
         elif size < 12:
             if rank == 0:
@@ -215,8 +218,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                     k_convergence_err = None
                     k_convergence_val = None
 
-                k_convergence_err = comm.bcast(k_convergence_err, root=0)
-                k_convergence_val = comm.bcast(k_convergence_val, root=0)
+        k_convergence_err = comm.bcast(k_convergence_err, root=0)
+        k_convergence_val = comm.bcast(k_convergence_val, root=0)
 
         comm.Barrier()
 
