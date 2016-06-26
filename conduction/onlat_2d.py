@@ -178,7 +178,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                 for j in range(1, size):
                     temp_k = comm.recv(source=j, tag=10)
                     k_list.append(temp_k)
-            print size(k_list)
+            print len(k_list)
                     #
                     #
                     # if rank != 0:
