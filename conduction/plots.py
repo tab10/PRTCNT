@@ -269,14 +269,14 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
 
 
 def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size):
-    all_num_tubes = []
     folds = []
     for file in glob.glob("*_%s_%d_*" % (orientation, tube_length)):
-        name_temp = file.split('_')
-        all_num_tubes.append(name_temp[0])
         folds.append(file)
     folds = sorted(folds)
-    uni_num_tubes = list(set(all_num_tubes))
+    uni_tubes = len(folds) / num_configs
+    uni_num_tubes = []
+    for i in range(uni_tubes):
+        uni_num_tubes.append(folds[i * num_configs].split('_')[0])
     all_k_vals = np.zeros(len(folds))
     for i in range(len(folds)):
         os.chdir(folds[i])
@@ -287,11 +287,11 @@ def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size):
     for i in range(len(uni_num_tubes)):
         k_vals.append(np.mean(all_k_vals[i * num_configs:(i + 1) * num_configs]))
         k_err.append(np.std(all_k_vals[i * num_configs:(i + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
-    plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, label=orientation)
+    plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=orientation)
     plt.title('Tubes of length %d in a %d box\n%d configurations' % (tube_length, grid_size, num_configs))
     plt.xlabel('Number of tubes')
     plt.ylabel('Conductivity k')
     plt.legend()
-    plt.savefig('k_num_tubes.pdf')
+    plt.savefig('k_num_tubes_%d.pdf' % tube_length)
     plt.show()
     plt.close()
