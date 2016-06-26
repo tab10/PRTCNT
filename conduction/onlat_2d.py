@@ -178,7 +178,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                 for j in range(1, size):
                     temp_k = comm.recv(source=j, tag=10)
                     k_list.append(temp_k)
-
+            print k_list
                     #
                     #
                     # if rank != 0:
@@ -208,7 +208,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
 
         comm.Barrier()
 
-        if (i * size) > begin_cov_check:
+        if (i * 2 * size) > begin_cov_check:
             if rank == 0:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
                 k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))
