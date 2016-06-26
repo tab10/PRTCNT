@@ -172,6 +172,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2 * (rank + 1),
                                                                                             grid.size, timesteps)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * (rank + 1), r2, k))
+
+            comm.Barrier()
+            
             if rank != 0:
                 comm.send(k, dest=0, tag=10)
             else:
