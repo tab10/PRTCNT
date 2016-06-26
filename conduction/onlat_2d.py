@@ -65,7 +65,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
 
         dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2, grid.size, timesteps)
         k_list.append(k)
-        logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
+        logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2, r2, k))
         if i > begin_cov_check:
             k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
             k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))
@@ -170,36 +170,34 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if size >= 12:
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2 * (rank + 1),
                                                                                             grid.size, timesteps)
+            logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * (rank + 1), r2, k))
             if rank != 0:
-                comm.send(k, dest=0, tag=10)
-                comm.send(r2, dest=0, tag=15)
+                comm.isend(k, dest=0, tag=10)
             else:
+                k_list.append(k)
                 for j in range(1, size):
-                    k_core[j] = comm.recv(source=j, tag=10)
-                    r2_core[j] = comm.recv(source=j, tag=15)
-                k_core[0] = k
-                r2_core[0] = r2
-                print k_core
-                print r2_core
-                k_error = np.std(k_core, ddof=1)
-                k_mean = np.mean(k_core)
-                r2_error = np.std(r2_core, ddof=1)
-                r2_mean = np.mean(r2_core)
-                logging.info("%d: Avg. across cores R squared: %.4f, k: %.4E" % (i * size, r2_mean, k_mean))
+                    temp_k = comm.irecv(source=j, tag=10)
+                    k_list.append(temp_k)
 
-            comm.Barrier()
+                    #
+                    #
+                    # if rank != 0:
+                    #     comm.send(k, dest=0, tag=10)
+                    #     comm.send(r2, dest=0, tag=15)
+                    # else:
+                    #     for j in range(1, size):
+                    #         k_core[j] = comm.recv(source=j, tag=10)
+                    #         r2_core[j] = comm.recv(source=j, tag=15)
+                    #     k_core[0] = k
+                    #     r2_core[0] = r2
+                    #     print k_core
+                    #     print r2_core
+                    #     k_error = np.std(k_core, ddof=1)
+                    #     k_mean = np.mean(k_core)
+                    #     r2_error = np.std(r2_core, ddof=1)
+                    #     r2_mean = np.mean(r2_core)
+                    #     logging.info("%d: Avg. across cores R squared: %.4f, k: %.4E" % (i*2*size, r2_mean, k_mean))
 
-            if (i * size) > begin_cov_check:
-                if rank == 0:
-                    logging.info("k error: %.4E" % k_error)
-                    k_convergence_err = k_error
-                    k_convergence_val = k_mean
-                else:
-                    k_convergence_err = None
-                    k_convergence_val = None
-
-                k_convergence_err = comm.bcast(k_convergence_err, root=0)
-                k_convergence_val = comm.bcast(k_convergence_val, root=0)
 
         elif size < 12:
             if rank == 0:
@@ -208,21 +206,21 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                 k_list.append(k)
                 logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
-            comm.Barrier()
+        comm.Barrier()
 
-            if (i * size) > begin_cov_check:
-                if rank == 0:
-                    k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
-                    k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))
-                    k_convergence_err_list.append(k_convergence_err)
-                    logging.info("k: %.4E" % k_convergence_val)
-                    logging.info("k error: %.4E" % k_convergence_err)
-                else:
-                    k_convergence_err = None
-                    k_convergence_val = None
+        if (i * size) > begin_cov_check:
+            if rank == 0:
+                k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
+                k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))
+                k_convergence_err_list.append(k_convergence_err)
+                logging.info("k: %.4E" % k_convergence_val)
+                logging.info("k error: %.4E" % k_convergence_err)
+            else:
+                k_convergence_err = None
+                k_convergence_val = None
 
-                k_convergence_err = comm.bcast(k_convergence_err, root=0)
-                k_convergence_val = comm.bcast(k_convergence_val, root=0)
+            k_convergence_err = comm.bcast(k_convergence_err, root=0)
+            k_convergence_val = comm.bcast(k_convergence_val, root=0)
 
         comm.Barrier()
 
