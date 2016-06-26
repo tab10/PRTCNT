@@ -174,7 +174,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                 comm.send(k, dest=0, tag=10)
                 comm.send(r2, dest=0, tag=15)
             else:
-                for j in range(1, len(size) + 1):
+                for j in range(1, size + 1):
                     k_core[j] = comm.recv(source=j, tag=10)
                     r2_core[j] = comm.recv(source=j, tag=15)
                 k_core[0] = k
