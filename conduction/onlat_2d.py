@@ -198,6 +198,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                     k_convergence_err = None
                     k_convergence_val = None
 
+                k_convergence_err = comm.bcast(k_convergence_err, root=0)
+                k_convergence_val = comm.bcast(k_convergence_val, root=0)
+
         elif size < 12:
             if rank == 0:
                 dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
@@ -218,8 +221,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                     k_convergence_err = None
                     k_convergence_val = None
 
-        k_convergence_err = comm.bcast(k_convergence_err, root=0)
-        k_convergence_val = comm.bcast(k_convergence_val, root=0)
+                k_convergence_err = comm.bcast(k_convergence_err, root=0)
+                k_convergence_val = comm.bcast(k_convergence_val, root=0)
 
         comm.Barrier()
 
