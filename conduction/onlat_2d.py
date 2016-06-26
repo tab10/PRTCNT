@@ -99,10 +99,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     comm = MPI.COMM_WORLD
     walker_data_save_dir = save_dir + "/walker_locations"
     walker_plot_save_dir = save_dir + "/walker_plots"
-    if size < 12:
-        logging.info("Less than 12 cores detected. Using serial convergence algorithm")
-    elif size >= 12:
-        logging.info("12 or more cores detected. Using parallel convergence algorithm")
+
     if rank == 0:
         logging.info("Setting up grid and tubes")
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
@@ -167,48 +164,12 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         # tot_H is the total across all cores
 
         i += 1  # i starts at 0
-        logging.info("Completed %d walkers on all cores" % (i * 2 * size))
-        if size >= 12:
-            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2 * (rank + 1),
+
+        if rank == 0:
+            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
                                                                                             grid.size, timesteps)
-            logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * (rank + 1), r2, k))
-
-            comm.Barrier()
-            
-            if rank != 0:
-                comm.send(k, dest=0, tag=10)
-            else:
-                k_list.append(k)
-                for j in range(1, size):
-                    temp_k = comm.recv(source=j, tag=10)
-                    k_list.append(temp_k)
-                print len(k_list)
-                    #
-                    #
-                    # if rank != 0:
-                    #     comm.send(k, dest=0, tag=10)
-                    #     comm.send(r2, dest=0, tag=15)
-                    # else:
-                    #     for j in range(1, size):
-                    #         k_core[j] = comm.recv(source=j, tag=10)
-                    #         r2_core[j] = comm.recv(source=j, tag=15)
-                    #     k_core[0] = k
-                    #     r2_core[0] = r2
-                    #     print k_core
-                    #     print r2_core
-                    #     k_error = np.std(k_core, ddof=1)
-                    #     k_mean = np.mean(k_core)
-                    #     r2_error = np.std(r2_core, ddof=1)
-                    #     r2_mean = np.mean(r2_core)
-                    #     logging.info("%d: Avg. across cores R squared: %.4f, k: %.4E" % (i*2*size, r2_mean, k_mean))
-
-
-        elif size < 12:
-            if rank == 0:
-                dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
-                                                                                                grid.size, timesteps)
-                k_list.append(k)
-                logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
+            k_list.append(k)
+            logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * size, r2, k))
 
         comm.Barrier()
 
