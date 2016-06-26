@@ -165,8 +165,9 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         tot_H = comm.allreduce(H, op=MPI.SUM)
         # H is updated on every core for every i independently
         # tot_H is the total across all cores
-        i += 1
 
+        i += 1  # i starts at 0
+        logging.info("Completed %d walkers on all cores" % (i * 2 * size))
         if size >= 12:
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2 * (rank + 1),
                                                                                             grid.size, timesteps)
@@ -178,7 +179,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                 for j in range(1, size):
                     temp_k = comm.recv(source=j, tag=10)
                     k_list.append(temp_k)
-            print len(k_list)
+                print len(k_list)
                     #
                     #
                     # if rank != 0:
