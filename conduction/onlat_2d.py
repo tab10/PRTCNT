@@ -172,11 +172,11 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
                                                                                             grid.size, timesteps)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * (rank + 1), r2, k))
             if rank != 0:
-                comm.isend(k, dest=0, tag=10)
+                comm.send(k, dest=0, tag=10)
             else:
                 k_list.append(k)
                 for j in range(1, size):
-                    temp_k = comm.irecv(source=j, tag=10)
+                    temp_k = comm.recv(source=j, tag=10)
                     k_list.append(temp_k)
 
                     #
