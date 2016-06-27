@@ -103,6 +103,7 @@ def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     grid_range = [[0, grid.size], [0, grid.size], [0, grid.size]]
     bins = grid.size
     H = np.zeros((grid.size, grid.size, grid.size))
+    tot_H = np.zeros((grid.size, grid.size, grid.size))
 
     i = 0
 

@@ -114,6 +114,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     grid_range = [[0, grid.size], [0, grid.size]]
     bins = grid.size
     H = np.zeros((grid.size, grid.size))
+    tot_H = np.zeros((grid.size, grid.size))
 
     i = 0
 
@@ -122,7 +123,6 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     k_convergence_err = 1.0
     k_core = np.zeros(size)
     r2_core = np.zeros(size)
-    tot_H = None
 
     start = MPI.Wtime()
 
