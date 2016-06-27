@@ -275,7 +275,7 @@ def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size, dim):
         folds.append(file)
     for file in glob.glob("0_*"):
         zero_folds.append(file)
-        folds += zero_folds
+    folds += zero_folds
     folds = sorted(folds)
     uni_tubes = len(folds) / num_configs
     uni_num_tubes = []
@@ -298,5 +298,4 @@ def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size, dim):
     plt.ylabel('Conductivity k')
     plt.legend()
     plt.savefig('k_num_tubes_%d.pdf' % tube_length)
-    plt.show()
     plt.close()
