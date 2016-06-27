@@ -116,9 +116,9 @@ if __name__ == "__main__":
     plot_save_dir = comm.bcast(plot_save_dir, root=0)
 
     if (dim == 3) and (k_convergence_tolerance == 1):
-        k_convergence_tolerance = 5E-07
+        k_convergence_tolerance = 1E-06
     elif (dim == 2) and (k_convergence_tolerance == 1):
-        k_convergence_tolerance = 5E-05
+        k_convergence_tolerance = 1E-04
     if rank == 0:
         logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
 
