@@ -11,7 +11,8 @@ from scipy import stats
 
 import creation
 
-mpl.rcParams['text.usetex'] = True
+
+# mpl.rcParams['text.usetex'] = True
 
 
 def histogram_walker_2d_onlat(walker, grid_range, bins):

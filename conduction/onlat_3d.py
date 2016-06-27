@@ -110,8 +110,6 @@ def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     k_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
-    k_core = np.zeros(size)
-    r2_core = np.zeros(size)
 
     start = MPI.Wtime()
 
@@ -148,7 +146,6 @@ def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         H_temp, x_edges, y_edges, z_edges = plots.histogram_walker_3d_onlat(walker, grid_range, bins)
         H -= H_temp
 
-        # tot_H = comm.allreduce(H, op=MPI.SUM)
         comm.Reduce(H, tot_H, op=MPI.SUM, root=0)
         # H is updated on every core for every i independently
         # tot_H is the total across all cores
