@@ -270,8 +270,12 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
 
 def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size, dim):
     folds = []
+    zero_folds = []
     for file in glob.glob("*_%s_%d_*" % (orientation, tube_length)):
         folds.append(file)
+    for file in glob.glob("0_*"):
+        zero_folds.append(file)
+        folds += zero_folds
     folds = sorted(folds)
     uni_tubes = len(folds) / num_configs
     uni_num_tubes = []

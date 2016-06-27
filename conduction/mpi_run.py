@@ -1,4 +1,3 @@
-import ConfigParser
 import logging
 import os
 import argparse
@@ -6,20 +5,6 @@ import creation
 import onlat_2d
 import onlat_3d
 from mpi4py import MPI
-
-
-# def ConfigSectionMap(section):
-#     dict1 = {}
-#     options = Config.options(section)
-#     for option in options:
-#         try:
-#             dict1[option] = Config.get(section, option)
-#             if dict1[option] == -1:
-#                 print("skip: %s" % option)
-#         except:
-#             print("exception on %s!" % option)
-#             dict1[option] = None
-#     return dict1
 
 
 def logging_setup(save_dir):
@@ -142,6 +127,8 @@ if __name__ == "__main__":
     k_conv_error_buffer /= size  # accounts for extra processors
     if k_conv_error_buffer < 5:  # imposes minimum steps to check convergence at
         k_conv_error_buffer = 5
+    if rank == 0:
+        logging.info('Using last %d k values to check for convergence' % k_conv_error_buffer)
 
     #  all processes have control now
     if on_lattice and (dim == 2):

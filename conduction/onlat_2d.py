@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 import time
 import analysis
@@ -163,6 +162,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         # H is updated on every core for every i independently
         # tot_H is the total across all cores
 
+        comm.Barrier()
         i += 1  # i starts at 0
 
         if rank == 0:

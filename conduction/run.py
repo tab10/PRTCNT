@@ -1,12 +1,9 @@
 import ConfigParser
 import logging
 import os
-
 import creation
 import onlat_2d
 import onlat_3d
-
-# from mpi4py import MPI
 
 
 def ConfigSectionMap(section):
