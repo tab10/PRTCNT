@@ -65,7 +65,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
 
         dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2, grid.size, timesteps)
         k_list.append(k)
-        logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2, r2, k))
+        logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
         if i > begin_cov_check:
             k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
             k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))
@@ -169,11 +169,11 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
                                                                                             grid.size, timesteps)
             k_list.append(k)
-            logging.info("%d: R squared: %.4f, k: %.4E" % (i * 2 * size, r2, k))
+            logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
         comm.Barrier()
 
-        if (i * 2 * size) > begin_cov_check:
+        if (i * size) > begin_cov_check:
             if rank == 0:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
                 k_convergence_val = np.mean(np.array(k_list[-k_conv_error_buffer:]))

@@ -2,13 +2,12 @@
 #### Package to study nanotubes in a medium
 
 Program implements a random walk in a medium to calculate its conductivity.
-Options are set and specified in default.ini, and the program should be called with "python run.py".
 
-Options are implemented by setting up a config.ini in your choice of save directory
-or else default.ini will be read.
+For serial code, options are given by setting up a config.ini in your choice of save directory
+or else default.ini will be read. For parallel code, options are given on the command line.
 
-Serial code is ran by running "python run.py", for the MPI implementation
-run "mpiexec -n X python mpi_run.py" with X the number of cores available.
+Serial code is ran by running "python run.py", for the MPI code
+run "mpirun -np X python mpi_run.py" with X the number of cores available.
 
 On OU's Schooner, add this line to your .profile:
 `module load OpenMPI mpi4py numpy matplotlib`. `#SBATCH -p 2650` gives a 10 core node, `#SBATCH -p 2670`

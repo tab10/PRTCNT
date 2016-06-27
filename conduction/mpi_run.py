@@ -1,30 +1,25 @@
 import ConfigParser
 import logging
 import os
-
+import argparse
 import creation
 import onlat_2d
 import onlat_3d
-
 from mpi4py import MPI
 
-comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
-size = comm.Get_size()
 
-
-def ConfigSectionMap(section):
-    dict1 = {}
-    options = Config.options(section)
-    for option in options:
-        try:
-            dict1[option] = Config.get(section, option)
-            if dict1[option] == -1:
-                print("skip: %s" % option)
-        except:
-            print("exception on %s!" % option)
-            dict1[option] = None
-    return dict1
+# def ConfigSectionMap(section):
+#     dict1 = {}
+#     options = Config.options(section)
+#     for option in options:
+#         try:
+#             dict1[option] = Config.get(section, option)
+#             if dict1[option] == -1:
+#                 print("skip: %s" % option)
+#         except:
+#             print("exception on %s!" % option)
+#             dict1[option] = None
+#     return dict1
 
 
 def logging_setup(save_dir):
@@ -52,90 +47,115 @@ def save_walker_loc(walker, save_dir, walker_index, temp):
 
 
 if __name__ == "__main__":
-    if rank == 0:  # head process does setup
-        Config = ConfigParser.ConfigParser()
 
-        if os.path.exists("config.ini"):
-            Config.read("config.ini")
-            config_used = 'Using config.ini'
-        else:
-            Config.read("default.ini")
-            config_used = 'Using default.ini'
-    else:
-        Config = None
-        config_used = None
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    size = comm.Get_size()
 
-    Config = comm.bcast(Config, root=0)
-    config_used = comm.bcast(config_used, root=0)
+    parser = argparse.ArgumentParser(description='.')
 
-    dim = Config.getint('config', 'dim')
-    grid_size = Config.getint('config', 'grid_size')
-    orientation = Config.get('config', 'orientation')
-    tube_length = Config.getfloat('config', 'tube_length')
-    num_tubes = Config.getint('config', 'num_tubes')
-    on_lattice = Config.getboolean('config', 'on_lattice')
-    timesteps = Config.getint('config', 'timesteps')
-    save_dir = Config.get('config', 'save_dir')
-    quiet = Config.getboolean('config', 'quiet')
-    num_tubes = Config.getint('config', 'num_tubes')
-    k_convergence_tolerance = Config.getfloat('config', 'k_convergence_tolerance')
-    begin_cov_check = Config.getint('config', 'begin_cov_check')
-    k_conv_error_buffer = Config.getint('config', 'k_conv_error_buffer')
-    save_loc_plots = Config.getboolean('config', 'save_loc_plots')
-    save_loc_data = Config.getboolean('config', 'save_loc_data')
-    gen_plots = Config.getboolean('config', 'gen_plots')
-    # mean_dist_tubes = Config.get('config','mean_dist_tubes')
-    # std_dist_tubes = Config.get('config', 'std_dist_tubes')
-
-    # Check if inputs valid
-    if rank == 0:
-        possible_dim = [2, 3]
-        if dim not in possible_dim:
-            logging.error('Invalid dimension')
-            raise SystemExit
-        if grid_size < 5:
-            logging.error('Invalid grid size')
-            raise SystemExit
-        if tube_length < 0:
-            logging.error('Invalid tube length')
-            raise SystemExit
-        if num_tubes < 0:
-            logging.error('Invalid number of tubes')
-            raise SystemExit
-        if timesteps <= 0:
-            logging.error('Invalid timesteps')
-            raise SystemExit
+    parser.add_argument('--dim', type=int, required=True, help='Dimensionality of simulation.')
+    parser.add_argument('--grid_size', type=int, default=100, help='Size of square grid of use.')
+    parser.add_argument('--tube_length', type=float, required=True, help='Length of nanotubes.')
+    parser.add_argument('--num_tubes', type=int, required=True,
+                        help='How many tubes are there for random walker to use.')
+    parser.add_argument('--tube_radius', type=float, default=1,
+                        help='Radius of tubes. Only used for 3d simulations.')
+    parser.add_argument('--orientation', type=str, required=True, help='Orientation of nanotubes in medium. '
+                                                                       'random, horizontal, vertical, or'
+                                                                       ' angle in DEGREES.')
+    parser.add_argument('--timesteps', type=int, default=10000, help='How many steps to run each walker for.')
+    parser.add_argument('--k_convergence_tolerance', type=float, default=1, help='Simulation runs until '
+                                                                                 'std. dev. of time fluctuations in k drop below this value.')
+    parser.add_argument('--begin_cov_check', type=int, default=100, help='Start checking for convergence '
+                                                                         'after this many walkers.')
+    parser.add_argument('--k_conv_error_buffer', type=int, default=25, help='Include the last X values of time '
+                                                                            'in the std. dev. of k calculation. '
+                                                                            'Reduced automatically depending on '
+                                                                            '# of cores.')
+    parser.add_argument('--gen_plots', type=bool, default=False, help='Gives the option to not generate any plots. '
+                                                                      'Useful on the supercomputer.')
+    parser.add_argument('--save_dir', type=str, default=os.getcwd(), help='Path for plots and data and config.ini.')
+    parser.add_argument('--save_loc_plots', type=bool, default=False, help='Save location plots for all walkers.')
+    parser.add_argument('--save_loc_data', type=bool, default=False, help='Save location data for all walkers.')
+    parser.add_argument('--quiet', type=bool, default=True, help='Show various plots throughout simulation.')
+    parser.add_argument('--on_lattice', type=bool, default=True, help='True for on lattice random walk.')
+    args = parser.parse_args()
 
     comm.Barrier()
+
+    dim = args.dim
+    grid_size = args.grid_size
+    orientation = args.orientation
+    tube_length = args.tube_length
+    tube_radius = args.tube_radius
+    num_tubes = args.num_tubes
+    on_lattice = args.on_lattice
+    timesteps = args.timesteps
+    save_dir = args.save_dir
+    quiet = args.quiet
+    num_tubes = args.num_tubes
+    k_convergence_tolerance = args.k_convergence_tolerance
+    begin_cov_check = args.begin_cov_check
+    k_conv_error_buffer = args.k_conv_error_buffer
+    save_loc_plots = args.save_loc_plots
+    save_loc_data = args.save_loc_data
+    gen_plots = args.gen_plots
+
+    # Check if inputs valid
+    possible_dim = [2, 3]
+    if dim not in possible_dim:
+        logging.error('Invalid dimension')
+        raise SystemExit
+    if grid_size < 5:
+        logging.error('Invalid grid size')
+        raise SystemExit
+    if tube_length < 0:
+        logging.error('Invalid tube length')
+        raise SystemExit
+    if num_tubes < 0:
+        logging.error('Invalid number of tubes')
+        raise SystemExit
+    if timesteps <= 0:
+        logging.error('Invalid timesteps')
+        raise SystemExit
 
     os.chdir(save_dir)
 
     if rank == 0:
         plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
         logging_setup(plot_save_dir)
-        logging.info(config_used)
     else:
         plot_save_dir = None
 
     plot_save_dir = comm.bcast(plot_save_dir, root=0)
+
+    if (dim == 3) and (k_convergence_tolerance == 1):
+        k_convergence_tolerance = 5E-07
+    elif (dim == 2) and (k_convergence_tolerance == 1):
+        k_convergence_tolerance = 5E-05
+    if rank == 0:
+        logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
+
+    comm.Barrier()
 
     k_conv_error_buffer /= size  # accounts for extra processors
     if k_conv_error_buffer < 5:  # imposes minimum steps to check convergence at
         k_conv_error_buffer = 5
 
     #  all processes have control now
-    if (on_lattice == True) & (dim == 2):
+    if on_lattice and (dim == 2):
         logging.info("Starting MPI 2D on-lattice simulation")
         comm.Barrier()
         onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
                                   k_conv_error_buffer, plot_save_dir, gen_plots, rank, size)
-    elif (on_lattice == True) & (dim == 3):
-        tube_diameter = Config.getfloat('config', 'tube_diameter')
+    elif on_lattice and (dim == 3):
         logging.info("Starting MPI 3D on-lattice simulation")
         comm.Barrier()
         onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, tube_diameter, gen_plots, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots, rank, size)
     else:
+        print 'Off lattice not implemented yet'
         raise SystemExit
