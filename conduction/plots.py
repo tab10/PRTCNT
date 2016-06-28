@@ -8,10 +8,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
-
 import creation
-
-
 # mpl.rcParams['text.usetex'] = True
 
 
@@ -269,34 +266,42 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     plt.close()
 
 
-def plot_k_vs_num_tubes(orientation, tube_length, num_configs, grid_size, dim):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim):
     folds = []
-    zero_folds = []
-    for file in glob.glob("*_%s_%d_*" % (orientation, tube_length)):
-        folds.append(file)
-    for file in glob.glob("0_*"):
-        zero_folds.append(file)
-    folds += zero_folds
-    folds = sorted(folds)
-    uni_tubes = len(folds) / num_configs
-    uni_num_tubes = []
-    for i in range(uni_tubes):
-        uni_num_tubes.append(folds[i * num_configs].split('_')[0])
-    all_k_vals = np.zeros(len(folds))
-    for i in range(len(folds)):
-        os.chdir(folds[i])
-        all_k_vals[i] = np.loadtxt('k.txt')
-        os.chdir('..')
-    k_vals = []
-    k_err = []
-    for i in range(len(uni_num_tubes)):
-        k_vals.append(np.mean(all_k_vals[i * num_configs:(i + 1) * num_configs]))
-        k_err.append(np.std(all_k_vals[i * num_configs:(i + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
-    plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=orientation)
+    orientations = []
+    for file in glob.glob("*_*_%d_*" % tube_length):
+        folds.append(file)  # all files
+        orientations.append(file.split('_')[1])
+    zero_folds = [x for x in folds if "0_*_*_*" in x]
+    # folds += zero_folds
+    uni_orientations = list(set(orientations))
+    sep_folds = []
+    # separate folds by orientation
+    for i in range(len(uni_orientations)):
+        sep_folds.append([x for x in folds if uni_orientations[i] in x])
+        sep_folds[i] = sorted(sep_folds[i])
+        sep_folds[i] += zero_folds
+    for i in range(len(uni_orientations)):
+        uni_tubes = len(sep_folds[i]) / num_configs
+        uni_num_tubes = []
+        for k in range(uni_tubes):
+            uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
+        all_k_vals = np.zeros(len(sep_folds[i]))
+        for j in range(len(sep_folds[i])):
+            os.chdir(sep_folds[i][j])
+            all_k_vals[j] = np.loadtxt('k.txt')
+            os.chdir('..')
+        k_vals = []
+        k_err = []
+        for l in range(len(uni_num_tubes)):
+            k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
+            k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
+        plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
     plt.xlabel('Number of tubes')
     plt.ylabel('Conductivity k')
-    plt.legend()
-    plt.savefig('k_num_tubes_%d.pdf' % tube_length)
+    plt.legend(loc=2)
+    plt.tight_layout()
+    plt.savefig('k_num_tubes_%d_%d.pdf' % (tube_length, dim))
     plt.close()
