@@ -309,5 +309,5 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()
-    plt.savefig('k_num_tubes_%d__%dD.pdf' % (tube_length, dim))
+    plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
     plt.close()

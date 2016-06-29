@@ -71,6 +71,8 @@ class Grid2D_onlat(object):
             raise SystemExit
         x_c = round(radius * np.cos(np.deg2rad(angle)) + x_l) / 2
         y_c = round(radius * np.sin(np.deg2rad(angle)) + y_l) / 2
+        # print x_l, y_l, x_r, y_r
+        # print self.euc_dist(x_l, y_l, x_r, y_r)
         return x_l, y_l, x_r, y_r, x_c, y_c
 
     @staticmethod
@@ -116,11 +118,9 @@ class Grid3D_onlat(object):
                 y_l = np.random.randint(radius, self.size + 1 - radius)
                 z_l = np.random.randint(radius, self.size + 1 - radius)
                 theta_angle_range = range(0, 360)  # y-z plane
-                # phi_angle_range = range(0, 360)  # x-y plane
+                phi_angle_range = range(0, 360)  # x-y plane
                 theta_angle = np.random.choice(theta_angle_range)
-                # phi_angle = np.random.choice(phi_angle_range)
-                # get phis that are within tolerance of radius
-
+                phi_angle = np.random.choice(phi_angle_range)
             elif orientation == 'vertical':
                 x_l = np.random.randint(0, self.size + 1)
                 y_l = np.random.randint(0, self.size + 1)
@@ -133,7 +133,7 @@ class Grid3D_onlat(object):
                 y_l = np.random.randint(0, self.size + 1)
                 z_l = np.random.randint(0, self.size + 1)
                 phi_angle = 0
-                theta_angle_range = [90]
+                theta_angle_range = [90, 270]
                 theta_angle = np.random.choice(theta_angle_range)
             else:
                 logging.error("Invalid orientation specified")
@@ -141,8 +141,8 @@ class Grid3D_onlat(object):
             x_r = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l)
             y_r = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l)
             z_r = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l)
-            print x_l, y_l, z_l, x_r, y_r, z_r
-            print self.euc_dist(x_l, y_l, z_l, x_r, y_r, z_r)
+            # print x_l, y_l, z_l, x_r, y_r, z_r
+            #print self.euc_dist(x_l, y_l, z_l, x_r, y_r, z_r)
             if (x_l >= 0) and (x_r <= self.size) and (y_l >= 0) and (y_r <= self.size) and (z_l >= 0) \
                     and (z_r <= self.size):
                 inside_box = True
@@ -153,10 +153,11 @@ class Grid3D_onlat(object):
 
     @staticmethod
     def coord(radius, theta_angle, phi_angle):
+        # convention - theta from + z axis, phi from + x axis
         x = radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle))
         y = radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle))
-        z = radius * np.cos(np.deg2rad(phi_angle))
-        return x, y,z
+        z = radius * np.cos(np.deg2rad(theta_angle))
+        return x, y, z
 
     @staticmethod
     def taxicab_dist(x0, y0, z0, x1, y1, z1):
