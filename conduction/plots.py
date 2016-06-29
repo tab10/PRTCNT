@@ -271,13 +271,15 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
     exclude_vals = map(str, exclude_vals)
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
+    zero_folds = []
     orientations = []
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0] + '_'
         if checker not in exclude_vals:
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
-    zero_folds = [x for x in folds if "0_*_*_*" in x]
+    for file in glob.glob("0_*_*_*"):
+        zero_folds.append(file)
     uni_orientations = list(set(orientations))
     sep_folds = []
     # separate folds by orientation
