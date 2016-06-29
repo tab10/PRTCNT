@@ -269,11 +269,12 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
     exclude_vals = map(str, exclude_vals)
+    exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
     orientations = []
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0]
-        if checker not in str(exclude_vals) + '_':
+        if checker not in exclude_vals:
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
     zero_folds = [x for x in folds if "0_*_*_*" in x]
@@ -306,5 +307,5 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()
-    plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
+    plt.savefig('k_num_tubes_%d__%dD.pdf' % (tube_length, dim))
     plt.close()
