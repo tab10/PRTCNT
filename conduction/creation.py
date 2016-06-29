@@ -116,9 +116,11 @@ class Grid3D_onlat(object):
                 y_l = np.random.randint(radius, self.size + 1 - radius)
                 z_l = np.random.randint(radius, self.size + 1 - radius)
                 theta_angle_range = range(0, 360)  # y-z plane
-                phi_angle_range = range(0, 360)  # x-y plane
+                # phi_angle_range = range(0, 360)  # x-y plane
                 theta_angle = np.random.choice(theta_angle_range)
-                phi_angle = np.random.choice(phi_angle_range)
+                # phi_angle = np.random.choice(phi_angle_range)
+                # get phis that are within tolerance of radius
+
             elif orientation == 'vertical':
                 x_l = np.random.randint(0, self.size + 1)
                 y_l = np.random.randint(0, self.size + 1)
@@ -136,16 +138,25 @@ class Grid3D_onlat(object):
             else:
                 logging.error("Invalid orientation specified")
                 raise SystemExit
-            x_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle)) + x_l)
-            y_r = round(radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle)) + y_l)
-            z_r = round(radius * np.cos(np.deg2rad(phi_angle)) + z_l)
+            x_r = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l)
+            y_r = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l)
+            z_r = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l)
+            print x_l, y_l, z_l, x_r, y_r, z_r
+            print self.euc_dist(x_l, y_l, z_l, x_r, y_r, z_r)
             if (x_l >= 0) and (x_r <= self.size) and (y_l >= 0) and (y_r <= self.size) and (z_l >= 0) \
                     and (z_r <= self.size):
                 inside_box = True
-        x_c = round(radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle)) + x_l) / 2
-        y_c = round(radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle)) + y_l) / 2
-        z_c = round(radius * np.cos(np.deg2rad(phi_angle)) + z_l) / 2
+        x_c = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l) / 2
+        y_c = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l) / 2
+        z_c = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l) / 2
         return x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c
+
+    @staticmethod
+    def coord(radius, theta_angle, phi_angle):
+        x = radius * np.sin(np.deg2rad(theta_angle)) * np.cos(np.deg2rad(phi_angle))
+        y = radius * np.sin(np.deg2rad(theta_angle)) * np.sin(np.deg2rad(phi_angle))
+        z = radius * np.cos(np.deg2rad(phi_angle))
+        return x, y,z
 
     @staticmethod
     def taxicab_dist(x0, y0, z0, x1, y1, z1):
