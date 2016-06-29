@@ -273,7 +273,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
     folds = []
     orientations = []
     for file in glob.glob("*_*_%d_*" % tube_length):
-        checker = file.split('_')[0]
+        checker = file.split('_')[0] + '_'
         if checker not in exclude_vals:
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
@@ -293,7 +293,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
         all_k_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
             os.chdir(sep_folds[i][j])
-            print sep_folds[i][j]
             all_k_vals[j] = np.loadtxt('k.txt')
             os.chdir('..')
         k_vals = []
