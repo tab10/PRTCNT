@@ -50,7 +50,7 @@ if __name__ == "__main__":
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
     parser.add_argument('--timesteps', type=int, default=10000, help='How many steps to run each walker for.')
-    parser.add_argument('--k_convergence_tolerance', type=float, default=1, help='Simulation runs until '
+    parser.add_argument('--k_convergence_tolerance', type=float, default=1E-05, help='Simulation runs until '
                                                                                  'std. dev. of time fluctuations in k drop below this value.')
     parser.add_argument('--begin_cov_check', type=int, default=100, help='Start checking for convergence '
                                                                          'after this many walkers.')
@@ -115,10 +115,6 @@ if __name__ == "__main__":
 
     plot_save_dir = comm.bcast(plot_save_dir, root=0)
 
-    if (dim == 3) and (k_convergence_tolerance == 1):
-        k_convergence_tolerance = 1E-06
-    elif (dim == 2) and (k_convergence_tolerance == 1):
-        k_convergence_tolerance = 1E-04
     if rank == 0:
         logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
 
