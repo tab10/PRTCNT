@@ -59,7 +59,7 @@ def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     gradient_avg = slope / float(timesteps)
     gradient_std = gradient_err
     # disregard first few x= slices as close to the wall and values have large errors
-    heat_flux = float(num_walkers) / (float(grid_size) ** 3 * float(timesteps))
+    heat_flux = float(num_walkers) / (float(grid_size) ** 2 * float(timesteps))
     # k = - heat_flux / gradient_avg
     # k_err = (heat_flux/gradient_avg**2)*gradient_std
     k = k_convergence_val
@@ -93,7 +93,7 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
             temp_profile_sum[i][j] = np.sum(temp_profile[i][j])
     test_mean = np.mean(temp_profile_sum[1:], axis=1)
     test_std = np.std(temp_profile_sum[1:], axis=1, ddof=1)
-    heat_flux = float(cur_num_walkers) / (float(grid_size) ** 3 * float(timesteps))
+    heat_flux = float(cur_num_walkers) / (float(grid_size) ** 2 * float(timesteps))
     gradient_err = np.mean(test_std)
     x = np.arange(1, len(test_mean) + 1)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx

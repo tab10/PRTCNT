@@ -3,7 +3,8 @@ import logging
 import glob
 import matplotlib as mpl
 import os
-# mpl.use('Agg')
+
+mpl.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -85,7 +86,6 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     plt.savefig('%s/setup.pdf' % save_dir)
     if not quiet:
         plt.show()
-        raise SystemExit
     plt.close()
 
 
@@ -267,7 +267,7 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals=''):
     exclude_vals = map(str, exclude_vals)
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
