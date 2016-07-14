@@ -12,8 +12,8 @@ def runrandomwalk_2d_onlat(grid, timesteps, temp):
     for i in range(1, timesteps + 1):
         d_pos = moves[np.random.randint(0, 4)]
         walker.add_dpos(d_pos)
-        walker = applytubejumps2d(walker, grid)
         walker = applybdconditions2d(walker, grid)
+        walker = applytubejumps2d(walker, grid)
     # logging.info('Done in %d steps' % i)
     return walker
 
@@ -25,14 +25,13 @@ def runrandomwalk_3d_onlat(grid, timesteps, temp):
     for i in range(1, timesteps + 1):
         d_pos = moves[np.random.randint(0, 6)]
         walker.add_dpos(d_pos)
-        walker = applytubejumps3d(walker, grid)
         walker = applybdconditions3d(walker, grid)
+        walker = applytubejumps3d(walker, grid)
     # logging.info('Done in %d steps' % i)
     return walker
 
 
 def applytubejumps2d(walker, grid):
-    # This code is slow, refactor to reduce load.
     jump_moves = [[0, 1], [1, 0], [0, -1], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]
     # 8 possible jump positions for now if at tube end, 4 at left (first 4) and 4 at right (second 4)
     tube_l = []
@@ -41,31 +40,30 @@ def applytubejumps2d(walker, grid):
         tube_l.append(grid.tube_coords[i][0:2])
         tube_r.append(grid.tube_coords[i][2:4])
     cur_pos = list(walker.pos[-1])
-    cur_pos_rev = list(np.flipud(walker.pos[-1]))
-    for i in range(len(tube_l)):
-        if tube_l[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            # logging.debug("Jump found")
-            choice = np.random.randint(0, 8)
-            d_pos = jump_moves[choice]
-            if choice <= 3:  # stay at left end
-                walker.replace_dpos(d_pos)
-            else:  # jump across tube to right end
-                newpos = np.array(tube_r[i]) + np.array(d_pos)
-                walker.replace_pos(newpos)
-        elif tube_r[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            # logging.debug("Jump found")
-            choice = np.random.randint(0, 8)
-            d_pos = jump_moves[choice]
-            if choice <= 3:  # stay at left end
-                walker.replace_dpos(d_pos)
-            else:  # jump across tube to right end
-                newpos = np.array(tube_l[i]) + np.array(d_pos)
-                walker.replace_pos(newpos)
+    choice = np.random.randint(0, 8)
+    d_pos = jump_moves[choice]
+    # coord on left tube end jumps to right end
+    tube_check_val_l = int(grid.tube_check_l[int(cur_pos[0]), int(cur_pos[1])])
+    if tube_check_val_l > 0:
+        # logging.debug("Jump found")
+        if choice <= 3:  # stay at left end
+            walker.replace_dpos(d_pos)
+        else:  # jump across tube to right end
+            newpos = np.array(tube_r[tube_check_val_l]) + np.array(d_pos)
+            walker.replace_pos(newpos)
+    # coord on right tube end jumps to left end
+    tube_check_val_r = int(grid.tube_check_r[int(cur_pos[0]), int(cur_pos[1])])
+    if tube_check_val_r > 0:
+        # logging.debug("Jump found")
+        if choice <= 3:  # stay at right end
+            walker.replace_dpos(d_pos)
+        else:  # jump across tube to left end
+            newpos = np.array(tube_l[tube_check_val_r]) + np.array(d_pos)
+            walker.replace_pos(newpos)
     return walker
 
 
 def applytubejumps3d(walker, grid):
-    # This code is slow, refactor to reduce load.
     jump_moves = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0], [0, 0, 1], [0, 1, 0], [1, 0, 0],
                   [0, 0, -1], [0, -1, 0], [-1, 0, 0]]
     # 12 possible jump positions for now if at tube end, 6 at left (first 6) and 6 at right (second 6)
@@ -75,26 +73,26 @@ def applytubejumps3d(walker, grid):
         tube_l.append(grid.tube_coords[i][0:3])
         tube_r.append(grid.tube_coords[i][3:6])
     cur_pos = list(walker.pos[-1])
-    cur_pos_rev = list(np.flipud(walker.pos[-1]))
-    for i in range(len(tube_l)):
-        if tube_l[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            logging.debug("Jump found")
-            choice = np.random.randint(0, 12)
-            d_pos = jump_moves[choice]
-            if choice <= 5:  # stay at left end
-                walker.replace_dpos(d_pos)
-            else:  # jump across tube to right end
-                newpos = np.array(tube_r[i]) + np.array(d_pos)
-                walker.replace_pos(newpos)
-        elif tube_r[i] == (cur_pos or cur_pos_rev):  # coord on left tube end jumps to right end
-            logging.debug("Jump found")
-            choice = np.random.randint(0, 12)
-            d_pos = jump_moves[choice]
-            if choice <= 5:  # stay at left end
-                walker.replace_dpos(d_pos)
-            else:  # jump across tube to right end
-                newpos = np.array(tube_l[i]) + np.array(d_pos)
-                walker.replace_pos(newpos)
+    choice = np.random.randint(0, 12)
+    d_pos = jump_moves[choice]
+    # coord on left tube end jumps to right end
+    tube_check_val_l = int(grid.tube_check_l[int(cur_pos[0]), int(cur_pos[1]), int(cur_pos[2])])
+    if tube_check_val_l > 0:
+        # logging.debug("Jump found")
+        if choice <= 5:  # stay at left end
+            walker.replace_dpos(d_pos)
+        else:  # jump across tube to right end
+            newpos = np.array(tube_r[tube_check_val_l]) + np.array(d_pos)
+            walker.replace_pos(newpos)
+    # coord on right tube end jumps to left end
+    tube_check_val_r = int(grid.tube_check_r[int(cur_pos[0]), int(cur_pos[1]), int(cur_pos[2])])
+    if tube_check_val_r > 0:
+        # logging.debug("Jump found")
+        if choice <= 5:  # stay at right end
+            walker.replace_dpos(d_pos)
+        else:  # jump across tube to left end
+            newpos = np.array(tube_l[tube_check_val_r]) + np.array(d_pos)
+            walker.replace_pos(newpos)
     return walker
 
 

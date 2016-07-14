@@ -11,7 +11,7 @@ import numpy as np
 from scipy import stats
 import creation
 # mpl.rcParams['text.usetex'] = True
-
+# option causes problems on Schooner
 
 def histogram_walker_2d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
@@ -268,7 +268,7 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals=''):
-    exclude_vals = map(str, exclude_vals)
+    exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
     zero_folds = []

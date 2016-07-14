@@ -37,6 +37,7 @@ class Grid2D_onlat(object):
                 x_l, y_l, x_r, y_r, x_c, y_c = self.generate_2d_tube(tube_length, orientation)
                 self.tube_centers.append([x_c, y_c])
                 self.tube_coords.append([x_l, y_l, x_r, y_r])
+            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_2d()
 
     def generate_2d_tube(self, radius, orientation):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -75,6 +76,16 @@ class Grid2D_onlat(object):
         # print self.euc_dist(x_l, y_l, x_r, y_r)
         return x_l, y_l, x_r, y_r, x_c, y_c
 
+    def generate_tube_check_array_2d(self):
+        tube_check_l = np.zeros((self.size + 1, self.size + 1))
+        tube_check_r = np.zeros((self.size + 1, self.size + 1))
+        for i in range(len(self.tube_coords)):
+            tube_check_l[int(self.tube_coords[i][0]), int(self.tube_coords[i][1])] = i
+            tube_check_r[int(self.tube_coords[i][2]), int(self.tube_coords[i][3])] = i
+            # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
+            # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
+        return tube_check_l, tube_check_r
+
     @staticmethod
     def taxicab_dist(x0, y0, x1, y1):
         dist = np.abs(x1 - x0) + np.abs(y1 - y0)
@@ -106,6 +117,7 @@ class Grid3D_onlat(object):
                                                                                     orientation)
                 self.tube_centers.append([x_c, y_c, z_c])
                 self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
+            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
 
     def generate_3d_tube(self, radius, tube_radius, orientation):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
@@ -150,6 +162,16 @@ class Grid3D_onlat(object):
         y_c = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l) / 2
         z_c = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l) / 2
         return x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c
+
+    def generate_tube_check_array_3d(self):
+        tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1))
+        tube_check_r = np.zeros((self.size + 1, self.size + 1, self.size + 1))
+        for i in range(len(self.tube_coords)):
+            tube_check_l[int(self.tube_coords[i][0]), int(self.tube_coords[i][1]), int(self.tube_coords[i][2])] = i
+            tube_check_r[int(self.tube_coords[i][3]), int(self.tube_coords[i][4]), int(self.tube_coords[i][5])] = i
+            # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
+            # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
+        return tube_check_l, tube_check_r
 
     @staticmethod
     def coord(radius, theta_angle, phi_angle):
