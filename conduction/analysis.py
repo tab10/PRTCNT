@@ -4,24 +4,6 @@ import logging
 from scipy import stats
 
 
-# def sim_setup_3d(grid_size, tube_diameter, l_d, )
-#        tube_length = l_d * tube_diameter
-
-
-def filling_fraction(tube_coords, grid_size):
-    """Calculates pixels covered by the tubes"""
-    x = []
-    y = []
-    fill_fract_list = []  # index corresponds to tube_coords index
-    for i in range(len(tube_coords)):
-        x.append(np.abs(tube_coords[i][2] - tube_coords[i][0]))
-        y.append(np.abs(tube_coords[i][3] - tube_coords[i][1]))
-        fill_fract_list.append(x[i] * y[i])
-    fill_fract_sum = sum(fill_fract_list)
-    fill_fract = fill_fract_sum / grid_size
-    return fill_fract
-
-
 def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradient_err, k_err, num_tubes, cur_dir,
                                 k_convergence_val, gradient_cutoff):
     """Final conductivity calculation"""

@@ -31,13 +31,33 @@ class Grid2D_onlat(object):
             logging.error('Nanotube is too large for grid')
             raise SystemExit
         self.tube_coords = []
+        self.tube_coords_l = []
+        self.tube_coords_r = []
         self.tube_centers = []
+        counter = 0  # counts num of non-unique tubes replaced
         if num_tubes > 0:  # tubes exist
             for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                 x_l, y_l, x_r, y_r, x_c, y_c = self.generate_2d_tube(tube_length, orientation)
                 self.tube_centers.append([x_c, y_c])
                 self.tube_coords.append([x_l, y_l, x_r, y_r])
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_2d()
+                self.tube_coords_l.append([x_l, y_l])
+                self.tube_coords_r.append([x_r, y_r])
+                if i >= 1:
+                    uni_flag = self.check_tube_unique()  # ensures no endpoints, left or right, are in the same spot
+                    while not uni_flag:
+                        counter += 1
+                        self.tube_centers.pop()
+                        self.tube_coords.pop()
+                        self.tube_coords_l.pop()
+                        self.tube_coords_r.pop()
+                        x_l, y_l, x_r, y_r, x_c, y_c = self.generate_2d_tube(tube_length, orientation)
+                        self.tube_centers.append([x_c, y_c])
+                        self.tube_coords.append([x_l, y_l, x_r, y_r])
+                        self.tube_coords_l.append([x_l, y_l])
+                        self.tube_coords_r.append([x_r, y_r])
+                        uni_flag = self.check_tube_unique()
+            logging.info("Corrected %d overlapping tube endpoints" % counter)
+        self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_2d()
 
     def generate_2d_tube(self, radius, orientation):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -77,14 +97,34 @@ class Grid2D_onlat(object):
         return x_l, y_l, x_r, y_r, x_c, y_c
 
     def generate_tube_check_array_2d(self):
-        tube_check_l = np.zeros((self.size + 1, self.size + 1))
-        tube_check_r = np.zeros((self.size + 1, self.size + 1))
+        tube_check_l = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        tube_check_r = np.zeros((self.size + 1, self.size + 1), dtype=int)
         for i in range(len(self.tube_coords)):
-            tube_check_l[int(self.tube_coords[i][0]), int(self.tube_coords[i][1])] = i
-            tube_check_r[int(self.tube_coords[i][2]), int(self.tube_coords[i][3])] = i
+            tube_check_l[self.tube_coords[i][0], self.tube_coords[i][1]] = i
+            tube_check_r[self.tube_coords[i][2], self.tube_coords[i][3]] = i
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
+        # np.set_printoptions(threshold=np.inf)
+        # print tube_check_l
         return tube_check_l, tube_check_r
+
+    def check_tube_unique(self):
+        uni_flag = None
+        current = self.tube_coords[-1]
+        cur_l = [current[0], current[1]]
+        cur_r = [current[2], current[3]]
+        # separate
+        tube_l = []
+        tube_r = []
+        for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
+            tube_l.append([self.tube_coords[i][0], self.tube_coords[i][1]])
+            tube_r.append([self.tube_coords[i][2], self.tube_coords[i][3]])
+        if (cur_l in tube_l) or (cur_l in tube_r) or (cur_r in tube_l) or (cur_r in tube_r):
+            uni_flag = False
+        else:
+            uni_flag = True
+        # ensures no endpoints, left or right, are in the same spot
+        return uni_flag
 
     @staticmethod
     def taxicab_dist(x0, y0, x1, y1):
@@ -110,14 +150,36 @@ class Grid3D_onlat(object):
             logging.error('Nanotube is too large for grid')
             raise SystemExit
         self.tube_coords = []
+        self.tube_coords_l = []
+        self.tube_coords_r = []
         self.tube_centers = []
+        counter = 0  # counts num of non-unique tubes replaced
         if num_tubes > 0:  # tubes exist
             for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                 x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c = self.generate_3d_tube(tube_length, tube_radius,
                                                                                     orientation)
                 self.tube_centers.append([x_c, y_c, z_c])
                 self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
+                self.tube_coords_l.append([x_l, y_l, z_l])
+                self.tube_coords_r.append([x_r, y_r, z_r])
+                if i >= 1:
+                    uni_flag = self.check_tube_unique()  # ensures no endpoints, left or right, are in the same spot
+                    # print uni_flag
+                    while not uni_flag:
+                        counter += 1
+                        self.tube_centers.pop()
+                        self.tube_coords.pop()
+                        self.tube_coords_l.pop()
+                        self.tube_coords_r.pop()
+                        x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c = self.generate_3d_tube(tube_length, tube_radius,
+                                                                                            orientation)
+                        self.tube_centers.append([x_c, y_c, z_c])
+                        self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
+                        self.tube_coords_l.append([x_l, y_l, z_l])
+                        self.tube_coords_r.append([x_r, y_r, z_r])
+                        uni_flag = self.check_tube_unique()
+            logging.info("Corrected %d overlapping tube endpoints" % counter)
+        self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
 
     def generate_3d_tube(self, radius, tube_radius, orientation):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
@@ -164,14 +226,32 @@ class Grid3D_onlat(object):
         return x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c
 
     def generate_tube_check_array_3d(self):
-        tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1))
-        tube_check_r = np.zeros((self.size + 1, self.size + 1, self.size + 1))
+        tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        tube_check_r = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         for i in range(len(self.tube_coords)):
             tube_check_l[int(self.tube_coords[i][0]), int(self.tube_coords[i][1]), int(self.tube_coords[i][2])] = i
             tube_check_r[int(self.tube_coords[i][3]), int(self.tube_coords[i][4]), int(self.tube_coords[i][5])] = i
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
         return tube_check_l, tube_check_r
+
+    def check_tube_unique(self):
+        uni_flag = None
+        current = self.tube_coords[-1]
+        cur_l = [current[0], current[1], current[2]]
+        cur_r = [current[3], current[4], current[5]]
+        # separate
+        tube_l = []
+        tube_r = []
+        for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
+            tube_l.append([self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]])
+            tube_r.append([self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]])
+        if (cur_l in tube_l) or (cur_l in tube_r) or (cur_r in tube_l) or (cur_r in tube_r):
+            uni_flag = False
+        else:
+            uni_flag = True
+        # ensures no endpoints, left or right, are in the same spot
+        return uni_flag
 
     @staticmethod
     def coord(radius, theta_angle, phi_angle):
