@@ -19,7 +19,7 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
-    fill_fract = 2 * float(num_tubes) / grid.size ** 2
+    fill_fract = tube_length * float(num_tubes) / grid.size ** 2
     logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
 
     grid_range = [[0, grid.size], [0, grid.size]]
@@ -104,7 +104,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
-        fill_fract = 2 * float(num_tubes) / grid.size ** 2
+        fill_fract = tube_length * float(num_tubes) / grid.size ** 2
         logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
     else:
         grid = None
