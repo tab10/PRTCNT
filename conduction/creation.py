@@ -2,6 +2,7 @@ import numpy as np
 import logging
 import os
 import glob
+from mpi4py import MPI
 
 
 def check_for_folder(folder):
@@ -26,6 +27,7 @@ def get_plot_save_dir(folder, num_tubes, orientation, tube_length):
 class Grid2D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation):
         """Grid in first quadrant only for convenience"""
+        logging.info("Setting up grid and tubes serially")
         self.size = grid_size
         if tube_length > grid_size:
             logging.error('Nanotube is too large for grid')

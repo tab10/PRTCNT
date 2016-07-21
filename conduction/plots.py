@@ -290,8 +290,11 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     for i in range(len(uni_orientations)):
         uni_tubes = len(sep_folds[i]) / num_configs
         uni_num_tubes = []
+        fill_fracts = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
+        for z in range(len(uni_num_tubes)):
+            fill_fracts.append(float(tube_length) * uni_num_tubes[z] * 100.0 / (grid_size ** dim))
         all_k_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
             os.chdir(sep_folds[i][j])
@@ -302,10 +305,12 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         for l in range(len(uni_num_tubes)):
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
             k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
-        plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        plt.errorbar(fill_fracts, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
-    plt.xlabel('Number of tubes')
+    # plt.xlabel('Number of tubes')
+    plt.xlabel('Filling fraction %%')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()

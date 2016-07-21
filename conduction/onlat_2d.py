@@ -15,7 +15,6 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     walker_data_save_dir = save_dir + "/walker_locations"
     walker_plot_save_dir = save_dir + "/walker_plots"
 
-    logging.info("Setting up grid and tubes")
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
@@ -100,7 +99,6 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
     walker_plot_save_dir = save_dir + "/walker_plots"
 
     if rank == 0:
-        logging.info("Setting up grid and tubes")
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation)
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
