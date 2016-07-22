@@ -189,25 +189,20 @@ class Grid3D_onlat(object):
         good_phi_angles = []
         inside_box = False  # keeps track of if tube is in box
         while inside_box == False:
+            # let's not put tube ends on the edges
+            x_l = np.random.randint(1, self.size)
+            y_l = np.random.randint(1, self.size)
+            z_l = np.random.randint(1, self.size)
             if orientation == 'random':
-                x_l = np.random.randint(radius, self.size + 1 - radius)
-                y_l = np.random.randint(radius, self.size + 1 - radius)
-                z_l = np.random.randint(radius, self.size + 1 - radius)
                 theta_angle_range = range(0, 360)  # y-z plane
                 phi_angle_range = range(0, 360)  # x-y plane
                 theta_angle = np.random.choice(theta_angle_range)
                 phi_angle = np.random.choice(phi_angle_range)
             elif orientation == 'vertical':
-                x_l = np.random.randint(0, self.size + 1)
-                y_l = np.random.randint(0, self.size + 1)
-                z_l = np.random.randint(radius, self.size + 1 - radius)
                 phi_angle = 0
                 theta_angle_range = [0, 180]
                 theta_angle = np.random.choice(theta_angle_range)
             elif orientation == 'horizontal':
-                x_l = np.random.randint(radius, self.size + 1 - radius)
-                y_l = np.random.randint(0, self.size + 1)
-                z_l = np.random.randint(0, self.size + 1)
                 phi_angle = 0
                 theta_angle_range = [90, 270]
                 theta_angle = np.random.choice(theta_angle_range)
@@ -217,10 +212,8 @@ class Grid3D_onlat(object):
             x_r = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l)
             y_r = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l)
             z_r = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l)
-            # print x_l, y_l, z_l, x_r, y_r, z_r
-            #print self.euc_dist(x_l, y_l, z_l, x_r, y_r, z_r)
-            if (x_l >= 0) and (x_r <= self.size) and (y_l >= 0) and (y_r <= self.size) and (z_l >= 0) \
-                    and (z_r <= self.size):
+            if (x_r > 0) and (x_r < self.size) and (y_r > 0) and (y_r < self.size) and (z_r > 0) \
+                    and (z_r < self.size):
                 inside_box = True
         x_c = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l) / 2
         y_c = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l) / 2

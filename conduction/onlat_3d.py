@@ -59,6 +59,7 @@ def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
         i += 1
 
         dt_dx, heat_flux, dt_dx_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(H, i * 2,
+                                                                                                          tube_length,
                                                                                                           grid.size,
                                                                                                           timesteps)
         k_list.append(k)
@@ -75,7 +76,8 @@ def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     if gen_plots:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, quiet, plot_save_dir, gen_plots)
+    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, tube_length, grid_size, quiet, plot_save_dir,
+                                                        gen_plots)
     analysis.final_conductivity_3d_onlat(i * 2, grid.size, timesteps, gradient_avg,
                                          gradient_std, k_convergence_err, num_tubes, save_dir,
                                          k_convergence_val, gradient_cutoff=2)
@@ -156,6 +158,7 @@ def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if rank == 0:
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(tot_H,
                                                                                                               i * 2 * size,
+                                                                                                              tube_length,
                                                                                                               grid.size,
                                                                                                               timesteps)
             k_list.append(k)
@@ -189,7 +192,8 @@ def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, quiet, plot_save_dir, gen_plots)
+        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, tube_length, grid_size, quiet,
+                                                            plot_save_dir, gen_plots)
         analysis.final_conductivity_3d_onlat(i * 2 * size, grid.size, timesteps, gradient_avg, gradient_std,
                                              k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
                                              gradient_cutoff=2)

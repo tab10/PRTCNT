@@ -61,7 +61,8 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
 
         i += 1
 
-        dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2, grid.size, timesteps)
+        dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2, tube_length,
+                                                                                        grid.size, timesteps)
         k_list.append(k)
         logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
         if i > begin_cov_check:
@@ -83,7 +84,8 @@ def sim_2d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet,
                                                         plot_save_dir, gradient_cutoff=2)
-    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, gen_plots)
+    gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, tube_length, grid_size, quiet, plot_save_dir,
+                                                        gen_plots)
     analysis.final_conductivity_2d_onlat(i * 2, grid.size, timesteps, gradient_avg, gradient_std,
                                          k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
                                          gradient_cutoff=2)
@@ -164,7 +166,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
 
         if rank == 0:
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
-                                                                                            grid.size, timesteps)
+                                                                                            tube_length, grid.size,
+                                                                                            timesteps)
             k_list.append(k)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
@@ -200,7 +203,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, 
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet,
                                                             plot_save_dir, gradient_cutoff=2)
-        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, quiet, plot_save_dir, gen_plots)
+        gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, tube_length, grid_size, quiet, plot_save_dir,
+                                                            gen_plots)
         analysis.final_conductivity_2d_onlat(i * 2 * size, grid.size, timesteps, gradient_avg, gradient_std,
                                              k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
                                              gradient_cutoff=2)

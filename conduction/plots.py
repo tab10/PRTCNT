@@ -112,10 +112,13 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
     return temp_profile
 
 
-def plot_linear_temp(temp_profile, quiet, save_dir, plots):
-    test_mean = np.mean(temp_profile[1:], axis=1)
-    test_std = np.std(temp_profile[1:], axis=1, ddof=1)
-    x = np.arange(1, len(test_mean) + 1)
+def plot_linear_temp(temp_profile, tube_length, grid_size, quiet, save_dir, plots):
+    tube_length = int(tube_length)
+    grid_size = int(grid_size)
+    # temp_profile sliced to remove
+    test_mean = np.mean(temp_profile[tube_length:grid_size - tube_length], axis=1)
+    test_std = np.std(temp_profile[tube_length:grid_size - tube_length], axis=1, ddof=1)
+    x = np.arange(tube_length, grid_size - tube_length)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)
     gradient_err = np.mean(test_std)
     line = slope * x + intercept
@@ -312,7 +315,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
     # plt.xlabel('Number of tubes')
-    plt.xlabel('Filling fraction %%')
+    plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()
