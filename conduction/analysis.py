@@ -54,15 +54,14 @@ def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     return k
 
 
-def check_convergence_2d_onlat(H_tot, cur_num_walkers, tube_length, grid_size, timesteps):
+def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     temp_profile = H_tot
-    tube_length = int(tube_length)
-    grid_size = int(grid_size)
-    test_mean = np.mean(temp_profile[tube_length:grid_size - tube_length], axis=1)
-    test_std = np.std(temp_profile[tube_length:grid_size - tube_length], axis=1, ddof=1)
+    cutoff_dist = int(0.25 * grid_size)
+    test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
+    test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
     heat_flux = float(cur_num_walkers) / (float(grid_size) ** 2 * float(timesteps))
     gradient_err = np.mean(test_std)
-    x = np.arange(tube_length, grid_size - tube_length)
+    x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
     slope /= float(timesteps)
     k = - heat_flux / slope
@@ -70,19 +69,18 @@ def check_convergence_2d_onlat(H_tot, cur_num_walkers, tube_length, grid_size, t
     return slope, heat_flux, gradient_err, k, k_err, r_value**2
 
 
-def check_convergence_3d_onlat(H_tot, cur_num_walkers, tube_length, grid_size, timesteps):
+def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     temp_profile = H_tot  # temp_profile is 3D. Collapse y and z dimensions (periodic)
     temp_profile_sum = np.zeros((len(temp_profile), len(temp_profile)))
     for i in range(len(temp_profile)):
         for j in range(len(temp_profile)):
             temp_profile_sum[i][j] = np.sum(temp_profile[i][j])
-    tube_length = int(tube_length)
-    grid_size = int(grid_size)
-    test_mean = np.mean(temp_profile_sum[tube_length:grid_size - tube_length], axis=1)
-    test_std = np.std(temp_profile_sum[tube_length:grid_size - tube_length], axis=1, ddof=1)
+    cutoff_dist = int(0.25 * grid_size)
+    test_mean = np.mean(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1)
+    test_std = np.std(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
     heat_flux = float(cur_num_walkers) / (float(grid_size) ** 2 * float(timesteps))
     gradient_err = np.mean(test_std)
-    x = np.arange(tube_length, grid_size - tube_length)
+    x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
     slope /= float(timesteps)
     k = - heat_flux / slope

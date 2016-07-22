@@ -112,13 +112,12 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
     return temp_profile
 
 
-def plot_linear_temp(temp_profile, tube_length, grid_size, quiet, save_dir, plots):
-    tube_length = int(tube_length)
-    grid_size = int(grid_size)
+def plot_linear_temp(temp_profile, grid_size, quiet, save_dir, plots):
+    cutoff_dist = int(0.25 * grid_size)
     # temp_profile sliced to remove
-    test_mean = np.mean(temp_profile[tube_length:grid_size - tube_length], axis=1)
-    test_std = np.std(temp_profile[tube_length:grid_size - tube_length], axis=1, ddof=1)
-    x = np.arange(tube_length, grid_size - tube_length)
+    test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
+    test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
+    x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)
     gradient_err = np.mean(test_std)
     line = slope * x + intercept
