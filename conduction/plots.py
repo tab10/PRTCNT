@@ -293,8 +293,9 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         fill_fracts = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
+        print uni_num_tubes
         for z in range(len(uni_num_tubes)):
-            fill_fracts.append(float(tube_length) * uni_num_tubes[z] * 100.0 / (grid_size ** dim))
+            fill_fracts.append(tube_length * uni_num_tubes[z] * 100.0 / (grid_size ** dim))
         all_k_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
             os.chdir(sep_folds[i][j])
