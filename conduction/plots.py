@@ -35,17 +35,28 @@ def histogram_walker_3d_onlat(walker, grid_range, bins):
     z_edges = edges[2]
     return H, x_edges, y_edges, z_edges
 
-def plot_two_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
+
+def plot_two_d_random_walk_setup(grid, quiet, save_dir):
     """Plots setup and orientation of nanotubes"""
-    logging.info("Plotting setup")
+    grid_size = grid.size
+    tube_coords = grid.tube_coords
+    tube_radius = grid.tube_radius
     colors = itertools.cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
     tube_x = []
     tube_y = []  # x and y coordinates of tubes unzipped
     for i in range(len(tube_coords)):
         tube_x.append(tube_coords[i][0::2])
         tube_y.append(tube_coords[i][1::2])
+    if tube_radius == 0:
+        logging.info("Plotting setup with no tube excluded volume")
+    else:
+        logging.info("Plotting setup with tube excluded volume")
+        for i in range(len(grid.bound_all)):
+            vol_x, vol_y = zip(*grid.bound_all[i])
+            plt.scatter(vol_x, vol_y)
     for i in range(len(tube_x)):
         plt.plot(tube_x[i], tube_y[i], c=next(colors))
+        plt.scatter(tube_x[i], tube_y[i], c='y')
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
     plt.title('Nanotube locations')

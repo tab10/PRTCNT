@@ -45,7 +45,7 @@ if __name__ == "__main__":
     parser.add_argument('--num_tubes', type=int, required=True,
                         help='How many tubes are there for random walker to use.')
     parser.add_argument('--tube_radius', type=float, default=1,
-                        help='Radius of tubes. Only used for 3d simulations.')
+                        help='Radius of tubes. Only used if kapitza is True.')
     parser.add_argument('--orientation', type=str, required=True, help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
@@ -65,6 +65,8 @@ if __name__ == "__main__":
     parser.add_argument('--save_loc_data', type=bool, default=False, help='Save location data for all walkers.')
     parser.add_argument('--quiet', type=bool, default=True, help='Show various plots throughout simulation.')
     parser.add_argument('--on_lattice', type=bool, default=True, help='True for on lattice random walk.')
+    parser.add_argument('--kapitza', type=bool, default=False, help='Adds kapitza resistance '
+                                                                    'to simulation, see readme.md.')
     args = parser.parse_args()
 
     comm.Barrier()
@@ -86,6 +88,9 @@ if __name__ == "__main__":
     save_loc_plots = args.save_loc_plots
     save_loc_data = args.save_loc_data
     gen_plots = args.gen_plots
+    kapitza = args.kapitza
+    if on_lattice:
+        tube_radius = int(tube_radius)
 
     # Check if inputs valid
     possible_dim = [2, 3]
@@ -130,15 +135,15 @@ if __name__ == "__main__":
     if on_lattice and (dim == 2):
         logging.info("Starting MPI 2D on-lattice simulation")
         comm.Barrier()
-        onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
+        onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, rank, size)
     elif on_lattice and (dim == 3):
         logging.info("Starting MPI 3D on-lattice simulation")
         comm.Barrier()
-        onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
+        onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots, kapitza, rank, size)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

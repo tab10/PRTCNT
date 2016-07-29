@@ -8,13 +8,13 @@ import run
 from mpi4py import MPI
 
 
-def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
+def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                 k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots):
-    walker_data_save_dir = save_dir + "/walker_locations"
-    walker_plot_save_dir = save_dir + "/walker_plots"
+                 k_conv_error_buffer, plot_save_dir, gen_plots, kapitza):
+    walker_data_save_dir = plot_save_dir + "/walker_locations"
+    walker_plot_save_dir = plot_save_dir + "/walker_plots"
 
-    grid = creation.Grid3D_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation)
+    grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
     if gen_plots:
         plots.plot_three_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
     fill_fract = tube_length * float(num_tubes) / grid.size ** 3
@@ -83,15 +83,15 @@ def sim_3d_onlat(grid_size, tube_length, num_tubes, orientation, timesteps, save
     logging.info("Complete")
 
 
-def sim_3d_onlat_MPI(grid_size, tube_length, num_tubes, orientation, timesteps, save_loc_data,
+def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                      quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                     k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots, rank, size):
+                     k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, rank, size):
     comm = MPI.COMM_WORLD
-    walker_data_save_dir = save_dir + "/walker_locations"
-    walker_plot_save_dir = save_dir + "/walker_plots"
+    walker_data_save_dir = plot_save_dir + "/walker_locations"
+    walker_plot_save_dir = plot_save_dir + "/walker_plots"
 
     if rank == 0:
-        grid = creation.Grid3D_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation)
+        grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
         if gen_plots:
             plots.plot_three_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
         fill_fract = tube_length * float(num_tubes) / grid.size ** 3
