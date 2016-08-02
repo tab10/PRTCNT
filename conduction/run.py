@@ -107,7 +107,6 @@ if __name__ == "__main__":
                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
                               k_conv_error_buffer, plot_save_dir, gen_plots, kapitza)
     elif (on_lattice == True) & (dim == 3):
-        tube_diameter = Config.getfloat('config', 'tube_diameter')
         logging.info("Starting 3D on-lattice simulation")
         onlat_3d.sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,

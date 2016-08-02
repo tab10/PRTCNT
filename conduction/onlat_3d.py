@@ -16,9 +16,7 @@ def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
 
     grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
     if gen_plots:
-        plots.plot_three_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
-    fill_fract = tube_length * float(num_tubes) / grid.size ** 3
-    logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+        plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
 
     grid_range = [[0, grid.size], [0, grid.size], [0, grid.size]]
     bins = grid.size
@@ -93,9 +91,7 @@ def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
     if rank == 0:
         grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
         if gen_plots:
-            plots.plot_three_d_random_walk_setup(grid.tube_coords, grid.size, quiet, plot_save_dir)
-        fill_fract = tube_length * float(num_tubes) / grid.size ** 3
-        logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+            plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
     else:
         grid = None
 

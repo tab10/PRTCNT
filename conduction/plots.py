@@ -4,7 +4,7 @@ import glob
 import matplotlib as mpl
 import os
 
-mpl.use('Agg')
+# mpl.use('Agg')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
@@ -49,13 +49,16 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir):
         tube_y.append(tube_coords[i][1::2])
     if tube_radius == 0:
         logging.info("Plotting setup with no tube excluded volume")
+        for i in range(len(tube_x)):
+            plt.plot(tube_x[i], tube_y[i], c=next(colors))
     else:
         logging.info("Plotting setup with tube excluded volume")
         for i in range(len(grid.bound_all)):
             vol_x, vol_y = zip(*grid.bound_all[i])
+            int_x, int_y = zip(*grid.occ_cubes[i])
             plt.scatter(vol_x, vol_y)
+            plt.scatter(int_x, int_y, c='r')
     for i in range(len(tube_x)):
-        plt.plot(tube_x[i], tube_y[i], c=next(colors))
         plt.scatter(tube_x[i], tube_y[i], c='y')
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
@@ -70,9 +73,12 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir):
     plt.close()
 
 
-def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
+def plot_three_d_random_walk_setup(grid, quiet, save_dir):
     """Plots setup and orientation of nanotubes"""
     logging.info("Plotting setup")
+    grid_size = grid.size
+    tube_coords = grid.tube_coords
+    tube_radius = grid.tube_radius
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     colors = itertools.cycle(['b', 'g', 'r', 'c', 'm', 'y', 'k'])
@@ -83,8 +89,19 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
         tube_x.append(tube_coords[i][0::3])
         tube_y.append(tube_coords[i][1::3])
         tube_z.append(tube_coords[i][2::3])
-    for i in range(len(tube_x)):
-        ax.plot(tube_x[i], tube_y[i], tube_z[i], c=next(colors))
+    if tube_radius == 0:
+        logging.info("Plotting setup with no tube excluded volume")
+        for i in range(len(tube_x)):
+            ax.plot(tube_x[i], tube_y[i], tube_z[i], c=next(colors))
+    else:
+        logging.info("Plotting setup with tube excluded volume")
+        for i in range(grid.size + 1):
+            for j in range(grid.size + 1):
+                for k in range(grid.size + 1):
+                    if grid.tube_check_bd_vol[i][j][k] == 1:  # boundary
+                        ax.scatter(i, j, k, c='red')
+                    elif grid.tube_check_bd_vol[i][j][k] == -1:  # volume
+                        ax.scatter(i, j, k, c='blue')
     ax.set_xlim(0, grid_size)
     ax.set_ylim(0, grid_size)
     ax.set_zlim(0, grid_size)
@@ -98,6 +115,24 @@ def plot_three_d_random_walk_setup(tube_coords, grid_size, quiet, save_dir):
     if not quiet:
         plt.show()
     plt.close()
+
+
+def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
+    """Plots array with bd/vol locations"""
+    logging.info("Plotting check array")
+    creation.check_for_folder(save_dir)
+    if gen_plots:
+        plt.pcolor(grid.tube_check_bd_vol)
+        plt.title("Location check array, 0 nothing, 1 boundary, -1 interior")
+        plt.colorbar()
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.xlim(0, grid.size)
+        plt.ylim(0, grid.size)
+        plt.savefig('%s/check_array.pdf' % save_dir)
+        if not quiet:
+            plt.show()
+        plt.close()
 
 
 def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
