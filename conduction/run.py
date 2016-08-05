@@ -74,8 +74,6 @@ if __name__ == "__main__":
     kapitza = Config.getboolean('config', 'kapitza')
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
-    if on_lattice:
-        tube_radius = int(tube_radius)
     # Check if inputs valid
 
     possible_dim = [2, 3]

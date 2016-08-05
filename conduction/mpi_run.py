@@ -44,7 +44,7 @@ if __name__ == "__main__":
     parser.add_argument('--tube_length', type=float, required=True, help='Length of nanotubes.')
     parser.add_argument('--num_tubes', type=int, required=True,
                         help='How many tubes are there for random walker to use.')
-    parser.add_argument('--tube_radius', type=float, default=1,
+    parser.add_argument('--tube_radius', type=float, default=0.5,
                         help='Radius of tubes. Only used if kapitza is True.')
     parser.add_argument('--orientation', type=str, required=True, help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
@@ -89,8 +89,6 @@ if __name__ == "__main__":
     save_loc_data = args.save_loc_data
     gen_plots = args.gen_plots
     kapitza = args.kapitza
-    if on_lattice:
-        tube_radius = int(tube_radius)
 
     # Check if inputs valid
     possible_dim = [2, 3]

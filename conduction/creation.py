@@ -60,7 +60,8 @@ class Grid2D_onlat(object):
                             self.tube_coords_l.pop()
                             self.tube_coords_r.pop()
                             self.theta.pop()
-                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation)
+                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
+                                                                                        tube_radius)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
                             self.tube_coords_l.append([x_l, y_l])
@@ -74,31 +75,16 @@ class Grid2D_onlat(object):
             l_d = tube_length / (2 * tube_radius)
             logging.info("L/D is %.4f." % l_d)
             self.tube_squares = []  # grid squares that a tube passes through, for every tube
-            self.bound_l = []
-            self.bound_r = []
-            self.bound_t = []
-            self.bound_b = []
-            self.bound_all = []
-            self.occ_cubes = []
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation, tube_radius)
-                    tube_squares = self.find_squares([x_l, y_l], [x_r, y_r])
-                    top, bot, left, right, total, occ_cubes = self.generate_bd_and_vol(tube_squares, theta)
-                    # this function pops the 2 ends from tube_squares removing the duplicated endpts
-                    # occ_cubes are the interior points of the tube
-                    self.bound_l.append(left)
-                    self.bound_r.append(right)
-                    self.bound_t.append(top)
-                    self.bound_b.append(bot)
-                    self.bound_all.append(total)
+                    tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
                     self.tube_centers.append([x_c, y_c])
                     self.tube_coords.append([x_l, y_l, x_r, y_r])
                     self.tube_coords_l.append([x_l, y_l])
                     self.tube_coords_r.append([x_r, y_r])
                     self.tube_squares.append(tube_squares)
                     self.theta.append(theta)
-                    self.occ_cubes.append(occ_cubes)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique()
                         while not uni_flag:
@@ -109,34 +95,21 @@ class Grid2D_onlat(object):
                             self.tube_coords_r.pop()
                             self.tube_squares.pop()
                             self.theta.pop()
-                            self.bound_l.pop()
-                            self.bound_r.pop()
-                            self.bound_t.pop()
-                            self.bound_b.pop()
-                            self.bound_all.pop()
-                            self.occ_cubes.pop()
                             x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                         tube_radius)
-                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r])
-                            top, bot, left, right, total, occ_cubes = self.generate_bd_and_vol(tube_squares, theta)
-                            self.bound_l.append(left)
-                            self.bound_r.append(right)
-                            self.bound_t.append(top)
-                            self.bound_b.append(bot)
-                            self.bound_all.append(total)
+                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
                             self.theta.append(theta)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
                             self.tube_coords_l.append([x_l, y_l])
                             self.tube_coords_r.append([x_r, y_r])
                             self.tube_squares.append(tube_squares)
-                            self.occ_cubes.append(occ_cubes)
                             uni_flag = self.check_tube_and_vol_unique()
                 logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
             # get number of squares filled
             cube_count = 0  # each cube has area 1
-            for i in range(len(self.occ_cubes)):
-                cube_count += len(self.occ_cubes[i])
+            for i in range(len(self.tube_squares)):
+                cube_count += len(self.tube_squares[i])
             fill_fract = float(cube_count) * tube_radius / grid_size ** 2
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
@@ -199,7 +172,7 @@ class Grid2D_onlat(object):
         # print self.euc_dist(x_l, y_l, x_r, y_r)
         return x_l, y_l, x_r, y_r, x_c, y_c, angle
 
-    def find_squares(self, start, end):
+    def find_squares(self, start, end, tube_radius):
         """Bresenham's Line Algorithm
         Produces a list of tuples (bottom left corners of grid)
         All squares a tube passes through
@@ -248,11 +221,16 @@ class Grid2D_onlat(object):
         # Reverse the list if the coordinates were swapped
         if swapped:
             points.reverse()
+
+        # now check if tube radius > 1, if so add more volume points
+        if tube_radius > 0.5:
+            logging.info('Tube radius will be implemented here later if needed.')
         return points
 
     def generate_bd_and_vol(self, tube_squares, angle):
         """2D, This takes the bottom left squares from find_squares and creates volume and boundaries based
         on the tube radius, for one tube
+        This function is not currently used for anything because boundaries are not implemented in this way
         """
         top = []
         bot = []
@@ -260,8 +238,6 @@ class Grid2D_onlat(object):
         right = []
         l_end = tube_squares[0]
         r_end = tube_squares[-1]
-        tube_squares.pop(0)
-        tube_squares.pop(-1)
         occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
         for i in range(1, self.tube_radius + 1):
             l_x_above = int(round(i * np.cos(np.deg2rad(angle + 90)) + l_end[0]))
@@ -308,10 +284,8 @@ class Grid2D_onlat(object):
         for i in range(len(self.tube_coords)):
             bd_vol[self.tube_coords[i][0], self.tube_coords[i][1]] = 1  # left endpoints
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = 1  # right endpoints
-            for j in range(len(self.bound_all[i])):
-                bd_vol[self.bound_all[i][j][0], self.bound_all[i][j][1]] = 1  # all other boundaries
-            for j in range(len(self.occ_cubes[i])):
-                bd_vol[self.occ_cubes[i][j][0], self.occ_cubes[i][j][1]] = -1  # interior points
+            for j in range(1, len(self.tube_squares[i]) - 1):
+                bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
         return bd_vol
@@ -335,35 +309,16 @@ class Grid2D_onlat(object):
         return uni_flag
 
     def check_tube_and_vol_unique(self):
-        """Checks all endpoints, boundaries, and volume for uniqueness and no overlap"""
-        uni_flag = None
-        current_tube = self.tube_coords[-1]
-        current_bound = self.bound_all[-1]
-        current_vol = self.occ_cubes[-1]
-        cur_l = [current_tube[0], current_tube[1]]
-        cur_r = [current_tube[2], current_tube[3]]
-        # separate
-        tube_l = []
-        tube_r = []
-        bound = []
-        vol = []  # checked by bottom left coordinate
+        """Checks all endpoints, boundaries, and volume for uniqueness and no overlap
+        tube_squares holds the endpoints too, so just check the current one for uniqueness"""
+        uni_flag = True
+        current_vol = self.tube_squares[-1]
+        vol = []
         for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
-            tube_l.append([self.tube_coords[i][0], self.tube_coords[i][1]])
-            tube_r.append([self.tube_coords[i][2], self.tube_coords[i][3]])
-            for j in range(len(self.bound_all[i])):
-                bound.append(self.bound_all[i][j])
-            for k in range(len(self.occ_cubes[i])):
-                vol.append(self.occ_cubes[i][k])
-        if (cur_l in tube_l) or (cur_l in tube_r) or (cur_l in bound) or (cur_l in vol) or (cur_r in tube_l) or \
-                (cur_r in tube_r) or (cur_r in bound) or (cur_r in vol):
-            uni_flag = False
-        else:
-            uni_flag = True
-        for k in range(len(current_bound)):
-            if (current_bound[k] in bound) or (current_bound[k] in vol):
-                uni_flag = False
+            for k in range(len(self.tube_squares[i])):
+                vol.append(self.tube_squares[i][k])
         for l in range(len(current_vol)):
-            if (current_vol[l] in vol) or (current_vol[l] in bound):
+            if current_vol[l] in vol:
                 uni_flag = False
         return uni_flag
 
@@ -440,34 +395,22 @@ class Grid3D_onlat(object):
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
             l_d = tube_length / (2 * tube_radius)
             logging.info("L/D is %.4f." % l_d)
-            self.tube_squares = []  # grid squares that a tube passes through, for every tube
-            self.bound_l = []
-            self.bound_r = []
-            self.bound_t = []
-            self.bound_b = []
-            self.bound_all = []
-            self.occ_cubes = []
+            self.tube_squares = []
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                     x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta, phi = self.generate_3d_tube(tube_length,
                                                                                                     orientation,
                                                                                                     tube_radius)
-                    tube_cubes = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
-                    top, bot, left, right, total, occ_cubes = self.generate_bd_and_vol(tube_cubes, theta, phi)
-                    self.bound_l.append(left)
-                    self.bound_r.append(right)
-                    self.bound_t.append(top)
-                    self.bound_b.append(bot)
-                    self.bound_all.append(total)
+                    tube_squares = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
                     self.tube_centers.append([x_c, y_c, z_c])
                     self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
                     self.tube_coords_l.append([x_l, y_l, z_l])
                     self.tube_coords_r.append([x_r, y_r, z_r])
                     self.theta.append(theta)
                     self.phi.append(phi)
-                    self.occ_cubes.append(occ_cubes)
+                    self.tube_squares.append(tube_squares)
                     if i >= 1:
-                        uni_flag = self.check_tube_unique()  # ensures no endpoints, left or right, are in the same spot
+                        uni_flag = self.check_tube_and_vol_unique()  # ensures no endpoints, left or right, are in the same spot
                         # print uni_flag
                         while not uni_flag:
                             counter += 1
@@ -477,36 +420,25 @@ class Grid3D_onlat(object):
                             self.tube_coords_r.pop()
                             self.theta.pop()
                             self.phi.pop()
-                            self.bound_l.pop()
-                            self.bound_r.pop()
-                            self.bound_t.pop()
-                            self.bound_b.pop()
-                            self.bound_all.pop()
-                            self.occ_cubes.pop()
+                            self.tube_squares.pop()
                             x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta, phi = self.generate_3d_tube(tube_length,
                                                                                                             orientation,
                                                                                                             tube_radius)
-                            tube_cubes = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
-                            top, bot, left, right, total, occ_cubes = self.generate_bd_and_vol(tube_cubes, theta, phi)
-                            self.bound_l.append(left)
-                            self.bound_r.append(right)
-                            self.bound_t.append(top)
-                            self.bound_b.append(bot)
-                            self.bound_all.append(total)
-                            self.occ_cubes.append(occ_cubes)
+                            tube_squares = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
                             self.tube_centers.append([x_c, y_c, z_c])
                             self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
                             self.tube_coords_l.append([x_l, y_l, z_l])
                             self.tube_coords_r.append([x_r, y_r, z_r])
                             self.theta.append(theta)
                             self.phi.append(phi)
-                            uni_flag = self.check_tube_unique()
+                            self.tube_squares.append(tube_squares)
+                            uni_flag = self.check_tube_and_vol_unique()
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
             # get number of squares filled
             cube_count = 0  # each cube has volume 1
-            for i in range(len(self.occ_cubes)):
-                cube_count += len(self.occ_cubes[i])
-            fill_fract = float(cube_count) * tube_radius / grid_size ** 3
+            for i in range(len(self.tube_squares)):
+                cube_count += len(self.tube_squares[i])
+            fill_fract = float(cube_count) * 2 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
@@ -538,9 +470,9 @@ class Grid3D_onlat(object):
             else:
                 logging.error("Invalid orientation specified")
                 raise SystemExit
-            x_r = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l)
-            y_r = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l)
-            z_r = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l)
+            x_r = int(round(self.coord(radius, theta_angle, phi_angle)[0] + x_l))
+            y_r = int(round(self.coord(radius, theta_angle, phi_angle)[1] + y_l))
+            z_r = int(round(self.coord(radius, theta_angle, phi_angle)[2] + z_l))
             if (x_r > 0) and (x_r < self.size) and (y_r > 0) and (y_r < self.size) and (z_r > 0) \
                     and (z_r < self.size):
                 inside_box = True
@@ -577,11 +509,11 @@ class Grid3D_onlat(object):
         points = []
         for i in range(N):
             p += s
-            points.append(list(np.round(p)))
+            points.append(list(np.round(p).astype(int)))
         if list(p1) not in points:
-            points.insert(0, list(p1))
+            points.insert(0, list(p1.astype(int)))
         if list(p2) not in points:
-            points.insert(-1, list(p2))
+            points.insert(-1, list(p2.astype(int)))
         # fig = plt.figure()
         # ax = fig.add_subplot(111, projection='3d')
         # for i in range(len(points)):
@@ -597,6 +529,7 @@ class Grid3D_onlat(object):
         """3D, This takes the bottom left squares from find_squares and creates volume and boundaries based
         on the tube radius, for one tube
         In 3D, there are top left, top right, bottom left, and bottom right boundaries to worry about too?
+        Currently not used for anything
         """
         top = []
         bot = []
@@ -604,8 +537,6 @@ class Grid3D_onlat(object):
         right = []
         l_end = tube_squares[0]
         r_end = tube_squares[-1]
-        tube_squares.pop(0)
-        tube_squares.pop(-1)
         occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
         for i in range(1, self.tube_radius + 1):
             l_x_above = int(round(self.coord(i, theta + 90, phi + 90)[0] + l_end[0]))
@@ -653,12 +584,9 @@ class Grid3D_onlat(object):
         for i in range(len(self.tube_coords)):
             bd_vol[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = 1  # left endpoints
             bd_vol[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = 1  # right endpoints
-            for j in range(len(self.bound_all[i])):
-                bd_vol[self.bound_all[i][j][0], self.bound_all[i][j][1], self.bound_all[i][j][
-                    2]] = 1  # all other boundaries
-            for j in range(len(self.occ_cubes[i])):
-                bd_vol[
-                    self.occ_cubes[i][j][0], self.occ_cubes[i][j][1], self.occ_cubes[i][j][2]] = -1  # interior points
+            for j in range(1, len(self.tube_squares[i]) - 1):
+                bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
+                    2]] = -1  # volume points
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
         return bd_vol
@@ -679,6 +607,18 @@ class Grid3D_onlat(object):
         else:
             uni_flag = True
         # ensures no endpoints, left or right, are in the same spot
+        return uni_flag
+
+    def check_tube_and_vol_unique(self):
+        uni_flag = True
+        current_vol = self.tube_squares[-1]
+        vol = []
+        for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
+            for k in range(len(self.tube_squares[i])):
+                vol.append(self.tube_squares[i][k])
+        for l in range(len(current_vol)):
+            if current_vol[l] in vol:
+                uni_flag = False
         return uni_flag
 
     @staticmethod
