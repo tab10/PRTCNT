@@ -72,13 +72,25 @@ if __name__ == "__main__":
     save_loc_data = Config.getboolean('config', 'save_loc_data')
     gen_plots = Config.getboolean('config', 'gen_plots')
     kapitza = Config.getboolean('config', 'kapitza')
+    prob_m_cn = Config.getfloat('config', 'prob_m_cn')
+    run_to_convergence = Config.getboolean('config', 'run_to_convergence')
+    num_walkers = Config.getint('config', 'num_walkers')
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
     # Check if inputs valid
 
+    os.chdir(save_dir)
+
+    plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
+    logging_setup(plot_save_dir)
+    logging.info(config_used)
+
     possible_dim = [2, 3]
     if dim not in possible_dim:
         logging.error('Invalid dimension')
+        raise SystemExit
+    if kapitza and tube_radius == 0:
+        logging.error('Kapitza modeling requires tubes to have a nonzero radius')
         raise SystemExit
     if grid_size < 5:
         logging.error('Invalid grid size')
@@ -92,22 +104,26 @@ if __name__ == "__main__":
     if timesteps <= 0:
         logging.error('Invalid timesteps')
         raise SystemExit
-
-    os.chdir(save_dir)
-
-    plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
-    logging_setup(plot_save_dir)
-    logging.info(config_used)
+    if kapitza:
+        logging.info('Kapitza modeling is ON')
+    else:
+        logging.info('Kapitza modeling is OFF')
+    if run_to_convergence:
+        logging.info('Simulation will run to convergence')
+    else:
+        logging.info('Simulation will run to %d walkers' % num_walkers)
 
     if (on_lattice == True) & (dim == 2):
         logging.info("Starting 2D on-lattice simulation")
         onlat_2d.sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza)
+                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                              run_to_convergence, num_walkers)
     elif (on_lattice == True) & (dim == 3):
         logging.info("Starting 3D on-lattice simulation")
         onlat_3d.sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza)
+                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                              run_to_convergence, num_walkers)
     else:
         raise SystemExit

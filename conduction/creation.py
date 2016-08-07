@@ -69,7 +69,7 @@ class Grid2D_onlat(object):
                             self.theta.append(theta)
                             uni_flag = self.check_tube_unique()
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_2d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
         else:
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
             l_d = tube_length / (2 * tube_radius)
@@ -113,19 +113,19 @@ class Grid2D_onlat(object):
             fill_fract = float(cube_count) * tube_radius / grid_size ** 2
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_2d()
-            self.tube_check_bd_vol = self.generate_vol_check_array_2d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
+            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
 
     def generate_2d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
         This method generates better tubes then a setup similar to the 3D method"""
         # first generate a left endpoint anywhere in the box
         if tube_radius == 0:
-            x_l = np.random.randint(0, self.size + 1)
-            y_l = np.random.randint(0, self.size + 1)
+            x_l = np.random.randint(1, self.size)  # nothing on boundaries
+            y_l = np.random.randint(1, self.size)
         else:  # ensures no tube parts are outside grid
-            x_l = np.random.randint(tube_radius, self.size - tube_radius + 1)
-            y_l = np.random.randint(tube_radius, self.size - tube_radius + 1)
+            x_l = np.random.randint(np.floor(tube_radius) + 1, self.size - np.floor(tube_radius))
+            y_l = np.random.randint(np.floor(tube_radius) + 1, self.size - np.floor(tube_radius))
         good_angles = []
         if orientation == 'random':
             angle_range = range(0, 360)
@@ -139,22 +139,16 @@ class Grid2D_onlat(object):
         for i in angle_range:  # round ensures endpoints stay on-grid
             x_test = round(radius * np.cos(np.deg2rad(i)) + x_l)
             y_test = round(radius * np.sin(np.deg2rad(i)) + y_l)
-            if tube_radius == 0:
-                if (x_test >= 0) & (x_test <= self.size) & (y_test >= 0) & (y_test <= self.size):
-                    # angle and x_r choice inside box
-                    good_angles.append(i)
-            else:
-                if (x_test >= tube_radius) & (x_test <= self.size - tube_radius) & (y_test >= tube_radius) & \
-                        (y_test <= self.size - tube_radius):
-                    # angle and x_r choice inside box with tube radius
-                    good_angles.append(i)
-        if good_angles == []:
+            if (x_test > 0) & (x_test < self.size + 1) & (y_test > 0) & (y_test < self.size + 1):
+                # angle and x_r choice inside box
+                good_angles.append(i)
+        if not good_angles:
             logging.error("Check box size and/or tube specs. No tubes can fit in the box.")
             raise SystemExit
         angle = np.random.choice(good_angles)  # in degrees
         x_r = int(round(radius * np.cos(np.deg2rad(angle)) + x_l))
         y_r = int(round(radius * np.sin(np.deg2rad(angle)) + y_l))
-        if not ((x_l >= 0) & (x_r <= self.size) & (y_l >= 0) & (y_r <= self.size)):
+        if not ((x_l > 0) & (x_r < self.size + 1) & (y_l > 0) & (y_r < self.size + 1)):
             logging.error("Point found outside box.")
             raise SystemExit
         if x_l > x_r:  # this imposes left to right tube order WRT + x-axis
@@ -268,27 +262,56 @@ class Grid2D_onlat(object):
         Generates a left and right lookup array that holds the index of the opposite endpoint"""
         tube_check_l = np.zeros((self.size + 1, self.size + 1), dtype=int)
         tube_check_r = np.zeros((self.size + 1, self.size + 1), dtype=int)
-        for i in range(len(self.tube_coords)):
-            tube_check_l[self.tube_coords[i][0], self.tube_coords[i][1]] = i
-            tube_check_r[self.tube_coords[i][2], self.tube_coords[i][3]] = i
+        bd = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        for i in range(0, len(self.tube_coords)):
+            tube_check_l[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
+            tube_check_r[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1
+            bd[self.tube_coords[i][0], self.tube_coords[i][1]] = 1  # endpoint
+            bd[self.tube_coords[i][2], self.tube_coords[i][3]] = 1
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
+        # add boundary tags
+        for i in range(self.size + 1):
+            bd[0, i] = 10  # x = 0 is reflective
+            bd[self.size, i] = 10  # x = grid.size is reflective
+            bd[i, 0] = 20  # y = 0 is periodic
+            bd[i, self.size] = 20  # y = grid.size is periodic
+        # corners are special
+        bd[0, 0] = 30
+        bd[0, self.size] = 30
+        bd[self.size, 0] = 30
+        bd[self.size, self.size] = 30
         # np.set_printoptions(threshold=np.inf)
         # print tube_check_l
-        return tube_check_l, tube_check_r
+        return tube_check_l, tube_check_r, bd
 
     def generate_vol_check_array_2d(self):
         """To be used with tube volume
         Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        index = np.zeros((self.size + 1, self.size + 1), dtype=int)
         for i in range(len(self.tube_coords)):
             bd_vol[self.tube_coords[i][0], self.tube_coords[i][1]] = 1  # left endpoints
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = 1  # right endpoints
+            index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
+            index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
             for j in range(1, len(self.tube_squares[i]) - 1):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
+                index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
+        # add boundary tags
+        for i in range(self.size + 1):
+            bd_vol[0, i] = 10  # x = 0 is reflective
+            bd_vol[self.size, i] = 10  # x = grid.size is reflective
+            bd_vol[i, 0] = 20  # y = 0 is periodic
+            bd_vol[i, self.size] = 20  # y = grid.size is periodic
+        # corners are special
+        bd_vol[0, 0] = 30
+        bd_vol[0, self.size] = 30
+        bd_vol[self.size, 0] = 30
+        bd_vol[self.size, self.size] = 30
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
-        return bd_vol
+        return bd_vol, index
 
     def check_tube_unique(self):
         uni_flag = None
@@ -442,7 +465,7 @@ class Grid3D_onlat(object):
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
-            self.tube_check_bd_vol = self.generate_vol_check_array_3d()
+            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d()
 
     def generate_3d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
@@ -581,15 +604,20 @@ class Grid3D_onlat(object):
         """To be used with tube volume
         Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
         bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        index = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         for i in range(len(self.tube_coords)):
             bd_vol[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = 1  # left endpoints
             bd_vol[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = 1  # right endpoints
+            index[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = i
+            index[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i
             for j in range(1, len(self.tube_squares[i]) - 1):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
                     2]] = -1  # volume points
+                index[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
+                    2]] = i
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
-        return bd_vol
+        return bd_vol, index
 
     def check_tube_unique(self):
         uni_flag = None
@@ -658,22 +686,11 @@ class Walker2D_onlat(object):
         start = [start_x, start_y]
         self.pos = [start]
 
-    def add_dpos(self, newpos):  # add incremented position
-        arr1 = np.array(self.pos[-1])
-        arr2 = np.array(newpos)
-        # print arr1, arr2
-        self.pos.append(list(arr1 + arr2))
-
     def add_pos(self, newpos):  # add new position
         self.pos.append(list(newpos))
 
     def replace_pos(self, newpos):  # replace current position
         self.pos[-1] = list(newpos)
-
-    def replace_dpos(self, newpos):  # replace incremented position
-        arr1 = np.array(self.pos[-1])
-        arr2 = np.array(newpos)
-        self.pos[-1] = list(arr1 + arr2)
 
 
 class Walker3D_onlat(object):
@@ -690,9 +707,9 @@ class Walker3D_onlat(object):
         start = [start_x, start_y, start_z]
         self.pos = [start]
 
-    def add_dpos(self, newpos):  # add incremented position
+    def add_dpos(self, dpos):  # add incremented position
         arr1 = np.array(self.pos[-1])
-        arr2 = np.array(newpos)
+        arr2 = np.array(dpos)
         # print arr1, arr2
         self.pos.append(list(arr1 + arr2))
 
@@ -702,9 +719,9 @@ class Walker3D_onlat(object):
     def replace_pos(self, newpos):  # replace current position
         self.pos[-1] = list(newpos)
 
-    def replace_dpos(self, newpos):  # replace incremented position
+    def replace_dpos(self, dpos):  # replace incremented position
         arr1 = np.array(self.pos[-1])
-        arr2 = np.array(newpos)
+        arr2 = np.array(dpos)
         self.pos[-1] = list(arr1 + arr2)
 
 def int_on_circle(radius):  # finds all integer solutions on the circumference of a circle

@@ -10,7 +10,7 @@ from mpi4py import MPI
 
 def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                 k_conv_error_buffer, plot_save_dir, gen_plots, kapitza):
+                 k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence, num_walkers):
     walker_data_save_dir = plot_save_dir + "/walker_locations"
     walker_plot_save_dir = plot_save_dir + "/walker_plots"
 
@@ -83,7 +83,7 @@ def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
 
 def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                      quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                     k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, rank, size):
+                     k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size):
     comm = MPI.COMM_WORLD
     walker_data_save_dir = plot_save_dir + "/walker_locations"
     walker_plot_save_dir = plot_save_dir + "/walker_plots"

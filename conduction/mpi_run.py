@@ -67,6 +67,12 @@ if __name__ == "__main__":
     parser.add_argument('--on_lattice', type=bool, default=True, help='True for on lattice random walk.')
     parser.add_argument('--kapitza', type=bool, default=False, help='Adds kapitza resistance '
                                                                     'to simulation, see readme.md.')
+    parser.add_argument('--prob_m_cn', type=float, default=0.0, help='Probability a walker will enter the nanotube. '
+                                                                     'kapitza must be true.')
+    parser.add_argument('--run_to_convergence', type=bool, default=True, help='True does this or False runs '
+                                                                              'for number of walkers.')
+    parser.add_argument('--num_walkers', type=int, default=5000, help='Total walkers to use for simulaton. '
+                                                                      'Only used if convergence is false.')
     args = parser.parse_args()
 
     comm.Barrier()
@@ -89,6 +95,22 @@ if __name__ == "__main__":
     save_loc_data = args.save_loc_data
     gen_plots = args.gen_plots
     kapitza = args.kapitza
+    prob_m_cn = args.prob_m_cn
+    run_to_convergence = args.run_to_convergence
+    num_walkers = args.num_walkers
+
+    os.chdir(save_dir)
+
+    if rank == 0:
+        plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
+        logging_setup(plot_save_dir)
+    else:
+        plot_save_dir = None
+
+    plot_save_dir = comm.bcast(plot_save_dir, root=0)
+
+    if rank == 0:
+        logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
 
     # Check if inputs valid
     possible_dim = [2, 3]
@@ -104,22 +126,20 @@ if __name__ == "__main__":
     if num_tubes < 0:
         logging.error('Invalid number of tubes')
         raise SystemExit
+    if kapitza and tube_radius == 0:
+        logging.error('Kapitza modeling requires tubes to have a nonzero radius')
+        raise SystemExit
     if timesteps <= 0:
         logging.error('Invalid timesteps')
         raise SystemExit
-
-    os.chdir(save_dir)
-
-    if rank == 0:
-        plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
-        logging_setup(plot_save_dir)
+    if kapitza:
+        logging.info('Kapitza modeling is ON')
     else:
-        plot_save_dir = None
-
-    plot_save_dir = comm.bcast(plot_save_dir, root=0)
-
-    if rank == 0:
-        logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
+        logging.info('Kapitza modeling is OFF')
+    if run_to_convergence:
+        logging.info('Simulation will run to convergence')
+    else:
+        logging.info('Simulation will run to %d walkers' % num_walkers)
 
     comm.Barrier()
 
@@ -135,13 +155,13 @@ if __name__ == "__main__":
         comm.Barrier()
         onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size)
     elif on_lattice and (dim == 3):
         logging.info("Starting MPI 3D on-lattice simulation")
         comm.Barrier()
         onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, tube_radius, gen_plots, kapitza, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

@@ -13,6 +13,7 @@ import creation
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
 
+
 def histogram_walker_2d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
@@ -119,34 +120,37 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
     logging.info("Plotting check array")
     creation.check_for_folder(save_dir)
     if gen_plots:
-        plt.pcolor(grid.tube_check_bd_vol)
-        plt.title("Nanotube setup, 0 nothing, 1 endpoint, -1 interior")
+        if grid.tube_radius == 0:
+            plt.pcolor(grid.tube_check_bd.T)  # since pcolor reverses axes
+        else:
+            plt.pcolor(grid.tube_check_bd_vol.T)  # since pcolor reverses axes
+        plt.title("Nanotube setup, 0 nothing, 1 endpoint, -1 interior\n10 reflective, 20 periodic, 30 corner")
         plt.colorbar()
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.xlim(0, grid.size)
-        plt.ylim(0, grid.size)
+        plt.xlim(0, grid.size + 1)
+        plt.ylim(0, grid.size + 1)
         plt.savefig('%s/setup_array.pdf' % save_dir)
         if not quiet:
             plt.show()
         plt.close()
 
 
-def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
+def plot_histogram_walkers_2d_onlat(grid, timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
     """Plots temperature profile for all walkers"""
     logging.info("Plotting temperature profile")
-    H_tot /= float(timesteps)  # normalization condition
+    # H_tot /= float(timesteps)  # normalization condition
     creation.check_for_folder(save_dir)
     np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
     if gen_plots:
         plt.title('Temperature density (dimensionless units)')
-        X, Y = np.meshgrid(xedges, yedges)
-        plt.pcolormesh(X, Y, temp_profile.T)  # transpose since pcolormesh reverses axes
+        # X, Y = np.meshgrid(xedges, yedges)
+        plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.xlim(xedges[0], xedges[-1])
-        plt.ylim(yedges[0], yedges[-1])
+        plt.xlim(0, grid.size + 1)
+        plt.ylim(0, grid.size + 1)
         plt.colorbar()
         plt.savefig('%s/temp.pdf' % save_dir)
         if not quiet:
@@ -155,22 +159,24 @@ def plot_histogram_walkers_2d_onlat(timesteps, H_tot, xedges, yedges, quiet, sav
     return temp_profile
 
 
-def plot_linear_temp(temp_profile, grid_size, quiet, save_dir, plots):
-    cutoff_dist = int(0.25 * grid_size)
+def plot_linear_temp(temp_profile, grid_size, quiet, save_dir, plots, cutoff_frac=0.25):
+    cutoff_dist = int(cutoff_frac * grid_size)
     # temp_profile sliced to remove
-    test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
-    test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
+    test_mean = np.mean(temp_profile, axis=1)
+    test_std = np.std(temp_profile, axis=1, ddof=1)
     x = np.arange(cutoff_dist, grid_size - cutoff_dist)
-    slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)
+    x_full = np.arange(0, grid_size + 1)
+    slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean[cutoff_dist:grid_size - cutoff_dist])
     gradient_err = np.mean(test_std)
-    line = slope * x + intercept
+    line = slope * x_full + intercept
     if plots == True:
-        plt.errorbar(x, test_mean, yerr=test_std)
-        plt.plot(x, line, color='black')
+        plt.errorbar(x_full, test_mean, yerr=test_std)
+        plt.plot(x_full, line, color='black')
         plt.title("Temperature density (normalized by time) (dimensionless units)\n"
                   "$R^2=%.4f$, $\\frac{dT(x)}{dx}$=%.4E$\\pm$%.4E" % (r_value ** 2, slope, std_err))
         plt.xlabel('x')
         plt.ylabel('T(x)')
+        plt.xlim(0, grid_size)
         plt.savefig('%s/temp_fit.pdf' % save_dir)
         if not quiet:
             plt.show()
@@ -236,7 +242,7 @@ def plot_walker_path_3d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     plt.close()
 
 
-def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir, gradient_cutoff):
+def plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet, save_dir, gradient_cutoff):
     """Plots temperature gradient for all walkers"""
     logging.info("Plotting temperature gradient")
     # disregard first few x= slices as close to the wall and values have large errors
@@ -250,8 +256,9 @@ def plot_temp_gradient_2d_onlat(temp_profile, xedges, yedges, quiet, save_dir, g
     plt.pcolormesh(X, Y, temp_gradient_x[gradient_cutoff:].T)  # transpose since pcolormesh reverses axes
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.xlim(xedges[0], xedges[-1])
-    plt.ylim(yedges[0], yedges[-1])
+    # plt.xlim(xedges[0], xedges[-1])
+    plt.xlim(0, grid.size + 1)
+    plt.ylim(0, grid.size + 1)
     plt.colorbar()
     creation.check_for_folder(save_dir)
     plt.savefig('%s/temp_gradient.pdf' % save_dir)
@@ -287,9 +294,10 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     plt.close()
 
 
-def plot_k_convergence(quantity, quiet, save_dir):
+def plot_k_convergence(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting k convergence")
     plt.plot(quantity)
+    plt.ylim(min(quantity[begin_cov_check:]), max(quantity[begin_cov_check:]))
     plt.title("Convergence of conductivity k")
     plt.xlabel('Timesteps')
     plt.ylabel('Conductivity k')
@@ -303,6 +311,7 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting k convergence error")
     x = range(begin_cov_check, len(quantity) + begin_cov_check)
     plt.plot(x, quantity)
+    plt.ylim(min(quantity[begin_cov_check:]), max(quantity[begin_cov_check:]))
     plt.title("Error in convergence of conductivity k")
     plt.xlabel('Timesteps')
     plt.ylabel('Conductivity k error')
