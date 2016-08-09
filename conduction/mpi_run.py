@@ -40,7 +40,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='.')
 
     parser.add_argument('--dim', type=int, required=True, help='Dimensionality of simulation.')
-    parser.add_argument('--grid_size', type=int, default=100, help='Size of square grid of use.')
+    parser.add_argument('--grid_size', type=int, default=99, help='Size of grid of use. TRUE SIZE USED IS VALUE + 1, '
+                                                                  'TO COMPARE WITH ANALYTICAL.')
     parser.add_argument('--tube_length', type=float, required=True, help='Length of nanotubes.')
     parser.add_argument('--num_tubes', type=int, required=True,
                         help='How many tubes are there for random walker to use.')
@@ -49,7 +50,9 @@ if __name__ == "__main__":
     parser.add_argument('--orientation', type=str, required=True, help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
-    parser.add_argument('--timesteps', type=int, default=10000, help='How many steps to run each walker for.')
+    parser.add_argument('--timesteps', type=int, default=10000, help='How many steps to run each walker for. '
+                                                                     'Should be (grid_size+1)**2 to have even '
+                                                                     'temperature distribution.')
     parser.add_argument('--k_convergence_tolerance', type=float, default=1E-05, help='Simulation runs until '
                                                                                  'std. dev. of time fluctuations in k drop below this value.')
     parser.add_argument('--begin_cov_check', type=int, default=100, help='Start checking for convergence '
@@ -58,7 +61,7 @@ if __name__ == "__main__":
                                                                             'in the std. dev. of k calculation. '
                                                                             'Reduced automatically depending on '
                                                                             '# of cores.')
-    parser.add_argument('--gen_plots', type=bool, default=False, help='Gives the option to not generate any plots. '
+    parser.add_argument('--gen_plots', type=bool, default=True, help='Gives the option to not generate any plots. '
                                                                       'Useful on the supercomputer.')
     parser.add_argument('--save_dir', type=str, default=os.getcwd(), help='Path for plots and data and config.ini.')
     parser.add_argument('--save_loc_plots', type=bool, default=False, help='Save location plots for all walkers.')
@@ -140,6 +143,7 @@ if __name__ == "__main__":
         logging.info('Simulation will run to convergence')
     else:
         logging.info('Simulation will run to %d walkers' % num_walkers)
+    logging.info('Grid size of %d is being used' % (grid_size + 1))
 
     comm.Barrier()
 
@@ -155,13 +159,15 @@ if __name__ == "__main__":
         comm.Barrier()
         onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size,
+                                  run_to_convergence, num_walkers)
     elif on_lattice and (dim == 3):
         logging.info("Starting MPI 3D on-lattice simulation")
         comm.Barrier()
         onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                                   quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size)
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size,
+                                  run_to_convergence, num_walkers)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

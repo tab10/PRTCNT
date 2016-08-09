@@ -139,7 +139,7 @@ class Grid2D_onlat(object):
         for i in angle_range:  # round ensures endpoints stay on-grid
             x_test = round(radius * np.cos(np.deg2rad(i)) + x_l)
             y_test = round(radius * np.sin(np.deg2rad(i)) + y_l)
-            if (x_test > 0) & (x_test < self.size + 1) & (y_test > 0) & (y_test < self.size + 1):
+            if (x_test > 0) & (x_test < self.size) & (y_test > 0) & (y_test < self.size):
                 # angle and x_r choice inside box
                 good_angles.append(i)
         if not good_angles:
@@ -256,7 +256,6 @@ class Grid2D_onlat(object):
         total = top + bot + left + right
         return top, bot, left, right, total, occupied_cubes
 
-
     def generate_tube_check_array_2d(self):
         """To be used with no tube volume
         Generates a left and right lookup array that holds the index of the opposite endpoint"""
@@ -343,6 +342,22 @@ class Grid2D_onlat(object):
         for l in range(len(current_vol)):
             if current_vol[l] in vol:
                 uni_flag = False
+            # generate candidate check positions for tube crossing
+            ###########
+            # this algorithm looks for interweaved diagonal clusters. The only 2 possibilities are checked
+            t_l = current_vol[l]
+            t_r = [current_vol[l][0] + 1, current_vol[l][1]]
+            b_l = [current_vol[l][0], current_vol[l][1] - 1]
+            b_r = [current_vol[l][0] + 1, current_vol[l][1] - 1]
+            if (b_r in current_vol) and (t_r in vol) and (b_l in vol):
+                uni_flag = False
+            t_r = current_vol[l]
+            t_l = [current_vol[l][0] - 1, current_vol[l][1]]
+            b_l = [current_vol[l][0] - 1, current_vol[l][1] - 1]
+            b_r = [current_vol[l][0], current_vol[l][1] - 1]
+            if (t_l in vol) and (b_l in current_vol) and (b_r in vol):
+                uni_flag = False
+                ##########
         return uni_flag
 
     @staticmethod
@@ -351,7 +366,7 @@ class Grid2D_onlat(object):
         return dist
 
     @staticmethod
-    def radius(x, y):
+    def calc_radius(x, y):
         radius = np.sqrt(x ** 2 + y ** 2)
         return radius
 
@@ -461,10 +476,10 @@ class Grid3D_onlat(object):
             cube_count = 0  # each cube has volume 1
             for i in range(len(self.tube_squares)):
                 cube_count += len(self.tube_squares[i])
-            fill_fract = float(cube_count) * 2 * tube_radius / grid_size ** 3
+            fill_fract = float(cube_count) * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d()
 
     def generate_3d_tube(self, radius, orientation, tube_radius):
@@ -593,12 +608,41 @@ class Grid3D_onlat(object):
     def generate_tube_check_array_3d(self):
         tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         tube_check_r = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        bd = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         for i in range(len(self.tube_coords)):
-            tube_check_l[int(self.tube_coords[i][0]), int(self.tube_coords[i][1]), int(self.tube_coords[i][2])] = i
-            tube_check_r[int(self.tube_coords[i][3]), int(self.tube_coords[i][4]), int(self.tube_coords[i][5])] = i
+            tube_check_l[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = i + 1
+            # THESE ARE OFFSET BY ONE
+            tube_check_r[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i + 1
+            # THESE ARE OFFSET BY ONE
+            bd[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = 1
+            bd[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = 1
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
-        return tube_check_l, tube_check_r
+        # add boundary tags
+        # entire planes hold bd conditions, so start at a corner and fill every plane
+        for i in range(self.size + 1):
+            for j in range(self.size + 1):
+                bd[0, i, j] = 10  # x = 0 is reflective
+                bd[self.size, i, j] = 10  # x = grid.size is reflective
+                bd[i, 0, j] = 20  # y = 0 is periodic
+                bd[i, self.size, j] = 20  # y = grid.size is periodic
+                bd[i, j, 0] = 20  # z = 0 is periodic
+                bd[i, j, self.size] = 20  # z = grid.size is periodic
+        # edges are special
+        for i in range(self.size + 1):
+            bd[i, 0, 0] = 30
+            bd[self.size, i, 0] = 30
+            bd[0, i, 0] = 30
+            bd[0, 0, i] = 30
+            bd[i, self.size, 0] = 30
+            bd[self.size, 0, i] = 30
+            bd[self.size, self.size, i] = 30
+            bd[0, self.size, i] = 30
+            bd[0, i, self.size] = 30
+            bd[i, 0, self.size] = 30
+            bd[i, self.size, self.size] = 30
+            bd[self.size, i, self.size] = 30
+        return tube_check_l, tube_check_r, bd
 
     def generate_vol_check_array_3d(self):
         """To be used with tube volume
@@ -608,13 +652,39 @@ class Grid3D_onlat(object):
         for i in range(len(self.tube_coords)):
             bd_vol[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = 1  # left endpoints
             bd_vol[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = 1  # right endpoints
-            index[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = i
-            index[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i
+            index[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = i + 1
+            # THESE ARE OFFSET BY ONE
+            index[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i + 1
+            # THESE ARE OFFSET BY ONE
             for j in range(1, len(self.tube_squares[i]) - 1):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
                     2]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
-                    2]] = i
+                    2]] = i + 1  # THESE ARE OFFSET BY ONE
+                # add boundary tags
+                # entire planes hold bd conditions, so start at a corner and fill every plane
+        for i in range(self.size + 1):
+            for j in range(self.size + 1):
+                bd_vol[0, i, j] = 10  # x = 0 is reflective
+                bd_vol[self.size, i, j] = 10  # x = grid.size is reflective
+                bd_vol[i, 0, j] = 20  # y = 0 is periodic
+                bd_vol[i, self.size, j] = 20  # y = grid.size is periodic
+                bd_vol[i, j, 0] = 20  # z = 0 is periodic
+                bd_vol[i, j, self.size] = 20  # z = grid.size is periodic
+        # edges are special
+        for i in range(self.size + 1):
+            bd_vol[i, 0, 0] = 30
+            bd_vol[self.size, i, 0] = 30
+            bd_vol[0, i, 0] = 30
+            bd_vol[0, 0, i] = 30
+            bd_vol[i, self.size, 0] = 30
+            bd_vol[self.size, 0, i] = 30
+            bd_vol[self.size, self.size, i] = 30
+            bd_vol[0, self.size, i] = 30
+            bd_vol[0, i, self.size] = 30
+            bd_vol[i, 0, self.size] = 30
+            bd_vol[i, self.size, self.size] = 30
+            bd_vol[self.size, i, self.size] = 30
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
         return bd_vol, index
@@ -647,6 +717,49 @@ class Grid3D_onlat(object):
         for l in range(len(current_vol)):
             if current_vol[l] in vol:
                 uni_flag = False
+                # generate candidate check positions for tube crossing
+                ###########
+                # this algorithm looks for interweaved diagonal clusters. The only 6 possibilities are checked
+                # x-y plane
+                t_l = current_vol[l]
+                t_r = [current_vol[l][0] + 1, current_vol[l][1], current_vol[l][2]]
+                b_l = [current_vol[l][0], current_vol[l][1] - 1, current_vol[l][2]]
+                b_r = [current_vol[l][0] + 1, current_vol[l][1] - 1, current_vol[l][2]]
+                if (b_r in current_vol) and (t_r in vol) and (b_l in vol):
+                    uni_flag = False
+                t_r = current_vol[l]
+                t_l = [current_vol[l][0] - 1, current_vol[l][1], current_vol[l][2]]
+                b_l = [current_vol[l][0] - 1, current_vol[l][1] - 1, current_vol[l][2]]
+                b_r = [current_vol[l][0], current_vol[l][1] - 1, current_vol[l][2]]
+                if (t_l in vol) and (b_l in current_vol) and (b_r in vol):
+                    uni_flag = False
+                # y-z plane
+                t_l = current_vol[l]
+                t_r = [current_vol[l][0], current_vol[l][1] + 1, current_vol[l][2]]
+                b_l = [current_vol[l][0], current_vol[l][1], current_vol[l][2] - 1]
+                b_r = [current_vol[l][0], current_vol[l][1] + 1, current_vol[l][2] - 1]
+                if (b_r in current_vol) and (t_r in vol) and (b_l in vol):
+                    uni_flag = False
+                t_r = current_vol[l]
+                t_l = [current_vol[l][0], current_vol[l][1] - 1, current_vol[l][2]]
+                b_l = [current_vol[l][0], current_vol[l][1] - 1, current_vol[l][2] - 1]
+                b_r = [current_vol[l][0], current_vol[l][1], current_vol[l][2] - 1]
+                if (t_l in vol) and (b_l in current_vol) and (b_r in vol):
+                    uni_flag = False
+                # x-z plane
+                t_l = current_vol[l]
+                t_r = [current_vol[l][0] + 1, current_vol[l][1], current_vol[l][2]]
+                b_l = [current_vol[l][0], current_vol[l][1], current_vol[l][2] - 1]
+                b_r = [current_vol[l][0] + 1, current_vol[l][1], current_vol[l][2] - 1]
+                if (b_r in current_vol) and (t_r in vol) and (b_l in vol):
+                    uni_flag = False
+                t_r = current_vol[l]
+                t_l = [current_vol[l][0] - 1, current_vol[l][1], current_vol[l][2]]
+                b_l = [current_vol[l][0] - 1, current_vol[l][1], current_vol[l][2] - 1]
+                b_r = [current_vol[l][0], current_vol[l][1], current_vol[l][2] - 1]
+                if (t_l in vol) and (b_l in current_vol) and (b_r in vol):
+                    uni_flag = False
+                    ##########
         return uni_flag
 
     @staticmethod
@@ -663,7 +776,7 @@ class Grid3D_onlat(object):
         return dist
 
     @staticmethod
-    def radius(x, y, z):
+    def calc_radius(x, y, z):
         radius = np.sqrt(x ** 2 + y ** 2 + z ** 2)
         return radius
 
@@ -707,22 +820,12 @@ class Walker3D_onlat(object):
         start = [start_x, start_y, start_z]
         self.pos = [start]
 
-    def add_dpos(self, dpos):  # add incremented position
-        arr1 = np.array(self.pos[-1])
-        arr2 = np.array(dpos)
-        # print arr1, arr2
-        self.pos.append(list(arr1 + arr2))
-
     def add_pos(self, newpos):  # add new position
         self.pos.append(list(newpos))
 
     def replace_pos(self, newpos):  # replace current position
         self.pos[-1] = list(newpos)
 
-    def replace_dpos(self, dpos):  # replace incremented position
-        arr1 = np.array(self.pos[-1])
-        arr2 = np.array(dpos)
-        self.pos[-1] = list(arr1 + arr2)
 
 def int_on_circle(radius):  # finds all integer solutions on the circumference of a circle
     # centered at origin for a given radius

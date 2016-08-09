@@ -112,6 +112,7 @@ if __name__ == "__main__":
         logging.info('Simulation will run to convergence')
     else:
         logging.info('Simulation will run to %d walkers' % num_walkers)
+    logging.info('Grid size of %d is being used' % (grid_size + 1))
 
     if (on_lattice == True) & (dim == 2):
         logging.info("Starting 2D on-lattice simulation")
