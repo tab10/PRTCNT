@@ -137,8 +137,10 @@ if __name__ == "__main__":
         raise SystemExit
     if kapitza:
         logging.info('Kapitza modeling is ON')
+        logging.info('Using prob_m_cn value of %.4f' % prob_m_cn)
     else:
         logging.info('Kapitza modeling is OFF')
+        prob_m_cn = 0.0
     if run_to_convergence:
         logging.info('Simulation will run to convergence')
     else:

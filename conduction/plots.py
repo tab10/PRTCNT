@@ -297,9 +297,8 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
 def plot_k_convergence(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting k convergence")
     plt.plot(quantity)
-    plt.ylim(min(quantity[begin_cov_check:]), max(quantity[begin_cov_check:]))
     plt.title("Convergence of conductivity k")
-    plt.xlabel('Timesteps')
+    plt.xlabel('Total walkers/2')
     plt.ylabel('Conductivity k')
     plt.savefig('%s/k_convergence.pdf' % save_dir)
     if not quiet:
@@ -309,11 +308,10 @@ def plot_k_convergence(quantity, quiet, save_dir, begin_cov_check):
 
 def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting k convergence error")
-    x = range(begin_cov_check, len(quantity) + begin_cov_check)
+    x = range(begin_cov_check, len(quantity))
     plt.plot(x, quantity)
-    plt.ylim(min(quantity[begin_cov_check:]), max(quantity[begin_cov_check:]))
     plt.title("Error in convergence of conductivity k")
-    plt.xlabel('Timesteps')
+    plt.xlabel('Total walkers/2')
     plt.ylabel('Conductivity k error')
     plt.savefig('%s/k_convergence_err.pdf' % save_dir)
     if not quiet:
@@ -321,7 +319,19 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals=''):
+def plot_dt_dx(quantity, quiet, save_dir, begin_cov_check):
+    logging.info("Plotting dt/dx")
+    plt.plot(quantity)
+    plt.title("Error in convergence of conductivity k")
+    plt.xlabel('Total walkers/2')
+    plt.ylabel('dT(x)/dx')
+    plt.savefig('%s/dt_dx.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, kapitza_val, exclude_vals=''):
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
@@ -352,12 +362,16 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         for z in range(len(uni_num_tubes)):
             fill_fracts.append(tube_length * uni_num_tubes[z] * 100.0 / (grid_size ** dim))
         all_k_vals = np.zeros(len(sep_folds[i]))
+        # all_kapitza_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
             os.chdir(sep_folds[i][j])
-            all_k_vals[j] = np.loadtxt('k.txt')
+            kapitza = np.loadtxt('prob_m_cn.txt')
+            if kapitza == kapitza_val:
+                all_k_vals[j] = np.loadtxt('k.txt')
             os.chdir('..')
         k_vals = []
         k_err = []
+        kapitza_vals = []
         for l in range(len(uni_num_tubes)):
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
             k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))

@@ -26,20 +26,25 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
 
     i = 0
     k_list = []
+    dt_dx_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
 
     start = time.clock()
     if run_to_convergence:
         while k_convergence_err > k_convergence_tolerance:
-            walker, H, xedges, yedges, i = randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data,
-                                                                        quiet,
-                                                                        save_loc_plots, bins, plot_save_dir,
-                                                                        walker_plot_save_dir, walker_data_save_dir,
-                                                                        gen_plots, kapitza, prob_m_cn, i, H)
+            walker, H, xedges, yedges = randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data,
+                                                                     quiet,
+                                                                     save_loc_plots, bins, plot_save_dir,
+                                                                     walker_plot_save_dir, walker_data_save_dir,
+                                                                     gen_plots, kapitza, prob_m_cn, i, H)
+
+            i += 1
+
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2,
                                                                                             grid.size, timesteps)
             k_list.append(k)
+            dt_dx_list.append(dt_dx)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
             if i > begin_cov_check:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
@@ -49,16 +54,15 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
                 logging.info("k error: %.4E" % k_convergence_err)
     else:
         for i in range(num_walkers / 2):
-            walker, H, xedges, yedges, i = randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data,
-                                                                        quiet,
-                                                                        save_loc_plots, bins, plot_save_dir,
-                                                                        walker_plot_save_dir, walker_data_save_dir,
-                                                                        gen_plots, kapitza, prob_m_cn, i, H)
+            walker, H, xedges, yedges = randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data,
+                                                                     quiet,
+                                                                     save_loc_plots, bins, plot_save_dir,
+                                                                     walker_plot_save_dir, walker_data_save_dir,
+                                                                     gen_plots, kapitza, prob_m_cn, i, H)
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, i * 2,
                                                                                             grid.size, timesteps)
             k_list.append(k)
-            logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
-            k_list.append(k)
+            dt_dx_list.append(dt_dx)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
             if i > begin_cov_check:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
@@ -78,13 +82,14 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
     if gen_plots == True:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
+        plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
                                                             plot_save_dir, gradient_cutoff=0)
     gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,
                                                         gen_plots)
     analysis.final_conductivity_2d_onlat(i * 2, grid.size, timesteps, gradient_avg, gradient_std,
                                          k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
-                                         gradient_cutoff=0)
+                                         prob_m_cn, gradient_cutoff=0)
     max_temp = np.max(temp_profile)
     min_temp = np.min(temp_profile)
     diff_temp = np.abs(max_temp) - np.abs(min_temp)
@@ -119,6 +124,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
     i = 0
 
     k_list = []
+    dt_dx_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
 
@@ -126,16 +132,20 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
 
     if run_to_convergence:
         while k_convergence_err > k_convergence_tolerance:
-            walker, H, xedges, yedges, i, tot_H = randomwalk_routine_2d_MPI(grid, grid_range, timesteps,
-                                                                            save_loc_data, quiet, save_loc_plots, bins,
-                                                                            plot_save_dir, walker_plot_save_dir,
-                                                                            walker_data_save_dir, gen_plots, kapitza,
-                                                                            prob_m_cn, i, H, rank, comm, tot_H)
+            walker, H, xedges, yedges, tot_H = randomwalk_routine_2d_MPI(grid, grid_range, timesteps,
+                                                                         save_loc_data, quiet, save_loc_plots, bins,
+                                                                         plot_save_dir, walker_plot_save_dir,
+                                                                         walker_data_save_dir, gen_plots, kapitza,
+                                                                         prob_m_cn, i, H, rank, comm, tot_H)
+
+            i += 1
+
             if rank == 0:
                 dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
                                                                                                 grid.size,
                                                                                                 timesteps)
                 k_list.append(k)
+                dt_dx_list.append(dt_dx)
                 logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
             comm.Barrier()
@@ -157,16 +167,17 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
             comm.Barrier()
     else:
         for i in range(num_walkers / (2 * size)):  # rounds down total walkers slightly
-            walker, H, xedges, yedges, i, tot_H = randomwalk_routine_2d_MPI(grid, grid_range, timesteps,
-                                                                            save_loc_data, quiet, save_loc_plots, bins,
-                                                                            plot_save_dir, walker_plot_save_dir,
-                                                                            walker_data_save_dir, gen_plots, kapitza,
-                                                                            prob_m_cn, i, H, rank, comm, tot_H)
+            walker, H, xedges, yedges, tot_H = randomwalk_routine_2d_MPI(grid, grid_range, timesteps,
+                                                                         save_loc_data, quiet, save_loc_plots, bins,
+                                                                         plot_save_dir, walker_plot_save_dir,
+                                                                         walker_data_save_dir, gen_plots, kapitza,
+                                                                         prob_m_cn, i, H, rank, comm, tot_H)
             if rank == 0:
                 dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(tot_H, i * 2 * size,
                                                                                                 grid.size,
                                                                                                 timesteps)
                 k_list.append(k)
+                dt_dx_list.append(dt_dx)
                 logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
             comm.Barrier()
@@ -200,13 +211,14 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
+            plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
                                                                 plot_save_dir, gradient_cutoff=0)
         gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,
                                                             gen_plots)
         analysis.final_conductivity_2d_onlat(i * 2 * size, grid.size, timesteps, gradient_avg, gradient_std,
                                              k_convergence_err, num_tubes, plot_save_dir, k_convergence_val,
-                                             gradient_cutoff=0)
+                                             prob_m_cn, gradient_cutoff=0)
         max_temp = np.max(temp_profile)
         min_temp = np.min(temp_profile)
         diff_temp = np.abs(max_temp) - np.abs(min_temp)
@@ -241,9 +253,7 @@ def randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data, qui
     H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(walker, grid_range, bins)
     H -= H_temp
 
-    i += 1
-
-    return walker, H, xedges, yedges, i
+    return walker, H, xedges, yedges
 
 
 def randomwalk_routine_2d_MPI(grid, grid_range, timesteps, save_loc_data, quiet, save_loc_plots, bins, plot_save_dir,
@@ -284,6 +294,5 @@ def randomwalk_routine_2d_MPI(grid, grid_range, timesteps, save_loc_data, quiet,
     # tot_H is the total across all cores
 
     comm.Barrier()
-    i += 1  # i starts at 0
 
-    return walker, H, xedges, yedges, i, tot_H
+    return walker, H, xedges, yedges, tot_H

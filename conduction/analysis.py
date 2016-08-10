@@ -5,7 +5,7 @@ from scipy import stats
 
 
 def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradient_err, k_err, num_tubes, cur_dir,
-                                k_convergence_val, gradient_cutoff):
+                                k_convergence_val, prob_m_cn, gradient_cutoff):
     """Final conductivity calculation"""
     # heat_flux - [# walkers]/([time][length]**2)
     # dT(x)/dx - [# walkers]/[length]
@@ -23,14 +23,19 @@ def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
     logging.info("Heat flux: %.4E" % heat_flux)
     logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
+
     f = open("%s/k.txt" % cur_dir, 'w')
     f.write("%.4E\n" % k)
+    f.close()
+
+    f = open("%s/prob_m_cn.txt" % cur_dir, 'w')
+    f.write("%.4E\n" % prob_m_cn)
     f.close()
     return k
 
 
 def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradient_err, k_err, num_tubes, cur_dir,
-                                k_convergence_val, gradient_cutoff):
+                                k_convergence_val, prob_m_cn, gradient_cutoff):
     """Final conductivity calculation"""
     # heat_flux - [# walkers]/([time][length]**2)
     # dT(x)/dx - [# walkers]/[length]
@@ -48,8 +53,13 @@ def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
     logging.info("Heat flux: %.4E" % heat_flux)
     logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
+
     f = open("%s/k.txt" % cur_dir, 'w')
     f.write("%.4E\n" % k)
+    f.close()
+
+    f = open("%s/prob_m_cn.txt" % cur_dir, 'w')
+    f.write("%.4E\n" % prob_m_cn)
     f.close()
     return k
 

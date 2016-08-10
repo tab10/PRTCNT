@@ -39,12 +39,16 @@ class Grid2D_onlat(object):
         self.theta = []
         self.tube_radius = tube_radius
         counter = 0  # counts num of non-unique tubes replaced
+        status_counter = 0
         if tube_radius == 0:
             logging.info("Zero tube radius given. Tubes will have no volume.")
             fill_fract = tube_length * float(num_tubes) / grid_size ** 2
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
+                    if (i % 50) == 0:
+                        status_counter += 50
+                        logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation, tube_radius)
                     self.tube_centers.append([x_c, y_c])
                     self.tube_coords.append([x_l, y_l, x_r, y_r])
@@ -77,6 +81,9 @@ class Grid2D_onlat(object):
             self.tube_squares = []  # grid squares that a tube passes through, for every tube
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
+                    if (i % 50) == 0:
+                        status_counter += 50
+                        logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation, tube_radius)
                     tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
                     self.tube_centers.append([x_c, y_c])
@@ -391,12 +398,16 @@ class Grid3D_onlat(object):
         self.phi = []
         self.tube_radius = tube_radius
         counter = 0  # counts num of non-unique tubes replaced
+        status_counter = 0
         if tube_radius == 0:
             logging.info("Zero tube radius given. Tubes will have no volume.")
             fill_fract = tube_length * float(num_tubes) / grid_size ** 3
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
+                    if (i % 50) == 0:
+                        status_counter += 50
+                        logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta, phi = self.generate_3d_tube(tube_length,
                                                                                                     orientation,
                                                                                                     tube_radius)
@@ -436,6 +447,9 @@ class Grid3D_onlat(object):
             self.tube_squares = []
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
+                    if (i % 50) == 0:
+                        status_counter += 50
+                        logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta, phi = self.generate_3d_tube(tube_length,
                                                                                                     orientation,
                                                                                                     tube_radius)
