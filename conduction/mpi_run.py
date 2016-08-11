@@ -115,7 +115,7 @@ if __name__ == "__main__":
     if rank == 0:
         logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
 
-    # Check if inputs valid
+    ##### VALUE & COMMON SENSE CHECKS#####
     possible_dim = [2, 3]
     if dim not in possible_dim:
         logging.error('Invalid dimension')
@@ -145,7 +145,11 @@ if __name__ == "__main__":
         logging.info('Simulation will run to convergence')
     else:
         logging.info('Simulation will run to %d walkers' % num_walkers)
+        if begin_cov_check >= num_walkers:
+            logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
+            num_walkers *= 3
     logging.info('Grid size of %d is being used' % (grid_size + 1))
+    ##### #####
 
     comm.Barrier()
 

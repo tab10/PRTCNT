@@ -6,12 +6,14 @@ import creation
 import plots
 import randomwalk
 import run
+from scipy import stats
 from mpi4py import MPI
 
 
 def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                 k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence, num_walkers):
+                 k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence,
+                 num_walkers):
     walker_data_save_dir = plot_save_dir + "/walker_locations"
     walker_plot_save_dir = plot_save_dir + "/walker_plots"
 
@@ -27,10 +29,12 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
     i = 0
     k_list = []
     dt_dx_list = []
+    heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
 
     start = time.clock()
+
     if run_to_convergence:
         while k_convergence_err > k_convergence_tolerance:
             walker, H, xedges, yedges = randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data,
@@ -45,6 +49,7 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
                                                                                             grid.size, timesteps)
             k_list.append(k)
             dt_dx_list.append(dt_dx)
+            heat_flux_list.append(heat_flux)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
             if i > begin_cov_check:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
@@ -63,6 +68,7 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
                                                                                             grid.size, timesteps)
             k_list.append(k)
             dt_dx_list.append(dt_dx)
+            heat_flux_list.append(heat_flux)
             logging.info("%d: R squared: %.4f, k: %.4E" % (i, r2, k))
             if i > begin_cov_check:
                 k_convergence_err = np.std(np.array(k_list[-k_conv_error_buffer:]), ddof=1)
@@ -83,6 +89,7 @@ def sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
         plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
         plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
+        plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, begin_cov_check)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
                                                             plot_save_dir, gradient_cutoff=0)
     gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,
@@ -125,6 +132,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
 
     k_list = []
     dt_dx_list = []
+    heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
 
@@ -146,6 +154,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
                                                                                                 timesteps)
                 k_list.append(k)
                 dt_dx_list.append(dt_dx)
+                heat_flux_list.append(heat_flux)
                 logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
             comm.Barrier()
@@ -178,6 +187,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
                                                                                                 timesteps)
                 k_list.append(k)
                 dt_dx_list.append(dt_dx)
+                heat_flux_list.append(heat_flux)
                 logging.info("%d: R squared: %.4f, k: %.4E" % (i * size, r2, k))
 
             comm.Barrier()
@@ -212,6 +222,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
             plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
             plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
+            plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, begin_cov_check)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
                                                                 plot_save_dir, gradient_cutoff=0)
         gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,

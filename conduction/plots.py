@@ -308,7 +308,7 @@ def plot_k_convergence(quantity, quiet, save_dir, begin_cov_check):
 
 def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting k convergence error")
-    x = range(begin_cov_check, len(quantity))
+    x = range(begin_cov_check, len(quantity) + begin_cov_check)
     plt.plot(x, quantity)
     plt.title("Error in convergence of conductivity k")
     plt.xlabel('Total walkers/2')
@@ -322,10 +322,22 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
 def plot_dt_dx(quantity, quiet, save_dir, begin_cov_check):
     logging.info("Plotting dt/dx")
     plt.plot(quantity)
-    plt.title("Error in convergence of conductivity k")
+    plt.title("dT(x)/dx")
     plt.xlabel('Total walkers/2')
     plt.ylabel('dT(x)/dx')
     plt.savefig('%s/dt_dx.pdf' % save_dir)
+    if not quiet:
+        plt.show()
+    plt.close()
+
+
+def plot_heat_flux(quantity, quiet, save_dir, begin_cov_check):
+    logging.info("Plotting heat flux")
+    plt.plot(quantity)
+    plt.title("Heat flux")
+    plt.xlabel('Total walkers/2')
+    plt.ylabel('Heat flux')
+    plt.savefig('%s/heat_flux.pdf' % save_dir)
     if not quiet:
         plt.show()
     plt.close()

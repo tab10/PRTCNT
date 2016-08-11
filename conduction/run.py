@@ -4,7 +4,7 @@ import os
 import creation
 import onlat_2d
 import onlat_3d
-
+import onlat_2d_constant_flux
 
 def ConfigSectionMap(section):
     dict1 = {}
@@ -75,6 +75,7 @@ if __name__ == "__main__":
     prob_m_cn = Config.getfloat('config', 'prob_m_cn')
     run_to_convergence = Config.getboolean('config', 'run_to_convergence')
     num_walkers = Config.getint('config', 'num_walkers')
+    method = Config.get('config', 'method')
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
     # Check if inputs valid
@@ -85,6 +86,7 @@ if __name__ == "__main__":
     logging_setup(plot_save_dir)
     logging.info(config_used)
 
+    ##### VALUE & COMMON SENSE CHECKS#####
     possible_dim = [2, 3]
     if dim not in possible_dim:
         logging.error('Invalid dimension')
@@ -114,14 +116,32 @@ if __name__ == "__main__":
         logging.info('Simulation will run to convergence')
     else:
         logging.info('Simulation will run to %d walkers' % num_walkers)
+        if begin_cov_check >= num_walkers:
+            logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
+            num_walkers *= 3
+
     logging.info('Grid size of %d is being used' % (grid_size + 1))
+    ##### #####
 
     if (on_lattice == True) & (dim == 2):
-        logging.info("Starting 2D on-lattice simulation")
-        onlat_2d.sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
-                              quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                              run_to_convergence, num_walkers)
+        if method == 'variable_flux':
+            logging.info("Starting 2D variable flux on-lattice simulation")
+            onlat_2d.sim_2d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
+                                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
+                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                  run_to_convergence, num_walkers)
+        elif method == 'constant_flux':
+            logging.info("Starting 2D constant flux on-lattice simulation")
+            onlat_2d_constant_flux.sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes,
+                                                              orientation, timesteps,
+                                                              save_loc_data,
+                                                              quiet, save_loc_plots, save_dir, k_convergence_tolerance,
+                                                              begin_cov_check,
+                                                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza,
+                                                              prob_m_cn,
+                                                              run_to_convergence,
+                                                              num_walkers, method)
+
     elif (on_lattice == True) & (dim == 3):
         logging.info("Starting 3D on-lattice simulation")
         onlat_3d.sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
@@ -129,4 +149,5 @@ if __name__ == "__main__":
                               k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
                               run_to_convergence, num_walkers)
     else:
+        logging.error('Check inputs')
         raise SystemExit
