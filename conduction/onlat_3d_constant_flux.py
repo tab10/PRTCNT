@@ -81,10 +81,10 @@ def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
     if gen_plots:
         temp_profile = plots.plot_histogram_walkers_2d_onlat(grid, timesteps, temp_profile_sum, x_edges, y_edges,
                                                              quiet, plot_save_dir, gen_plots)
-        plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
+        plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-        plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
-        plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, begin_cov_check)
+        plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir)
+        plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir)
         gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, grid_size, quiet, plot_save_dir,
                                                             gen_plots)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile_sum, x_edges, y_edges, quiet,
@@ -145,9 +145,9 @@ def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
 
             if rank == 0:
                 dt_dx, heat_flux, dt_dx_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(tot_H,
-                                                                                                              i * 2 * size,
-                                                                                                              grid.size,
-                                                                                                              timesteps)
+                                                                                                                  i * 2 * size,
+                                                                                                                  grid.size,
+                                                                                                                  timesteps)
                 k_list.append(k)
                 heat_flux_list.append(heat_flux)
                 dt_dx_list.append(dt_dx)
@@ -216,10 +216,10 @@ def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
         if gen_plots:
             temp_profile = plots.plot_histogram_walkers_2d_onlat(grid, timesteps, temp_profile_sum, x_edges, y_edges,
                                                                  quiet, plot_save_dir, gen_plots)
-            plots.plot_k_convergence(k_list, quiet, plot_save_dir, begin_cov_check)
+            plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
-            plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, begin_cov_check)
-            plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, begin_cov_check)
+            plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir)
+            plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir)
             gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile_sum, grid_size, quiet,
                                                                 plot_save_dir, gen_plots)
             temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile_sum, x_edges, y_edges, quiet,

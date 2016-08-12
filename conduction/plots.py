@@ -294,11 +294,15 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     plt.close()
 
 
-def plot_k_convergence(quantity, quiet, save_dir, begin_cov_check):
+def plot_k_convergence(quantity, quiet, save_dir, x_list=None):
     logging.info("Plotting k convergence")
-    plt.plot(quantity)
+    if x_list is not None:
+        plt.plot(x_list, quantity)
+        plt.xlabel('Timesteps')
+    else:
+        plt.plot(quantity)
+        plt.xlabel('Total walkers/2')
     plt.title("Convergence of conductivity k")
-    plt.xlabel('Total walkers/2')
     plt.ylabel('Conductivity k')
     plt.savefig('%s/k_convergence.pdf' % save_dir)
     if not quiet:
@@ -319,11 +323,15 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
     plt.close()
 
 
-def plot_dt_dx(quantity, quiet, save_dir, begin_cov_check):
+def plot_dt_dx(quantity, quiet, save_dir, x_list=None):
     logging.info("Plotting dt/dx")
-    plt.plot(quantity)
+    if x_list is not None:
+        plt.plot(x_list, quantity)
+        plt.xlabel('Timesteps')
+    else:
+        plt.plot(quantity)
+        plt.xlabel('Total walkers/2')
     plt.title("dT(x)/dx")
-    plt.xlabel('Total walkers/2')
     plt.ylabel('dT(x)/dx')
     plt.savefig('%s/dt_dx.pdf' % save_dir)
     if not quiet:
@@ -331,11 +339,15 @@ def plot_dt_dx(quantity, quiet, save_dir, begin_cov_check):
     plt.close()
 
 
-def plot_heat_flux(quantity, quiet, save_dir, begin_cov_check):
+def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     logging.info("Plotting heat flux")
-    plt.plot(quantity)
+    if x_list is not None:
+        plt.plot(x_list, quantity)
+        plt.xlabel('Timesteps')
+    else:
+        plt.plot(quantity)
+        plt.xlabel('Total walkers/2')
     plt.title("Heat flux")
-    plt.xlabel('Total walkers/2')
     plt.ylabel('Heat flux')
     plt.savefig('%s/heat_flux.pdf' % save_dir)
     if not quiet:
