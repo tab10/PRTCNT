@@ -70,7 +70,7 @@ def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
     # test_mean /= (float(timesteps)*float(cur_num_walkers))
-    test_mean /= float(cur_num_walkers)
+    # test_mean /= float(cur_num_walkers)
     # test_mean /= float(timesteps)
     heat_flux = float(cur_num_walkers) / ((float(grid_size + 1)) * float(timesteps))
     gradient_err = np.mean(test_std)

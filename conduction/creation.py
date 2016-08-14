@@ -819,6 +819,11 @@ class Walker2D_onlat(object):
     def replace_pos(self, newpos):  # replace current position
         self.pos[-1] = list(newpos)
 
+    def erase_prev_pos(self):
+        '''Removes all but last position from memory. Important for constant flux simulation
+        so that memory usage is kept low.'''
+        self.pos = [self.pos[-1]]  # double nesting is important here for the way the item is parsed
+
 
 class Walker3D_onlat(object):
     def __init__(self, grid_size, temp):

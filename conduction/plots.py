@@ -18,13 +18,18 @@ def histogram_walker_2d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
     (for 1 walker only)"""
     # logging.info("Histogramming positions")
-    walker_pos_xarr = np.zeros(len(walker.pos))
-    walker_pos_yarr = np.zeros(len(walker.pos))
-    for i in range(len(walker.pos)):
-        walker_pos_xarr[i] = walker.pos[i][0]  # converts list of lists to list of arrays
-        walker_pos_yarr[i] = walker.pos[i][1]
-    H, xedges, yedges = np.histogram2d(walker_pos_xarr, walker_pos_yarr, range=grid_range, bins=bins)
-    return H, xedges, yedges
+    # walker_pos_xarr = np.zeros(len(walker.pos))
+    # walker_pos_yarr = np.zeros(len(walker.pos))
+    # for i in range(len(walker.pos)):
+    #    walker_pos_xarr[i] = walker.pos[i][0]  # converts list of lists to list of arrays
+    #    walker_pos_yarr[i] = walker.pos[i][1]
+    # H, xedges, yedges = np.histogram2d(walker_pos_xarr, walker_pos_yarr, range=grid_range, bins=bins)
+
+    H = np.zeros((99 + 1, 99 + 1))
+    walker_pos_xarr = walker.pos[-1][0]
+    walker_pos_yarr = walker.pos[-1][1]
+    H[walker.pos[-1][0], walker.pos[-1][1]] = 1
+    return H
 
 
 def histogram_walker_3d_onlat(walker, grid_range, bins):

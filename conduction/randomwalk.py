@@ -140,7 +140,6 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn):
     # check where we are
     cur_pos = np.asarray(walker.pos[-1])
     # DEBUG
-    # print i, cur_pos
     # Having tube radius doesn't matter if kapitza is off, apart from excluded volume
     if kapitza:
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on

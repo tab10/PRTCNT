@@ -28,6 +28,8 @@ def sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, ti
     heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
+    x_edges = range(0, bins)
+    y_edges = range(0, bins)
 
     if run_to_convergence:
         while k_convergence_err > k_convergence_tolerance:
@@ -128,6 +130,8 @@ def sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
     heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
+    x_edges = range(0, bins)
+    y_edges = range(0, bins)
 
     start = MPI.Wtime()
     if run_to_convergence:

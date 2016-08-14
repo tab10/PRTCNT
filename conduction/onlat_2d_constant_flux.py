@@ -24,14 +24,13 @@ def sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes, o
 
     grid_range = [[0, grid.size + 1], [0, grid.size + 1]]
     bins = grid.size + 1
-    H = np.zeros((grid.size + 1, grid.size + 1))
 
     start = time.clock()
 
     hot_walker_master, cold_walker_master, H, xedges, yedges, k_list, dt_dx_list, heat_flux_list, timestep_list = \
         randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data, quiet, save_loc_plots, bins,
                                      plot_save_dir, walker_plot_save_dir, walker_data_save_dir, gen_plots, kapitza,
-                                     prob_m_cn, H, num_walkers,
+                                     prob_m_cn, num_walkers,
                                      printout_inc)
 
     dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, num_walkers,
@@ -57,18 +56,16 @@ def sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes, o
 
 def randomwalk_routine_2d_serial(grid, grid_range, tot_time, save_loc_data, quiet, save_loc_plots, bins, plot_save_dir,
                                  walker_plot_save_dir, walker_data_save_dir, gen_plots, kapitza, prob_m_cn,
-                                 H, tot_walkers, printout_inc):
-    def histogram_walker_list(hot_walker_master, cold_walker_master, H, grid_range, bins):
+                                 tot_walkers, printout_inc):
+    def histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins):
         H = np.zeros((grid.size + 1, grid.size + 1))  # resets H every time function is called, IMPORTANT
         for i in range(len(hot_walker_master)):
             hot_temp = hot_walker_master[i]
-            H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(hot_temp, grid_range, bins)
-            H += H_temp
+            H[hot_temp.pos[-1][0], hot_temp.pos[-1][1]] += 1
 
             cold_temp = cold_walker_master[i]
-            H_temp, xedges, yedges = plots.histogram_walker_2d_onlat(cold_temp, grid_range, bins)
-            H -= H_temp
-        return H, xedges, yedges
+            H[cold_temp.pos[-1][0], cold_temp.pos[-1][1]] -= 1
+        return H
 
     # these will hold the walker objects, need to access walker.pos for the positions
     hot_walker_master = []
@@ -77,13 +74,15 @@ def randomwalk_routine_2d_serial(grid, grid_range, tot_time, save_loc_data, quie
     dt_dx_list = []
     heat_flux_list = []
     timestep_list = []  # x axis for plots
+    xedges = range(0, bins)
+    yedges = range(0, bins)
 
     d_add = tot_time / (tot_walkers / 2.0)  # how often to add hot/cold walkers
 
     for i in range(tot_time):
         if (i % printout_inc) == 0 and (i > (5 * printout_inc)):
             cur_num_walkers = len(hot_walker_master) * 2
-            Htemp, xedges, yedges = histogram_walker_list(hot_walker_master, cold_walker_master, H, grid_range, bins)
+            Htemp = histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins)
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(Htemp, cur_num_walkers,
                                                                                             grid.size, i)
             k_list.append(k)
@@ -106,15 +105,17 @@ def randomwalk_routine_2d_serial(grid, grid_range, tot_time, save_loc_data, quie
         for j in range(len(hot_walker_master) - trigger):  # except the new ones
             hot_temp = hot_walker_master[j]
             current_hot_updated = randomwalk.apply_moves_2d(hot_temp, kapitza, grid, prob_m_cn)
+            current_hot_updated.erase_prev_pos()
             hot_walker_master[j] = current_hot_updated
 
             cold_temp = cold_walker_master[j]
             current_cold_updated = randomwalk.apply_moves_2d(cold_temp, kapitza, grid, prob_m_cn)
+            current_cold_updated.erase_prev_pos()
             cold_walker_master[j] = current_cold_updated
 
     # let's histogram everything
     logging.info('Finished random walks, histogramming...')
 
-    H, xedges, yedges = histogram_walker_list(hot_walker_master, cold_walker_master, H, grid_range, bins)
+    H = histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins)
 
     return hot_walker_master, cold_walker_master, H, xedges, yedges, k_list, dt_dx_list, heat_flux_list, timestep_list
