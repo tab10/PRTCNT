@@ -16,25 +16,22 @@ import creation
 
 def histogram_walker_2d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
-    (for 1 walker only)"""
-    # logging.info("Histogramming positions")
-    # walker_pos_xarr = np.zeros(len(walker.pos))
-    # walker_pos_yarr = np.zeros(len(walker.pos))
-    # for i in range(len(walker.pos)):
-    #    walker_pos_xarr[i] = walker.pos[i][0]  # converts list of lists to list of arrays
-    #    walker_pos_yarr[i] = walker.pos[i][1]
-    # H, xedges, yedges = np.histogram2d(walker_pos_xarr, walker_pos_yarr, range=grid_range, bins=bins)
-
-    H = np.zeros((99 + 1, 99 + 1))
-    walker_pos_xarr = walker.pos[-1][0]
-    walker_pos_yarr = walker.pos[-1][1]
-    H[walker.pos[-1][0], walker.pos[-1][1]] = 1
+    (for 1 walker only)
+    FUNCTION IS OUTDATED, SHOULDN'T BE USED"""
+    logging.info("Histogramming positions")
+    walker_pos_xarr = np.zeros(len(walker.pos))
+    walker_pos_yarr = np.zeros(len(walker.pos))
+    for i in range(len(walker.pos)):
+        walker_pos_xarr[i] = walker.pos[i][0]  # converts list of lists to list of arrays
+        walker_pos_yarr[i] = walker.pos[i][1]
+    H, xedges, yedges = np.histogram2d(walker_pos_xarr, walker_pos_yarr, range=grid_range, bins=bins)
     return H
 
 
 def histogram_walker_3d_onlat(walker, grid_range, bins):
     """Takes walker instance and histograms how many times location is accessed over the simulation. H not normalized
-    (for 1 walker only)"""
+    (for 1 walker only)
+    FUNCTION IS OUTDATED, SHOULDN'T BE USED"""
     H, edges = np.histogramdd(np.asarray(walker.pos), range=grid_range, bins=bins)
     x_edges = edges[0]
     y_edges = edges[1]
@@ -141,7 +138,7 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
         plt.close()
 
 
-def plot_histogram_walkers_2d_onlat(grid, timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
+def plot_histogram_walkers_onlat(grid, timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
     """Plots temperature profile for all walkers"""
     logging.info("Plotting temperature profile")
     # H_tot /= float(timesteps)  # normalization condition
@@ -315,12 +312,16 @@ def plot_k_convergence(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check):
+def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check, x_list=None):
     logging.info("Plotting k convergence error")
-    x = range(begin_cov_check, len(quantity) + begin_cov_check)
-    plt.plot(x, quantity)
+    if x_list is not None:
+        plt.plot(x_list, quantity)
+        plt.xlabel('Timesteps')
+    else:
+        x = range(begin_cov_check, len(quantity) + begin_cov_check)
+        plt.plot(x, quantity)
+        plt.xlabel('Total walkers/2')
     plt.title("Error in convergence of conductivity k")
-    plt.xlabel('Total walkers/2')
     plt.ylabel('Conductivity k error')
     plt.savefig('%s/k_convergence_err.pdf' % save_dir)
     if not quiet:

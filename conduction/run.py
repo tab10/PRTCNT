@@ -117,57 +117,51 @@ if __name__ == "__main__":
     else:
         logging.info('Kapitza modeling is OFF')
         prob_m_cn = 0.0
-    if run_to_convergence:
-        logging.info('Simulation will run to convergence')
+    if method == 'variable_flux':
+        if run_to_convergence:
+            logging.info('Simulation will run to convergence')
+            if begin_cov_check >= num_walkers:
+                logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
+                num_walkers *= 3
+        else:
+            logging.info('Simulation will run to %d walkers' % num_walkers)
+    elif method == 'constant_flux':
+        logging.info('Simulation will run for %d timesteps' % timesteps)
     else:
-        logging.info('Simulation will run to %d walkers' % num_walkers)
-        if begin_cov_check >= num_walkers:
-            logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
-            num_walkers *= 3
-    if method == 'constant_flux':
-        if (timesteps % (num_walkers / 2.0)) != 0:
-            logging.error('Choose total walkers/2 or timesteps so that timesteps/(total walkers/2) has no remainder')
-            raise SystemExit
+        logging.error('Check method')
+        raise SystemExit
 
     logging.info('Grid size of %d is being used' % (grid_size + 1))
     ##### #####
 
-    if (on_lattice == True) & (dim == 2):
+    if on_lattice & (dim == 2):
         if method == 'variable_flux':
-            logging.info("Starting 2D variable flux on-lattice simulation")
-            onlat_2d_variable_flux.sim_2d_onlat_variable_flux(grid_size, tube_length, tube_radius, num_tubes,
-                                                              orientation, timesteps, save_loc_data,
-                                                              quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                              run_to_convergence, num_walkers)
+            logging.error('This method is not accurate, stopping')
+            raise SystemExit
+            # logging.info("Starting 2D variable flux on-lattice simulation")
+            # onlat_2d_variable_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes,
+            #                                                  orientation, timesteps, save_loc_data,
+            #                                                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
+            #                                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+            #                                                  run_to_convergence, num_walkers)
         elif method == 'constant_flux':
-            logging.info("Starting 2D constant flux on-lattice simulation")
-            onlat_2d_constant_flux.sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes,
-                                                              orientation, timesteps,
-                                                              save_loc_data,
-                                                              quiet, save_loc_plots, save_dir, k_convergence_tolerance,
-                                                              begin_cov_check,
-                                                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza,
-                                                              prob_m_cn,
-                                                              run_to_convergence,
-                                                              num_walkers, method, printout_inc)
-
-    elif (on_lattice == True) & (dim == 3):
+            onlat_2d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                                 timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                                 num_walkers, printout_inc, k_conv_error_buffer)
+    elif on_lattice and (dim == 3):
         if method == 'variable_flux':
-            logging.info("Starting 3D variable flux on-lattice simulation")
-            onlat_3d_variable_flux.sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
-                                                save_loc_data,
-                              quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                              k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                              run_to_convergence, num_walkers)
+            logging.error('This method is not accurate, stopping')
+            raise SystemExit
+            # logging.info("Starting 3D variable flux on-lattice simulation")
+            # onlat_3d_variable_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
+            #      quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
+            #      k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence, num_walkers)
         elif method == 'constant_flux':
             logging.info("Starting 3D constant flux on-lattice simulation")
-            onlat_3d_constant_flux.sim_3d_onlat(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
-                                                save_loc_data,
-                                                quiet, save_loc_plots, save_dir, k_convergence_tolerance,
-                                                begin_cov_check,
-                                                k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                run_to_convergence, num_walkers)
+            onlat_3d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
+                                                 quiet, plot_save_dir,
+                                                 gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                                 k_conv_error_buffer)
     else:
         logging.error('Check inputs')
         raise SystemExit

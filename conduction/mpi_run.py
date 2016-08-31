@@ -2,8 +2,10 @@ import logging
 import os
 import argparse
 import creation
-import onlat_2d
-import onlat_3d
+import onlat_2d_constant_flux
+import onlat_2d_variable_flux
+import onlat_3d_variable_flux
+import onlat_3d_constant_flux
 from mpi4py import MPI
 
 
@@ -42,15 +44,15 @@ if __name__ == "__main__":
     parser.add_argument('--dim', type=int, required=True, help='Dimensionality of simulation.')
     parser.add_argument('--grid_size', type=int, default=99, help='Size of grid of use. TRUE SIZE USED IS VALUE + 1, '
                                                                   'TO COMPARE WITH ANALYTICAL.')
-    parser.add_argument('--tube_length', type=float, required=True, help='Length of nanotubes.')
-    parser.add_argument('--num_tubes', type=int, required=True,
+    parser.add_argument('--tube_length', type=float, default=15, help='Length of nanotubes.')
+    parser.add_argument('--num_tubes', type=int, default=0,
                         help='How many tubes are there for random walker to use.')
     parser.add_argument('--tube_radius', type=float, default=0.5,
                         help='Radius of tubes. Only used if kapitza is True.')
-    parser.add_argument('--orientation', type=str, required=True, help='Orientation of nanotubes in medium. '
+    parser.add_argument('--orientation', type=str, default='horizontal', help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
-    parser.add_argument('--timesteps', type=int, default=10000, help='How many steps to run each walker for. '
+    parser.add_argument('--timesteps', type=int, default=20000, help='How many steps to run each walker for. '
                                                                      'Should be (grid_size+1)**2 to have even '
                                                                      'temperature distribution.')
     parser.add_argument('--k_convergence_tolerance', type=float, default=1E-05, help='Simulation runs until '
@@ -74,8 +76,21 @@ if __name__ == "__main__":
                                                                      'kapitza must be true.')
     parser.add_argument('--run_to_convergence', type=bool, default=True, help='True does this or False runs '
                                                                               'for number of walkers.')
-    parser.add_argument('--num_walkers', type=int, default=5000, help='Total walkers to use for simulaton. '
+    parser.add_argument('--num_walkers', type=int, default=40000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
+    parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
+                                                                     'info for constant flux simulations. Should be '
+                                                                     'somewhat large because histogramming has to be done every time.')
+    parser.add_argument('--method', type=str, default='constant_flux',
+                        help='constant_flux sets a constant flux, num_walkers, ' \
+                             'and simulation time, adding a hot and ' \
+                             'cold walker every so often. ' \
+                             'variable_flux runs a hot and cold ' \
+                             'walker for a certain ' \
+                             'amount of time, and' \
+                             'the simulation can converge as walkers' \
+                             'are added or stop at a value of walkers.') \
+ \
     args = parser.parse_args()
 
     comm.Barrier()
@@ -101,6 +116,8 @@ if __name__ == "__main__":
     prob_m_cn = args.prob_m_cn
     run_to_convergence = args.run_to_convergence
     num_walkers = args.num_walkers
+    method = args.method
+    printout_inc = args.printout_inc
 
     os.chdir(save_dir)
 
@@ -161,19 +178,26 @@ if __name__ == "__main__":
 
     #  all processes have control now
     if on_lattice and (dim == 2):
-        logging.info("Starting MPI 2D on-lattice simulation")
-        comm.Barrier()
-        onlat_2d.sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
-                                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size,
-                                  run_to_convergence, num_walkers)
+        if method == 'variable_flux':
+            logging.error('This method is not accurate, stopping')
+            raise SystemExit
+        elif method == 'constant_flux':
+            logging.info("Starting 2D constant flux MPI on-lattice simulation")
+            comm.Barrier()
+            onlat_2d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                                   timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                                   num_walkers, printout_inc, k_conv_error_buffer, rank, size)
     elif on_lattice and (dim == 3):
-        logging.info("Starting MPI 3D on-lattice simulation")
-        comm.Barrier()
-        onlat_3d.sim_3d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
-                                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, rank, size,
-                                  run_to_convergence, num_walkers)
+        if method == 'variable_flux':
+            logging.error('This method is not accurate, stopping')
+            raise SystemExit
+        elif method == 'constant_flux':
+            logging.info("Starting 3D constant flux MPI on-lattice simulation")
+            comm.Barrier()
+            onlat_3d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                                   timesteps, quiet, plot_save_dir,
+                                                   gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                                   k_conv_error_buffer, rank, size)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

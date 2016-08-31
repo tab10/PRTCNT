@@ -10,12 +10,19 @@ from scipy import stats
 from mpi4py import MPI
 
 
-def sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
-                               quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-                               k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence,
-                               num_walkers, method, printout_inc):
-    walker_data_save_dir = plot_save_dir + "/walker_locations"
-    walker_plot_save_dir = plot_save_dir + "/walker_plots"
+def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
+                  gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer):
+    def histogram_walker_list(hot_walker_master, cold_walker_master):
+        H = np.zeros((grid.size + 1, grid.size + 1))  # resets H every time function is called, IMPORTANT
+        for i in range(len(hot_walker_master)):
+            hot_temp = hot_walker_master[i]
+            H[hot_temp.pos[-1][0], hot_temp.pos[-1][1]] += 1
+
+            cold_temp = cold_walker_master[i]
+            H[cold_temp.pos[-1][0], cold_temp.pos[-1][1]] -= 1
+        # DEBUG, sum should be 0
+        # print np.sum(H), np.max(H), np.min(H)
+        return H
 
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
     if gen_plots:
@@ -27,24 +34,101 @@ def sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes, o
 
     start = time.clock()
 
-    hot_walker_master, cold_walker_master, H, xedges, yedges, k_list, dt_dx_list, heat_flux_list, timestep_list = \
-        randomwalk_routine_2d_serial(grid, grid_range, timesteps, save_loc_data, quiet, save_loc_plots, bins,
-                                     plot_save_dir, walker_plot_save_dir, walker_data_save_dir, gen_plots, kapitza,
-                                     prob_m_cn, num_walkers,
-                                     printout_inc)
+    # these will hold the walker objects, need to access walker.pos for the positions
+    hot_walker_master = []
+    cold_walker_master = []
+    k_list = []
+    k_err_list = []
+    dt_dx_list = []
+    heat_flux_list = []
+    timestep_list = []  # x axis for plots
+    xedges = range(0, bins)
+    yedges = range(0, bins)
+    start_k_err_check = tot_time / 2
 
-    dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, num_walkers,
-                                                                                    grid.size, timesteps)
-    logging.info("%d walkers: R squared: %.4f, k: %.4E, heat flux: %.4E" % (num_walkers, r2, k, heat_flux))
+    # d_add - how often to add a hot/cold walker pair
+    d_add = tot_time / (tot_walkers / 2.0)  # as a float
+    if d_add.is_integer() and d_add >= 1:
+        d_add = int(tot_time / (tot_walkers / 2.0))
+        walker_frac_trigger = 0  # add a pair every d_add timesteps
+    elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
+        d_add = int(1.0 / d_add)
+        walker_frac_trigger = 1
+    else:  # change num_walkers or timesteps
+        logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1')
+        raise SystemExit
+    if walker_frac_trigger == 1:
+        logging.info('Adding %d hot/cold walker pair(s) every timestep, this might not converge' % d_add)
+    elif walker_frac_trigger == 0:
+        logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
+
+    for i in range(tot_time):
+        if (i % printout_inc) == 0 and (i >= (2 * printout_inc)):
+            cur_num_walkers = len(hot_walker_master) * 2
+            Htemp = histogram_walker_list(hot_walker_master, cold_walker_master)
+            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(Htemp, cur_num_walkers,
+                                                                                            grid.size, i)
+            k_list.append(k)
+            dt_dx_list.append(dt_dx)
+            heat_flux_list.append(heat_flux)
+            timestep_list.append(i)
+            if i >= start_k_err_check:
+                k_err = np.std(k_list[-k_conv_error_buffer:], ddof=1)
+                k_err_list.append(k_err)
+                logging.info("Timestep: %d, %d walkers, R2: %.4f, k: %.4E, k err: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
+                             % (i, cur_num_walkers, r2, k, k_err, heat_flux, dt_dx))
+            else:
+                logging.info("Timestep: %d, %d walkers, R2: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
+                             % (i, cur_num_walkers, r2, k, heat_flux, dt_dx))
+        if walker_frac_trigger == 0:
+            if (i % d_add) == 0:
+                trigger = 1
+                # let's add the 2 new walkers
+                hot_walker_temp = creation.Walker2D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation.Walker2D_onlat(grid.size, 'cold')
+                hot_walker_master.append(hot_walker_temp)
+                cold_walker_master.append(cold_walker_temp)
+            else:
+                trigger = 0
+        elif walker_frac_trigger == 1:
+            trigger = d_add  # trigger never 0 in this case
+            # let's add the 2 new walkers, several times
+            for k in range(d_add):
+                hot_walker_temp = creation.Walker2D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation.Walker2D_onlat(grid.size, 'cold')
+                hot_walker_master.append(hot_walker_temp)
+                cold_walker_master.append(cold_walker_temp)
+        # let's update all the positions of the activated walkers
+        for j in range(len(hot_walker_master) - trigger):  # except the new ones
+            hot_temp = hot_walker_master[j]
+            current_hot_updated = randomwalk.apply_moves_2d(hot_temp, kapitza, grid, prob_m_cn, True)
+            current_hot_updated.erase_prev_pos()
+            hot_walker_master[j] = current_hot_updated
+
+            cold_temp = cold_walker_master[j]
+            current_cold_updated = randomwalk.apply_moves_2d(cold_temp, kapitza, grid, prob_m_cn, True)
+            current_cold_updated.erase_prev_pos()
+            cold_walker_master[j] = current_cold_updated
+
+    # let's histogram everything
+    logging.info('Finished random walks, histogramming...')
+
+    H = histogram_walker_list(hot_walker_master, cold_walker_master)
+
+    dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H, tot_walkers,
+                                                                                    grid.size, tot_time)
+    logging.info("%d walkers: R squared: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E" % (tot_walkers, r2, k,
+                                                                                            heat_flux, dt_dx))
 
     end = time.clock()
     logging.info("Constant flux simulation has completed")
     logging.info("Serial simulation time was %.4f s" % (end - start))
 
-    temp_profile = plots.plot_histogram_walkers_2d_onlat(grid, timesteps, H, xedges, yedges, quiet, plot_save_dir,
+    temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H, xedges, yedges, quiet, plot_save_dir,
                                                          gen_plots)
     if gen_plots:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
+        plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)
         plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, timestep_list)
         plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, timestep_list)
         temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
@@ -54,68 +138,134 @@ def sim_2d_onlat_constant_flux(grid_size, tube_length, tube_radius, num_tubes, o
     logging.info("Complete")
 
 
-def randomwalk_routine_2d_serial(grid, grid_range, tot_time, save_loc_data, quiet, save_loc_plots, bins, plot_save_dir,
-                                 walker_plot_save_dir, walker_data_save_dir, gen_plots, kapitza, prob_m_cn,
-                                 tot_walkers, printout_inc):
-    def histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins):
-        H = np.zeros((grid.size + 1, grid.size + 1))  # resets H every time function is called, IMPORTANT
-        for i in range(len(hot_walker_master)):
-            hot_temp = hot_walker_master[i]
-            H[hot_temp.pos[-1][0], hot_temp.pos[-1][1]] += 1
+def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
+                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size):
+    comm = MPI.COMM_WORLD
 
-            cold_temp = cold_walker_master[i]
-            H[cold_temp.pos[-1][0], cold_temp.pos[-1][1]] -= 1
-        return H
+    if rank == 0:
+        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
+        if gen_plots:
+            plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
+            plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
+    else:
+        grid = None
+
+    grid = comm.bcast(grid, root=0)
+
+    grid_range = [[0, grid.size + 1], [0, grid.size + 1]]
+    bins = grid.size + 1
+
+    start = MPI.Wtime()
 
     # these will hold the walker objects, need to access walker.pos for the positions
-    hot_walker_master = []
-    cold_walker_master = []
+
+    hot_walker_master_pos = []
+    cold_walker_master_pos = []
     k_list = []
+    k_err_list = []
     dt_dx_list = []
     heat_flux_list = []
     timestep_list = []  # x axis for plots
     xedges = range(0, bins)
     yedges = range(0, bins)
+    start_k_err_check = tot_time / 2
 
-    d_add = tot_time / (tot_walkers / 2.0)  # how often to add hot/cold walkers
+    # d_add - how often to add a hot/cold walker pair
+    d_add = tot_time / (tot_walkers / 2.0)  # as a float
+    if d_add.is_integer() and d_add >= 1:
+        d_add = int(tot_time / (tot_walkers / 2.0))
+        walker_frac_trigger = 0  # add a pair every d_add timesteps
+    elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
+        d_add = int(1.0 / d_add)
+        walker_frac_trigger = 1
+    else:  # change num_walkers or timesteps
+        logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1')
+        raise SystemExit
+    if walker_frac_trigger == 1:
+        logging.info('Adding %d hot/cold walker pair(s) every timestep, this might not converge' % d_add)
+    elif walker_frac_trigger == 0:
+        logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
 
-    for i in range(tot_time):
-        if (i % printout_inc) == 0 and (i > (5 * printout_inc)):
-            cur_num_walkers = len(hot_walker_master) * 2
-            Htemp = histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins)
-            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(Htemp, cur_num_walkers,
-                                                                                            grid.size, i)
+    comm.Barrier()
+
+    walkers_per_core_whole = int(np.floor((tot_walkers / 2.0) / size))
+    walkers_per_core_remain = int(tot_walkers % size)
+    if walkers_per_core_remain != 0:
+        logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
+        raise SystemExit
+    H_local = np.zeros((grid.size + 1, grid.size + 1))
+    for i in range(walkers_per_core_whole):
+        H_master = np.zeros((grid.size + 1, grid.size + 1))  # should be reset every iteration
+        # going from shortest trajectory to longest
+        if walker_frac_trigger == 0:
+            cur_timestep = (i * size) * d_add
+            if cur_timestep > tot_time:
+                cur_timestep = tot_time
+            core_time = (i * size + rank) * d_add  # how long to run each simulation on each core
+            if core_time > tot_time:
+                core_time = tot_time
+            num_pairs_per_timestep = 1
+        elif walker_frac_trigger == 1:
+            cur_timestep = (i * size)
+            if cur_timestep > tot_time:
+                cur_timestep = tot_time
+            core_time = (i * size + rank)  # how long to run each simulation on each core
+            if core_time > tot_time:
+                core_time = tot_time
+            num_pairs_per_timestep = d_add
+        # print '%d on core %d' % (core_time, rank)
+        # run trajectories for that long
+        for j in range(num_pairs_per_timestep):
+            hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
+            cold_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
+            # get last position of walker
+            hot_temp_pos = hot_temp.pos[-1]
+            cold_temp_pos = cold_temp.pos[-1]
+            # histogram
+            H_local[hot_temp_pos[0], hot_temp_pos[1]] += 1
+            H_local[cold_temp_pos[0], cold_temp_pos[1]] -= 1
+        # send to core 0
+        # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
+        comm.Barrier()
+        comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
+        # analysis
+        cur_num_walkers = 2 * (i + 1) * size
+        if rank == 0 and (i > 5):
+            logging.info('Parallel iteration %d out of %d, at timestep %d' % (i, walkers_per_core_whole, cur_timestep))
+            # print np.count_nonzero(H_master)
+            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, cur_num_walkers,
+                                                                                            grid.size, cur_timestep)
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
             timestep_list.append(i)
+            logging.info("%d walkers, R2: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
+                         % (cur_num_walkers, r2, k, heat_flux, dt_dx))
 
-            logging.info("Timestep: %d, %d walkers, R2: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
-                         % (i, cur_num_walkers, r2, k, heat_flux, dt_dx))
-        if (i % d_add) == 0:
-            trigger = 1
-            # let's add the 2 new walkers
-            hot_walker_temp = creation.Walker2D_onlat(grid.size, 'hot')
-            cold_walker_temp = creation.Walker2D_onlat(grid.size, 'cold')
-            hot_walker_master.append(hot_walker_temp)
-            cold_walker_master.append(cold_walker_temp)
-        else:
-            trigger = 0
-        # let's update all the positions of the activated walkers
-        for j in range(len(hot_walker_master) - trigger):  # except the new ones
-            hot_temp = hot_walker_master[j]
-            current_hot_updated = randomwalk.apply_moves_2d(hot_temp, kapitza, grid, prob_m_cn)
-            current_hot_updated.erase_prev_pos()
-            hot_walker_master[j] = current_hot_updated
+    comm.Barrier()  # make sure whole walks are done
 
-            cold_temp = cold_walker_master[j]
-            current_cold_updated = randomwalk.apply_moves_2d(cold_temp, kapitza, grid, prob_m_cn)
-            current_cold_updated.erase_prev_pos()
-            cold_walker_master[j] = current_cold_updated
+    if rank == 0:
+        logging.info('Finished random walks, histogramming...')
 
-    # let's histogram everything
-    logging.info('Finished random walks, histogramming...')
-
-    H = histogram_walker_list(hot_walker_master, cold_walker_master, grid_range, bins)
-
-    return hot_walker_master, cold_walker_master, H, xedges, yedges, k_list, dt_dx_list, heat_flux_list, timestep_list
+        dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, tot_walkers,
+                                                                                        grid.size, tot_time)
+        logging.info("%d walkers: R squared: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E" % (tot_walkers, r2, k,
+                                                                                                heat_flux, dt_dx))
+        end = MPI.Wtime()
+        logging.info("Constant flux simulation has completed")
+        logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
+        walk_sec = (tot_walkers * size) / (end - start)
+        logging.info("Crunched %.4f walkers/second" % walk_sec)
+        temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H_master, xedges, yedges, quiet,
+                                                          plot_save_dir,
+                                                          gen_plots)
+        if gen_plots:
+            plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
+            plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)
+            plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, timestep_list)
+            plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, timestep_list)
+            temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
+                                                                plot_save_dir, gradient_cutoff=0)
+            gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,
+                                                                gen_plots)
+        logging.info("Complete")

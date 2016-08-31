@@ -801,6 +801,8 @@ class Grid3D_onlat(object):
 
 
 class Walker2D_onlat(object):
+    '''For variable_flux we can plot an entire trajectory and keep track of 2 complete walker trajectories at a
+    time. Only the last position should be stored for constant_flux'''
     def __init__(self, grid_size, temp):
         if temp == 'hot':
             start_x = 0
@@ -826,6 +828,8 @@ class Walker2D_onlat(object):
 
 
 class Walker3D_onlat(object):
+    '''For variable_flux we can plot an entire trajectory and keep track of 2 complete walker trajectories at a
+    time. Only the last position should be stored for constant_flux'''
     def __init__(self, grid_size, temp):
         if temp == 'hot':
             start_x = 0
@@ -844,6 +848,11 @@ class Walker3D_onlat(object):
 
     def replace_pos(self, newpos):  # replace current position
         self.pos[-1] = list(newpos)
+
+    def erase_prev_pos(self):
+        '''Removes all but last position from memory. Important for constant flux simulation
+        so that memory usage is kept low.'''
+        self.pos = [self.pos[-1]]  # double nesting is important here for the way the item is parsed
 
 
 def int_on_circle(radius):  # finds all integer solutions on the circumference of a circle
