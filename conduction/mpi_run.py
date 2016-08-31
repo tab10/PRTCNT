@@ -89,8 +89,8 @@ if __name__ == "__main__":
                              'walker for a certain ' \
                              'amount of time, and' \
                              'the simulation can converge as walkers' \
-                             'are added or stop at a value of walkers.') \
- \
+                             'are added or stop at a value of walkers.')
+    
     args = parser.parse_args()
 
     comm.Barrier()
