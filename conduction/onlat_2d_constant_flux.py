@@ -231,7 +231,6 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         # analysis
         cur_num_walkers = 2 * (i + 1) * size
         if rank == 0 and (i > 5):
-            logging.info('Parallel iteration %d out of %d, at timestep %d' % (i, walkers_per_core_whole, cur_timestep))
             # print np.count_nonzero(H_master)
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, cur_num_walkers,
                                                                                             grid.size, cur_timestep)
@@ -239,8 +238,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
             timestep_list.append(i)
-            logging.info("%d walkers, R2: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
-                         % (cur_num_walkers, r2, k, heat_flux, dt_dx))
+            logging.info("Parallel iteration %d out of %d, timestep %d, %d walkers, R2: %.4f, "
+                         "k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
+                         % (i, walkers_per_core_whole, cur_timestep, cur_num_walkers, r2, k, heat_flux, dt_dx))
 
     comm.Barrier()  # make sure whole walks are done
 
