@@ -17,7 +17,7 @@ def final_conductivity_onlat(cur_dir, prob_m_cn, dt_dx_list, k_list, k_conv_erro
     logging.info("Conductivity: %.4E +/- %.4E" % (k_mean, k_std))
 
     f = open("%s/k.txt" % cur_dir, 'w')
-    f.write("%.4E\n" % k)
+    f.write("%.4E\n" % k_mean)
     f.close()
 
     f = open("%s/prob_m_cn.txt" % cur_dir, 'w')
