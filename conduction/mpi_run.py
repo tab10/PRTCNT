@@ -76,7 +76,7 @@ if __name__ == "__main__":
                                                                      'kapitza must be true.')
     parser.add_argument('--run_to_convergence', type=bool, default=True, help='True does this or False runs '
                                                                               'for number of walkers.')
-    parser.add_argument('--num_walkers', type=int, default=80000, help='Total walkers to use for simulaton. '
+    parser.add_argument('--num_walkers', type=int, default=40000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '

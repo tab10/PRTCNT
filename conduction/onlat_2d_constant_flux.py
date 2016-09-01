@@ -189,6 +189,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         raise SystemExit
     if walker_frac_trigger == 1:
         logging.info('Adding %d hot/cold walker pair(s) every timestep, this might not converge' % d_add)
+        logging.error('Option isnt implemented yet.')
+        raise SystemExit
     elif walker_frac_trigger == 0:
         logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
 
@@ -201,24 +203,25 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         raise SystemExit
 
     # generate array of times to run random walks for
-    if walker_frac_trigger == 0:
-        cur_timestep_temp = np.zeros((tot_walkers / 2, 1), dtype=int)
-        for i in range(tot_walkers / 2):
-            cur_timestep_temp[i] = i * d_add
-    elif walker_frac_trigger == 1:
-        cur_timestep_temp = np.zeros((tot_walkers / (2 * d_add), d_add), dtype=int)
-        for i in range(tot_walkers / (2 * d_add)):
-            for j in range(d_add):
-                cur_timestep_temp[i, j] = i
-    cur_timestep = np.reshape(cur_timestep_temp, (size, walkers_per_core_whole))
+    # going from longest trajectory to shortest
+    # if walker_frac_trigger == 0:
+    #     cur_timestep_temp = np.zeros((tot_walkers / 2, 1), dtype=int)
+    #     for i in range(tot_walkers / 2):
+    #         cur_timestep_temp[i] = tot_walkers - (i * d_add)
+    # elif walker_frac_trigger == 1:
+    #     cur_timestep_temp = np.zeros((tot_walkers / (2 * d_add), d_add), dtype=int)
+    #     for i in range(tot_walkers / (2 * d_add)):
+    #         for j in range(d_add):
+    #             cur_timestep_temp[i, j] = tot_walkers - i
+    # cur_timestep = np.reshape(cur_timestep_temp, (size, walkers_per_core_whole))
     # print cur_timestep
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
     for i in range(walkers_per_core_whole):
         H_master = np.zeros((grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
-        # going from shortest trajectory to longest
-        core_time = cur_timestep[rank, i]
+        core_time = (i * size) + rank
+        # core_time = cur_timestep[rank, i]
         # print '%d on core %d' % (core_time, rank)
         # run trajectories for that long
         hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
