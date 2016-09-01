@@ -213,7 +213,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             if core_time > tot_time:
                 core_time = tot_time
             num_pairs_per_timestep = d_add
-        # print '%d on core %d' % (core_time, rank)
+        print '%d on core %d' % (core_time, rank)
         # run trajectories for that long
         for j in range(num_pairs_per_timestep):
             hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
@@ -241,6 +241,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             logging.info("Parallel iteration %d out of %d, timestep %d, %d walkers, R2: %.4f, "
                          "k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
                          % (i, walkers_per_core_whole, cur_timestep, cur_num_walkers, r2, k, heat_flux, dt_dx))
+        comm.Barrier()  # should stop heat flux from having errors due to core 0 being slower than other cores
 
     comm.Barrier()  # make sure whole walks are done
 
