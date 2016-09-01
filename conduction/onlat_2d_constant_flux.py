@@ -242,7 +242,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
-            timestep_list.append(cur_timestep)
+            timestep_list.append(core_time)
             logging.info("Parallel iteration %d out of %d, timestep %d, %d walkers, R2: %.4f, "
                          "k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
                          % (i, walkers_per_core_whole, core_time, cur_num_walkers, r2, k, heat_flux, dt_dx))
