@@ -241,7 +241,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
-            timestep_list.append(i)
+            timestep_list.append(cur_timestep)
             logging.info("Parallel iteration %d out of %d, timestep %d, %d walkers, R2: %.4f, "
                          "k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E"
                          % (i, walkers_per_core_whole, cur_timestep, cur_num_walkers, r2, k, heat_flux, dt_dx))
@@ -250,12 +250,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     if rank == 0:
         logging.info('Finished random walks, histogramming...')
-
-        dt_dx, heat_flux, gradient_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(H_master,
-                                                                                                             tot_walkers,
-                                                                                                             grid.size, tot_time)
-        logging.info("%d walkers: R squared: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E" % (tot_walkers, r2, k,
-                                                                                                heat_flux, dt_dx))
+        analysis.final_conductivity_onlat(plot_save_dir, prob_m_cn, dt_dx_list, k_list, k_conv_error_buffer)
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))

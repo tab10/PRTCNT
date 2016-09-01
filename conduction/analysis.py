@@ -4,20 +4,17 @@ import logging
 from scipy import stats
 
 
-def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradient_err, k_err, num_tubes, cur_dir,
-                                k_convergence_val, prob_m_cn, gradient_cutoff):
-    """Final conductivity calculation"""
+def final_conductivity_onlat(cur_dir, prob_m_cn, dt_dx_list, k_list, k_conv_error_buffer):
+    """Final conductivity calculation, the best way to do this is averaging the last so many k values"""
     # heat_flux - [# walkers]/([time][length]**2)
     # dT(x)/dx - [# walkers]/[length]
     # k - 1/([time][length])
-    logging.info("Using gradient cutoff at x=%d" % gradient_cutoff)
-    gradient_avg = slope  # / float(timesteps)
-    gradient_std = gradient_err
-    heat_flux = float(num_walkers) / (float(grid_size + 1) * float(timesteps))
-    k = k_convergence_val
-    logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
-    logging.info("Heat flux: %.4E" % heat_flux)
-    logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
+    k_mean = np.mean(k_list[-k_conv_error_buffer:])
+    k_std = np.std(k_list[-k_conv_error_buffer:], ddof=1)
+    dt_dx_mean = np.mean(dt_dx_list[-k_conv_error_buffer:])
+    dt_dx_std = np.std(dt_dx_list[-k_conv_error_buffer:], ddof=1)
+    logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (dt_dx_mean, dt_dx_std))
+    logging.info("Conductivity: %.4E +/- %.4E" % (k_mean, k_std))
 
     f = open("%s/k.txt" % cur_dir, 'w')
     f.write("%.4E\n" % k)
@@ -26,37 +23,6 @@ def final_conductivity_2d_onlat(num_walkers, grid_size, timesteps, slope, gradie
     f = open("%s/prob_m_cn.txt" % cur_dir, 'w')
     f.write("%.4E\n" % prob_m_cn)
     f.close()
-    return k
-
-
-def final_conductivity_3d_onlat(num_walkers, grid_size, timesteps, slope, gradient_err, k_err, num_tubes, cur_dir,
-                                k_convergence_val, prob_m_cn, gradient_cutoff):
-    """Final conductivity calculation"""
-    # heat_flux - [# walkers]/([time][length]**2)
-    # dT(x)/dx - [# walkers]/[length]
-    # k - 1/([time][length])
-    logging.info("Using gradient cutoff at x=%d" % gradient_cutoff)
-    # gradient_avg = float(np.mean(temp_gradient_x[gradient_cutoff:]))
-    # gradient_std = float(np.std(temp_gradient_x[gradient_cutoff:], ddof = 1))
-    gradient_avg = slope / float(timesteps)
-    gradient_std = gradient_err
-    # disregard first few x= slices as close to the wall and values have large errors
-    heat_flux = float(num_walkers) / (float(grid_size + 1) ** 2 * float(timesteps))
-    # k = - heat_flux / gradient_avg
-    # k_err = (heat_flux/gradient_avg**2)*gradient_std
-    k = k_convergence_val
-    logging.info("Average dT(x)/dx: %.4E +/- %.4E" % (gradient_avg, gradient_std))
-    logging.info("Heat flux: %.4E" % heat_flux)
-    logging.info("Conductivity: %.4E +/- %.4E" % (k, k_err))
-
-    f = open("%s/k.txt" % cur_dir, 'w')
-    f.write("%.4E\n" % k)
-    f.close()
-
-    f = open("%s/prob_m_cn.txt" % cur_dir, 'w')
-    f.write("%.4E\n" % prob_m_cn)
-    f.close()
-    return k
 
 
 def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
