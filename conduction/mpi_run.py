@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('--orientation', type=str, default='horizontal', help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
-    parser.add_argument('--timesteps', type=int, default=40000, help='How many steps to run each walker for. '
+    parser.add_argument('--timesteps', type=int, default=20000, help='How many steps to run each walker for. '
                                                                      'Should be (grid_size+1)**2 to have even '
                                                                      'temperature distribution.')
     parser.add_argument('--k_convergence_tolerance', type=float, default=1E-05, help='Simulation runs until '

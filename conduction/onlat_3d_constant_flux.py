@@ -179,7 +179,12 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         d_add = int(tot_time / (tot_walkers / 2.0))
         walker_frac_trigger = 0  # add a pair every d_add timesteps
     elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
-        d_add = int(1.0 / d_add)
+        d_add = 1.0 / d_add
+        if not d_add.is_integer():
+            logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1 and whole')
+            raise SystemExit
+        else:
+            d_add = int(d_add)
         walker_frac_trigger = 1
     else:  # change num_walkers or timesteps
         logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1')
