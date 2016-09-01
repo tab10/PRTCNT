@@ -213,7 +213,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             if core_time > tot_time:
                 core_time = tot_time
             num_pairs_per_timestep = d_add
-        print '%d on core %d' % (core_time, rank)
+        # print '%d on core %d' % (core_time, rank)
         # run trajectories for that long
         for j in range(num_pairs_per_timestep):
             hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
