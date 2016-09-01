@@ -251,8 +251,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     if rank == 0:
         logging.info('Finished random walks, histogramming...')
 
-        dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_3d_onlat(H_master, tot_walkers,
-                                                                                        grid.size, tot_time)
+        dt_dx, heat_flux, gradient_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(H_master,
+                                                                                                             tot_walkers,
+                                                                                                             grid.size, tot_time)
         logging.info("%d walkers: R squared: %.4f, k: %.4E, heat flux: %.4E, dT(x)/dx: %.4E" % (tot_walkers, r2, k,
                                                                                                 heat_flux, dt_dx))
         end = MPI.Wtime()
