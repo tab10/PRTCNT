@@ -143,7 +143,7 @@ def plot_histogram_walkers_onlat(grid, timesteps, H_tot, xedges, yedges, quiet, 
     logging.info("Plotting temperature profile")
     # H_tot /= float(timesteps)  # normalization condition
     creation.check_for_folder(save_dir)
-    np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
+    # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
     if gen_plots:
         plt.title('Temperature density (dimensionless units)')
