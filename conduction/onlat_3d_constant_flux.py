@@ -256,9 +256,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
         walk_sec = (tot_walkers * size) / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H_master, xedges, yedges, quiet,
-                                                          plot_save_dir,
-                                                          gen_plots)
+        temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, temp_profile_sum, xedges, yedges, quiet,
+                                                          plot_save_dir, gen_plots)
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
             plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)
