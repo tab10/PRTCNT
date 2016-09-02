@@ -248,8 +248,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         # analysis
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
-            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, tot_walkers,
-                                                                                            grid.size, tot_time)
+            dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, cur_num_walkers,
+                                                                                            grid.size, core_time)
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
