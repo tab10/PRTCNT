@@ -189,8 +189,6 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         raise SystemExit
     if walker_frac_trigger == 1:
         logging.info('Adding %d hot/cold walker pair(s) every timestep, this might not converge' % d_add)
-        # logging.error('Option isnt implemented yet.')
-        # raise SystemExit
     elif walker_frac_trigger == 0:
         logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
 
@@ -202,19 +200,6 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
         raise SystemExit
 
-    # generate array of times to run random walks for
-    # going from longest trajectory to shortest
-    # if walker_frac_trigger == 0:
-    #     cur_timestep_temp = np.zeros((tot_walkers / 2, 1), dtype=int)
-    #     for i in range(tot_walkers / 2):
-    #         cur_timestep_temp[i] = tot_walkers - (i * d_add)
-    # elif walker_frac_trigger == 1:
-    #     cur_timestep_temp = np.zeros((tot_walkers / (2 * d_add), d_add), dtype=int)
-    #     for i in range(tot_walkers / (2 * d_add)):
-    #         for j in range(d_add):
-    #             cur_timestep_temp[i, j] = tot_walkers - i
-    # cur_timestep = np.reshape(cur_timestep_temp, (size, walkers_per_core_whole))
-    # print cur_timestep
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
@@ -229,7 +214,6 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             cur_num_walkers = 2 * (i + 1) * size * d_add
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
-            # core_time = cur_timestep[rank, i]
             # print '%d on core %d' % (core_time, rank)
             # run trajectories for that long
             hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
@@ -249,7 +233,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2 = analysis.check_convergence_2d_onlat(H_master, cur_num_walkers,
-                                                                                            grid.size, core_time)
+                                                                                            grid.size, core_time + 1)
+            # since final k is based on core 0 calculations, heat flux will slide a little since
+            # core 0 will run slower, and this gives a more accurate result
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)
