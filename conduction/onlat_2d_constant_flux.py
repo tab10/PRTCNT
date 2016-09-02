@@ -224,7 +224,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             core_time = ((i * size) + rank) * d_add
             walkers_per_timestep = 1
         elif walker_frac_trigger == 1:
-            core_time = ((i * size) + rank)
+            core_time = i * (size / d_add) + rank
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
             # core_time = cur_timestep[rank, i]
