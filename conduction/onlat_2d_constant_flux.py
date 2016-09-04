@@ -188,18 +188,21 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1 and whole')
         raise SystemExit
     if walker_frac_trigger == 1:
-        logging.info('Adding %d hot/cold walker pair(s) every timestep, this might not converge' % d_add)
+        logging.info('Adding %d hot/cold walker pair(s) every timestep' % d_add)
+        walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size * d_add)))
     elif walker_frac_trigger == 0:
         logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
+        walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size)))
 
     comm.Barrier()
 
-    walkers_per_core_whole = int(np.floor((tot_walkers / 2.0) / size))
     walkers_per_core_remain = int(tot_walkers % size)
     if walkers_per_core_remain != 0:
         logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
         raise SystemExit
-
+    if d_add > size:
+        logging.error('Too many walkers added per timestep. Must be less than number of cores being used.')
+        raise SystemExit
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
@@ -210,24 +213,25 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             cur_num_walkers = 2 * i * size
             walkers_per_timestep = 1
         elif walker_frac_trigger == 1:
-            core_time = i * (size / d_add) + rank
+            # core_time = i * (size / d_add) + rank
+            core_time = i * size + rank
             cur_num_walkers = 2 * i * size
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
-            if j == rank:  # important, prevents adding extra walkers, but barriers could slow code down
-                # print '%d on core %d' % (core_time, rank)
-                # run trajectories for that long
-                # this adds too many walkers!
-                hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
-                cold_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
-                # get last position of walker
-                hot_temp_pos = hot_temp.pos[-1]
-                cold_temp_pos = cold_temp.pos[-1]
-                # histogram
-                H_local[hot_temp_pos[0], hot_temp_pos[1]] += 1
-                H_local[cold_temp_pos[0], cold_temp_pos[1]] -= 1
-                # send to core 0
-                # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
+            # if j == rank:  # important, prevents adding extra walkers, but barriers could slow code down
+            # print '%d on core %d' % (core_time, rank)
+            # run trajectories for that long
+            # this adds too many walkers!
+            hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
+            cold_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
+            # get last position of walker
+            hot_temp_pos = hot_temp.pos[-1]
+            cold_temp_pos = cold_temp.pos[-1]
+            # histogram
+            H_local[hot_temp_pos[0], hot_temp_pos[1]] += 1
+            H_local[cold_temp_pos[0], cold_temp_pos[1]] -= 1
+            # send to core 0
+            # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
             comm.Barrier()
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
