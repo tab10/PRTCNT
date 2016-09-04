@@ -209,25 +209,26 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
         if walker_frac_trigger == 0:
             core_time = ((i * size) + rank) * d_add
-            cur_num_walkers = 2 * (i + 1) * size
+            cur_num_walkers = 2 * i * size
             walkers_per_timestep = 1
         elif walker_frac_trigger == 1:
             core_time = i * (size / d_add) + rank
-            cur_num_walkers = 2 * (i + 1) * size * d_add
+            cur_num_walkers = 2 * i * size
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
-            # print '%d on core %d' % (core_time, rank)
-            # run trajectories for that long
-            hot_temp = randomwalk.runrandomwalk_3d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn)
-            cold_temp = randomwalk.runrandomwalk_3d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn)
-            # get last position of walker
-            hot_temp_pos = hot_temp.pos[-1]
-            cold_temp_pos = cold_temp.pos[-1]
-            # histogram
-            H_local[hot_temp_pos[0], hot_temp_pos[1], hot_temp_pos[2]] += 1
-            H_local[cold_temp_pos[0], cold_temp_pos[1], cold_temp_pos[2]] -= 1
-            # send to core 0
-            # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
+            if j == rank:  # important, prevents adding extra walkers, but barriers could slow code down
+                # print '%d on core %d' % (core_time, rank)
+                # run trajectories for that long
+                hot_temp = randomwalk.runrandomwalk_3d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn)
+                cold_temp = randomwalk.runrandomwalk_3d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn)
+                # get last position of walker
+                hot_temp_pos = hot_temp.pos[-1]
+                cold_temp_pos = cold_temp.pos[-1]
+                # histogram
+                H_local[hot_temp_pos[0], hot_temp_pos[1], hot_temp_pos[2]] += 1
+                H_local[cold_temp_pos[0], cold_temp_pos[1], cold_temp_pos[2]] -= 1
+                # send to core 0
+                # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
             comm.Barrier()
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
@@ -235,8 +236,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
             dt_dx, heat_flux, gradient_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(
-                H_master, cur_num_walkers,
-                grid.size, core_time + 1)
+                H_master, tot_walkers,
+                grid.size, tot_time)
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)

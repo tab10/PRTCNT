@@ -228,7 +228,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                 H_local[cold_temp_pos[0], cold_temp_pos[1]] -= 1
                 # send to core 0
                 # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
-                comm.Barrier()
+            comm.Barrier()
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
         # analysis
