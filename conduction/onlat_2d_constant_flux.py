@@ -191,7 +191,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info('Adding %d hot/cold walker pair(s) every timestep' % d_add)
         walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size * d_add)))
     elif walker_frac_trigger == 0:
-        logging.info('Adding 1 hot/cold walker pair(s) every %d timesteps' % d_add)
+        logging.info(
+            'Adding 1 hot/cold walker pair(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
         walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size)))
 
     comm.Barrier()
@@ -200,9 +201,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     if walkers_per_core_remain != 0:
         logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
         raise SystemExit
-    if d_add > size:
-        logging.error('Too many walkers added per timestep. Must be less than number of cores being used.')
-        raise SystemExit
+
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
@@ -213,15 +212,12 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             cur_num_walkers = 2 * i * size
             walkers_per_timestep = 1
         elif walker_frac_trigger == 1:
-            # core_time = i * (size / d_add) + rank
             core_time = i * size + rank
             cur_num_walkers = 2 * i * size
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
-            # if j == rank:  # important, prevents adding extra walkers, but barriers could slow code down
             # print '%d on core %d' % (core_time, rank)
             # run trajectories for that long
-            # this adds too many walkers!
             hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
             cold_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
             # get last position of walker
@@ -259,7 +255,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
-        walk_sec = (tot_walkers * size) / (end - start)
+        walk_sec = tot_walkers / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H_master, xedges, yedges, quiet,
                                                           plot_save_dir,
