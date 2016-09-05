@@ -27,7 +27,7 @@ def final_conductivity_onlat(cur_dir, prob_m_cn, dt_dx_list, k_list, k_conv_erro
 
 def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     temp_profile = H_tot
-    cutoff_dist = int(0.1 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
+    cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
     heat_flux = float(cur_num_walkers) / ((float(grid_size + 1)) * float(timesteps))
@@ -45,7 +45,7 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     for i in range(len(temp_profile)):
         for j in range(len(temp_profile)):
             temp_profile_sum[i][j] = np.sum(temp_profile[i][j])
-    cutoff_dist = int(0.1 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
+    cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
     heat_flux = float(cur_num_walkers) / (float(grid_size + 1) ** 2 * float(timesteps))
