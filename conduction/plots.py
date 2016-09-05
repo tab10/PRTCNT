@@ -362,7 +362,8 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, kapitza_val, exclude_vals=''):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, option, exclude_vals=''):
+    '''Options-tunneling, excluded_vol, kapitza'''
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []
@@ -385,33 +386,30 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, kapitza_val, e
     for i in range(len(uni_orientations)):
         uni_tubes = len(sep_folds[i]) / num_configs
         uni_num_tubes = []
-        fill_fracts = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
         uni_num_tubes = [float(y) for y in uni_num_tubes]
         print uni_num_tubes
-        for z in range(len(uni_num_tubes)):
-            fill_fracts.append(tube_length * uni_num_tubes[z] * 100.0 / (grid_size ** dim))
         all_k_vals = np.zeros(len(sep_folds[i]))
         # all_kapitza_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
             os.chdir(sep_folds[i][j])
-            kapitza = np.loadtxt('prob_m_cn.txt')
-            if kapitza == kapitza_val:
-                all_k_vals[j] = np.loadtxt('k.txt')
+            # kapitza = np.loadtxt('prob_m_cn.txt')
+            all_k_vals[j] = np.loadtxt('k.txt')
             os.chdir('..')
         k_vals = []
         k_err = []
-        kapitza_vals = []
         for l in range(len(uni_num_tubes)):
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
             k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
         # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-        plt.errorbar(fill_fracts, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-    plt.title(
-        'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
-    # plt.xlabel('Number of tubes')
-    plt.xlabel('Filling fraction %')
+        plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+    if option == 'tunneling':
+        plt.title(
+            'Tubes of length %d in a %dD cube of length %d\n%d configurations, tunneling only' % (
+            tube_length, dim, grid_size, num_configs))
+    plt.xlabel('Number of tubes')
+    #plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()
