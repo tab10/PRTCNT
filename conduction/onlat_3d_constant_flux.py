@@ -215,7 +215,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             walkers_per_timestep = 1
         elif walker_frac_trigger == 1:
             core_time = i * size + rank
-            cur_num_walkers = 2 * i * size
+            cur_num_walkers = 2 * i * size * d_add
             walkers_per_timestep = d_add
         for j in range(walkers_per_timestep):
             # print '%d on core %d' % (core_time, rank)
@@ -255,7 +255,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         analysis.final_conductivity_onlat(plot_save_dir, prob_m_cn, dt_dx_list, k_list, k_conv_error_buffer)
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
-        logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
+        logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
         walk_sec = tot_walkers / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, temp_profile_sum, xedges, yedges, quiet,
