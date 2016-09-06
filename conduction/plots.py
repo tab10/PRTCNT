@@ -362,13 +362,12 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, option, exclude_vals=''):
-    '''Options-tunneling, excluded_vol, kapitza'''
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals=''):
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
-    folds = []
+    folds = []  # list of all folder name strings
     zero_folds = []
-    orientations = []
+    orientations = []  # list of all orientations (not unique yet)
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0] + '_'
         if checker not in exclude_vals:
@@ -404,11 +403,11 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, option, exclud
             k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
         # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-    if option == 'tunneling':
-        plt.title(
-            'Tubes of length %d in a %dD cube of length %d\n%d configurations, tunneling only' % (
+    plt.title(
+        'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
     plt.xlabel('Number of tubes')
+    plt.ylim(0, 50)
     #plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
