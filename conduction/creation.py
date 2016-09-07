@@ -439,7 +439,7 @@ class Grid3D_onlat(object):
                             self.phi.append(phi)
                             uni_flag = self.check_tube_unique()
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
-            self.tube_check_l, self.tube_check_r = self.generate_tube_check_array_3d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
         else:
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
             l_d = tube_length / (2 * tube_radius)
