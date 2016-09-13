@@ -142,7 +142,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
-                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size):
+                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size, restart):
     comm = MPI.COMM_WORLD
 
     if rank == 0:
@@ -239,6 +239,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             dt_dx, heat_flux, gradient_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(
                 H_master, tot_walkers,
                 grid.size, tot_time)
+            np.savetxt("%s/H.txt" % plot_save_dir, temp_profile_sum, fmt='%d')  # write histo to file
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)

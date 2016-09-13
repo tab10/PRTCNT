@@ -52,7 +52,7 @@ if __name__ == "__main__":
     parser.add_argument('--orientation', type=str, default='horizontal', help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
-    parser.add_argument('--timesteps', type=int, default=20000, help='How many steps to run each walker for. '
+    parser.add_argument('--timesteps', type=int, default=25000, help='How many steps to run each walker for. '
                                                                      'Should be (grid_size+1)**2 to have even '
                                                                      'temperature distribution.')
     parser.add_argument('--k_convergence_tolerance', type=float, default=1E-05, help='Simulation runs until '
@@ -72,11 +72,13 @@ if __name__ == "__main__":
     parser.add_argument('--on_lattice', type=bool, default=True, help='True for on lattice random walk.')
     parser.add_argument('--kapitza', type=bool, default=False, help='Adds kapitza resistance '
                                                                     'to simulation, see readme.md.')
-    parser.add_argument('--prob_m_cn', type=float, default=0.0, help='Probability a walker will enter the nanotube. '
+    parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the nanotube. '
                                                                      'kapitza must be true.')
     parser.add_argument('--run_to_convergence', type=bool, default=True, help='True does this or False runs '
                                                                               'for number of walkers.')
-    parser.add_argument('--num_walkers', type=int, default=80000, help='Total walkers to use for simulaton. '
+    parser.add_argument('--restart', type=bool, default=False, help='Looks in previous directory for H to extend or '
+                                                                    'restart simulation.')
+    parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
@@ -118,11 +120,12 @@ if __name__ == "__main__":
     num_walkers = args.num_walkers
     method = args.method
     printout_inc = args.printout_inc
+    restart = args.restart
 
     os.chdir(save_dir)
 
     if rank == 0:
-        plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
+        plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length, restart)
         logging_setup(plot_save_dir)
     else:
         plot_save_dir = None
@@ -186,7 +189,7 @@ if __name__ == "__main__":
             comm.Barrier()
             onlat_2d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                    timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                   num_walkers, printout_inc, k_conv_error_buffer, rank, size)
+                                                   num_walkers, printout_inc, k_conv_error_buffer, rank, size, restart)
     elif on_lattice and (dim == 3):
         if method == 'variable_flux':
             logging.error('This method is not accurate, stopping')
@@ -197,7 +200,7 @@ if __name__ == "__main__":
             onlat_3d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                    timesteps, quiet, plot_save_dir,
                                                    gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                                   k_conv_error_buffer, rank, size)
+                                                   k_conv_error_buffer, rank, size, restart)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

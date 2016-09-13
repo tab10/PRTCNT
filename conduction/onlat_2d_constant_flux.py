@@ -5,6 +5,7 @@ import analysis
 import creation
 import plots
 import randomwalk
+import os
 import run
 from scipy import stats
 from mpi4py import MPI
@@ -139,7 +140,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
-                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size):
+                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size, restart):
     comm = MPI.COMM_WORLD
 
     if rank == 0:
@@ -202,9 +203,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
         raise SystemExit
 
+    H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
+
     comm.Barrier()
 
-    H_local = np.zeros((grid.size + 1, grid.size + 1), dtype=int)
     for i in range(walkers_per_core_whole):
         H_master = np.zeros((grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
         if walker_frac_trigger == 0:
@@ -238,6 +240,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                                                             grid.size, tot_time)
             # since final k is based on core 0 calculations, heat flux will slide a little since
             # core 0 will run slower, and this gives a more accurate result
+            np.savetxt("%s/H.txt" % plot_save_dir, H_master, fmt='%d')  # write histo to file
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)

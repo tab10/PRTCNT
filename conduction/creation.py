@@ -10,7 +10,7 @@ def check_for_folder(folder):
         os.mkdir(folder)
 
 
-def get_plot_save_dir(folder, num_tubes, orientation, tube_length):
+def get_plot_save_dir(folder, num_tubes, orientation, tube_length, restart):
     ends = []
     for file in glob.glob("%d_%s_%d_*" % (num_tubes, orientation, tube_length)):
         name_temp = file.split('_')
@@ -19,8 +19,11 @@ def get_plot_save_dir(folder, num_tubes, orientation, tube_length):
         maxnum = 1
     else:
         maxnum = max(map(int, ends)) + 1
-    plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum)
-    os.mkdir(plot_save_dir)
+    if not restart:
+        plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum)
+        os.mkdir(plot_save_dir)
+    else:
+        plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum - 1)
     return plot_save_dir
 
 
@@ -117,7 +120,7 @@ class Grid2D_onlat(object):
             cube_count = 0  # each cube has area 1
             for i in range(len(self.tube_squares)):
                 cube_count += len(self.tube_squares[i])
-            fill_fract = float(cube_count) * tube_radius / grid_size ** 2
+            fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
@@ -490,7 +493,7 @@ class Grid3D_onlat(object):
             cube_count = 0  # each cube has volume 1
             for i in range(len(self.tube_squares)):
                 cube_count += len(self.tube_squares[i])
-            fill_fract = float(cube_count) * tube_radius / grid_size ** 3
+            fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
