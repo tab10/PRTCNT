@@ -370,7 +370,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     orientations = []  # list of all orientations (not unique yet)
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0] + '_'
-        if checker not in exclude_vals:
+        config_num = int(file.split('_')[3])
+        if (checker not in exclude_vals) and (config_num >= num_configs):  # throws out extra configs
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
     for file in glob.glob("0_*_*_*"):
