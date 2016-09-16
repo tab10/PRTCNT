@@ -268,7 +268,72 @@ class Grid2D_onlat(object):
                 if num_tubes > 0:  # tubes exist
                     # generate all tubes on all cores, no checking yet
                     # whole iterations
+                    logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
+                    l_d = tube_length / (2 * tube_radius)
+                    logging.info("L/D is %.4f." % l_d)
+                    self.tube_squares = []  # grid squares that a tube passes through, for every tube
+                    if num_tubes > 0:  # tubes exist
+                        for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
+                            if (i % 50) == 0:
+                                status_counter += 50
+                                logging.info('Generating tube %d...' % (status_counter - 50))
+                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
+                                                                                        tube_radius)
+                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                            self.tube_centers.append([x_c, y_c])
+                            self.tube_coords.append([x_l, y_l, x_r, y_r])
+                            self.tube_coords_l.append([x_l, y_l])
+                            self.tube_coords_r.append([x_r, y_r])
+                            self.tube_squares.append(tube_squares)
+                            self.theta.append(theta)
+                            if i >= 1:
+                                uni_flag = self.check_tube_and_vol_unique()
+                                while not uni_flag:
+                                    counter += 1
+                                    self.tube_centers.pop()
+                                    self.tube_coords.pop()
+                                    self.tube_coords_l.pop()
+                                    self.tube_coords_r.pop()
+                                    self.tube_squares.pop()
+                                    self.theta.pop()
+                                    x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length,
+                                                                                                orientation,
+                                                                                                tube_radius)
+                                    tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                                    self.theta.append(theta)
+                                    self.tube_centers.append([x_c, y_c])
+                                    self.tube_coords.append([x_l, y_l, x_r, y_r])
+                                    self.tube_coords_l.append([x_l, y_l])
+                                    self.tube_coords_r.append([x_r, y_r])
+                                    self.tube_squares.append(tube_squares)
+                                    uni_flag = self.check_tube_and_vol_unique()
+                        logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
+                    # get number of squares filled
+                    cube_count = 0  # each cube has area 1
+                    for i in range(len(self.tube_squares)):
+                        cube_count += len(self.tube_squares[i])
+                    fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
+                    # each cube has area 1, times the tube radius (important if not 1)
+                    logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+                    self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
+                    self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
+
+                    def tube_gen_2D_real(tube_length, orientation, tube_radius):
+                        x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
+                                                                                    tube_radius)
+                        tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                        self.tube_centers.append([x_c, y_c])
+                        self.tube_coords.append([x_l, y_l, x_r, y_r])
+                        self.tube_coords_l.append([x_l, y_l])
+                        self.tube_coords_r.append([x_r, y_r])
+                        self.tube_squares.append(tube_squares)
+                        self.theta.append(theta)
+
+
+
                     for i in range(whole_iterations):
+                        if (i % 5) == 0:
+                            logging.info('Generating tube %d in parallel...' % (i * size))
                         x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                     tube_radius)
                         # print('core %d here' % rank)
@@ -279,8 +344,27 @@ class Grid2D_onlat(object):
                         local_tube_coords_r.append([x_r, y_r])
                         local_theta.append(theta)
                         local_tube_squares.append(tube_squares)
-                        if (i % 5) == 0:
-                            logging.info('Generating tube %d in parallel...' % (i * size))
+                        if i >= 1:
+                            uni_flag = self.check_tube_and_vol_unique()
+                            while not uni_flag:
+                                counter += 1
+                                self.tube_centers.pop()
+                                self.tube_coords.pop()
+                                self.tube_coords_l.pop()
+                                self.tube_coords_r.pop()
+                                self.tube_squares.pop()
+                                self.theta.pop()
+                                x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length,
+                                                                                            orientation,
+                                                                                            tube_radius)
+                                tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                                self.theta.append(theta)
+                                self.tube_centers.append([x_c, y_c])
+                                self.tube_coords.append([x_l, y_l, x_r, y_r])
+                                self.tube_coords_l.append([x_l, y_l])
+                                self.tube_coords_r.append([x_r, y_r])
+                                self.tube_squares.append(tube_squares)
+                                uni_flag = self.check_tube_and_vol_unique()
                     comm.Barrier()
                     # partial iteration
                     if rank < partial_iteration_num:

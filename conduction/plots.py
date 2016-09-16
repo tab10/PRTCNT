@@ -371,7 +371,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0] + '_'
         config_num = int(file.split('_')[3])
-        if (checker not in exclude_vals) and (config_num >= num_configs):  # throws out extra configs
+        if (checker not in exclude_vals) and (config_num >= num_configs):  # throws out extra config
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
     for file in glob.glob("0_*_*_*"):
@@ -408,7 +408,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
     plt.xlabel('Number of tubes')
-    plt.ylim(0, 50)
     #plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
