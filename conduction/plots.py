@@ -362,7 +362,7 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals=''):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='', max_tube_num=100000):
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
@@ -371,7 +371,9 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     for file in glob.glob("*_*_%d_*" % tube_length):
         checker = file.split('_')[0] + '_'
         config_num = int(file.split('_')[3])
-        if (checker not in exclude_vals) and (config_num <= num_configs):  # throws out extra config
+        tube_val = int(file.split('_')[0])
+        if (checker not in exclude_vals) and (config_num <= num_configs) and (
+            tube_val <= max_tube_num):  # throws out extra config
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
     print folds
