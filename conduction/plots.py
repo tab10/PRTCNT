@@ -380,7 +380,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     sep_folds = []
     # separate folds by orientation
     for i in range(len(uni_orientations)):
-        sep_folds.append([x for x in folds if uni_orientations[i] in x])
+        sepolds.append([x for x in folds if uni_orientations[i] in x])
         sep_folds[i] = sorted(sep_folds[i])
         sep_folds[i] += zero_folds
     for i in range(len(uni_orientations)):
