@@ -37,6 +37,7 @@ class Grid2D_onlat(object):
             if tube_length > grid_size:
                 logging.error('Nanotube is too large for grid')
                 raise SystemExit
+            # self holds all positions, on core 0 only
             if rank == 0:
                 self.tube_coords = []
                 self.tube_coords_l = []
@@ -49,11 +50,6 @@ class Grid2D_onlat(object):
                 self.tube_coords_r = None
                 self.tube_centers = None
                 self.theta = None
-            local_tube_coords = []
-            local_tube_coords_l = []
-            local_tube_coords_r = []
-            local_tube_centers = []
-            local_theta = []
             self.tube_radius = tube_radius
             counter = 0  # counts num of non-unique tubes replaced
             whole_iterations = num_tubes / size
@@ -70,138 +66,32 @@ class Grid2D_onlat(object):
                         x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                     tube_radius)
                         # print('core %d here' % rank)
-                        local_tube_centers.append([x_c, y_c])
-                        local_tube_coords.append([x_l, y_l, x_r, y_r])
-                        local_tube_coords_l.append([x_l, y_l])
-                        local_tube_coords_r.append([x_r, y_r])
-                        local_theta.append(theta)
+                        local_tube_centers = [x_c, y_c]
+                        local_tube_coords = [x_l, y_l, x_r, y_r]
+                        local_tube_coords_l = [x_l, y_l]
+                        local_tube_coords_r = [x_r, y_r]
+                        local_theta = theta
                         if (i % 5) == 0:
                             logging.info('Generating tube %d in parallel...' % (i * size))
-                    comm.Barrier()
-                    # partial iteration
-                    if rank < partial_iteration_num:
-                        x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                    tube_radius)
-                        local_tube_centers.append([x_c, y_c])
-                        local_tube_coords.append([x_l, y_l, x_r, y_r])
-                        local_tube_coords_l.append([x_l, y_l])
-                        local_tube_coords_r.append([x_r, y_r])
-                        local_theta.append(theta)
-                    # print('core %d here' % rank)
-                    comm.Barrier()
-                    # lists will be uneven now
-                    # send lists to core 0
-                    if rank == 0:
-                        # add work that was already done on core 0 to main lists
-                        self.tube_centers += local_tube_centers
-                        self.tube_coords += local_tube_coords
-                        self.tube_coords_l += local_tube_coords_l
-                        self.tube_coords_r += local_tube_coords_r
-                        self.theta += local_theta
-                        for z in range(1, size):
-                            local_tube_centers_temp = comm.recv(source=z, tag=1)
-                            self.tube_centers += local_tube_centers_temp
-                            local_tube_coords_temp = comm.recv(source=z, tag=2)
-                            self.tube_coords += local_tube_coords_temp
-                            local_tube_coords_l_temp = comm.recv(source=z, tag=3)
-                            self.tube_coords_l += local_tube_coords_l_temp
-                            local_tube_coords_r_temp = comm.recv(source=z, tag=4)
-                            self.tube_coords_r += local_tube_coords_r_temp
-                            local_theta_temp = comm.recv(source=z, tag=5)
-                            self.theta += local_theta_temp
-                    else:
-                        comm.send(local_tube_centers, dest=0, tag=1)
-                        comm.send(local_tube_coords, dest=0, tag=2)
-                        comm.send(local_tube_coords_l, dest=0, tag=3)
-                        comm.send(local_tube_coords_r, dest=0, tag=4)
-                        comm.send(local_theta, dest=0, tag=5)
-                    comm.Barrier()
-                    # code above checked and works for sending!
-                    # do checks for identical endpoints
-                    if rank == 0:
-                        # print self.tube_coords_l
-                        duplicates = []
-                        # this should scale with O(n^2)
-                        for i in range(num_tubes):
-                            for j in range(num_tubes):
-                                if i < j:
-                                    if (self.tube_coords_l[i] == self.tube_coords_l[j]) or \
-                                            (self.tube_coords_l[i] == self.tube_coords_r[j]) or \
-                                            (self.tube_coords_r[i] == self.tube_coords_r[j]):
-                                        duplicates.append(i)
-                        # duplicates should have unqiue elements only
-                        uni_duplicates = set(duplicates)
-                        duplicates = list(uni_duplicates)
-                        #
-                        tot_duplicates = len(duplicates)
-                        if tot_duplicates > 0:
-                            logging.info('%d duplicates found. Regenerating...' % tot_duplicates)
-                            whole_new_iteration = tot_duplicates / size
-                            partial_new_iteration = tot_duplicates % size
-                            dups_exist = True
-                        else:
-                            logging.info('No duplicates found. Continuing...')
-                            dups_exist = False
-                    else:
-                        dups_exist = None
-                        whole_new_iteration = None
-                        partial_new_iteration = None
-
-                    dups_exist = comm.bcast(dups_exist, root=0)
-                    whole_new_iteration = comm.bcast(whole_new_iteration, root=0)
-                    partial_new_iteration = comm.bcast(partial_new_iteration, root=0)
-
-                    while dups_exist:
-                        local_tube_coords = []
-                        local_tube_coords_l = []
-                        local_tube_coords_r = []
-                        local_tube_centers = []
-                        local_theta = []
                         comm.Barrier()
-
-                        for i in range(whole_new_iteration):
-                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                        tube_radius)
-                            # print('core %d here' % rank)
-                            local_tube_centers.append([x_c, y_c])
-                            local_tube_coords.append([x_l, y_l, x_r, y_r])
-                            local_tube_coords_l.append([x_l, y_l])
-                            local_tube_coords_r.append([x_r, y_r])
-                            local_theta.append(theta)
-                        comm.Barrier()
-                        # partial iteration
-                        if rank < partial_new_iteration:
-                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                        tube_radius)
-                            local_tube_centers.append([x_c, y_c])
-                            local_tube_coords.append([x_l, y_l, x_r, y_r])
-                            local_tube_coords_l.append([x_l, y_l])
-                            local_tube_coords_r.append([x_r, y_r])
-                            local_theta.append(theta)
-                        # print('core %d here' % rank)
-                        comm.Barrier()
-                        # send replacements to core 0
                         if rank == 0:
                             # add work that was already done on core 0 to main lists
-                            # these are all the new lists!
-                            local_tube_centers_temp = []
-                            local_tube_coords_temp = []
-                            local_tube_coords_l_temp = []
-                            local_tube_coords_r_temp = []
-                            local_theta_temp = []
-
-                            local_tube_centers_temp += local_tube_centers
-                            local_tube_coords_temp += local_tube_coords
-                            local_tube_coords_l_temp += local_tube_coords_l
-                            local_tube_coords_r_temp += local_tube_coords_r
-                            local_theta_temp += local_theta
-
+                            self.tube_centers.append(local_tube_centers)
+                            self.tube_coords.append(local_tube_coords)
+                            self.tube_coords_l.append(local_tube_coords_l)
+                            self.tube_coords_r.append(local_tube_coords_r)
+                            self.theta.append(local_theta)
                             for z in range(1, size):
-                                local_tube_centers_temp += comm.recv(source=z, tag=1)
-                                local_tube_coords_temp += comm.recv(source=z, tag=2)
-                                local_tube_coords_l_temp += comm.recv(source=z, tag=3)
-                                local_tube_coords_r_temp += comm.recv(source=z, tag=4)
-                                local_theta_temp += comm.recv(source=z, tag=5)
+                                local_tube_centers_temp = comm.recv(source=z, tag=1)
+                                self.tube_centers.append(local_tube_centers_temp)
+                                local_tube_coords_temp = comm.recv(source=z, tag=2)
+                                self.tube_coords.append(local_tube_coords_temp)
+                                local_tube_coords_l_temp = comm.recv(source=z, tag=3)
+                                self.tube_coords_l.append(local_tube_coords_l_temp)
+                                local_tube_coords_r_temp = comm.recv(source=z, tag=4)
+                                self.tube_coords_r.append(local_tube_coords_r_temp)
+                                local_theta_temp = comm.recv(source=z, tag=5)
+                                self.theta.append(local_theta_temp)
                         else:
                             comm.send(local_tube_centers, dest=0, tag=1)
                             comm.send(local_tube_coords, dest=0, tag=2)
@@ -209,55 +99,83 @@ class Grid2D_onlat(object):
                             comm.send(local_tube_coords_r, dest=0, tag=4)
                             comm.send(local_theta, dest=0, tag=5)
                         comm.Barrier()
-                        # actual replacements now
-                        if rank == 0:
-                            for a in range(len(duplicates)):
-                                self.tube_centers[duplicates[a]] = local_tube_centers_temp[a]
-                                self.tube_coords[duplicates[a]] = local_tube_coords_temp[a]
-                                self.tube_coords_l[duplicates[a]] = local_tube_coords_l_temp[a]
-                                self.tube_coords_r[duplicates[a]] = local_tube_coords_r_temp[a]
-                                self.theta[duplicates[a]] = local_theta_temp[a]
-                        comm.Barrier()
-                        # check again for duplicates
-                        if rank == 0:
-                            # print self.tube_coords_l
-                            duplicates = []
-                            # this should scale with O(n^2)
-                            for i in range(num_tubes):
-                                for j in range(num_tubes):
-                                    if i < j:
-                                        if (self.tube_coords_l[i] == self.tube_coords_l[j]) or \
-                                                (self.tube_coords_l[i] == self.tube_coords_r[j]) or \
-                                                (self.tube_coords_r[i] == self.tube_coords_r[j]):
-                                            duplicates.append(i)
-                            # duplicates should have unqiue elements only
-                            uni_duplicates = set(duplicates)
-                            duplicates = list(uni_duplicates)
-                            #
-                            tot_duplicates = len(duplicates)
-                            if tot_duplicates > 0:
-                                logging.info('%d duplicates found. Regenerating...' % tot_duplicates)
-                                whole_new_iteration = tot_duplicates / size
-                                partial_new_iteration = tot_duplicates % size
-                                dups_exist = True
+                        # code above checked and works for sending!
+                        # now send master *self* lists to all cores for checks
+                        # *self* will be stored on core 0 and will hold the final values
+                        checker_tube_coords = comm.bcast(self.tube_coords, root=0)
+                        if i >= 1:
+                            uni_flag = self.check_tube_unique(checker_tube_coords,
+                                                              rank)  # ensures no endpoints, left or right, are in the same spot
+                            if rank == 0:
+                                uni_list = []  # stores list of non-unique tubes
+                                if not uni_flag:  # check on core 0
+                                    uni_list.append(0)
+                                for z in range(1, size):
+                                    uni_flag_temp = comm.recv(source=z)
+                                    if not uni_flag_temp:  # tube is not unique
+                                        uni_list.append(z)
                             else:
-                                logging.info('No duplicates found. Continuing...')
-                                dups_exist = False
-                        dups_exist = comm.bcast(dups_exist, root=0)
-                        whole_new_iteration = comm.bcast(whole_new_iteration, root=0)
-                        partial_new_iteration = comm.bcast(partial_new_iteration, root=0)
-                        comm.Barrier()
-
-                    if rank == 0:
-                        self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-                    else:
-                        self.tube_check_l = None
-                        self.tube_check_r = None
-                        self.tube_check_bd = None
-                    self.tube_check_l = comm.bcast(self.tube_check_l, root=0)
-                    self.tube_check_r = comm.bcast(self.tube_check_r, root=0)
-                    self.tube_check_bd = comm.bcast(self.tube_check_bd, root=0)
+                                comm.send(uni_flag, dest=0)
+                                uni_list = None
+                            comm.Barrier()
+                            uni_list = comm.bcast(uni_list, source=0)
+                            # uni_list holds which cores need to generate new tubes
+                            while rank in uni_list:
+                                # generate new tube
+                                x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
+                                                                                            tube_radius)
+                                # print('core %d here' % rank)
+                                local_tube_centers = [x_c, y_c]
+                                local_tube_coords = [x_l, y_l, x_r, y_r]
+                                local_tube_coords_l = [x_l, y_l]
+                                local_tube_coords_r = [x_r, y_r]
+                                local_theta = theta
+                                # send to core 0
+                                if rank == 0:
+                                    for z in uni_list:
+                                        temp = z + 1
+                                        local_tube_centers_temp = comm.recv(source=z, tag=1)
+                                        self.tube_centers[-temp] = local_tube_centers_temp
+                                        local_tube_coords_temp = comm.recv(source=z, tag=2)
+                                        self.tube_coords[-temp] = local_tube_coords_temp
+                                        local_tube_coords_l_temp = comm.recv(source=z, tag=3)
+                                        self.tube_coords_l[-temp] = local_tube_coords_l_temp
+                                        local_tube_coords_r_temp = comm.recv(source=z, tag=4)
+                                        self.tube_coords_r[-temp] = local_tube_coords_r_temp
+                                        local_theta_temp = comm.recv(source=z, tag=5)
+                                        self.theta[-temp] = local_theta_temp
+                                else:
+                                    comm.send(local_tube_centers, dest=0, tag=1)
+                                    comm.send(local_tube_coords, dest=0, tag=2)
+                                    comm.send(local_tube_coords_l, dest=0, tag=3)
+                                    comm.send(local_tube_coords_r, dest=0, tag=4)
+                                    comm.send(local_theta, dest=0, tag=5)
+                                # regenerate uni_list
+                                checker_tube_coords = None
+                                checker_tube_coords = comm.bcast(self.tube_coords, root=0)
+                                uni_flag = self.check_tube_unique(checker_tube_coords, rank)
+                                if rank == 0:
+                                    uni_list = []  # stores list of non-unique tubes
+                                    if not uni_flag:  # check on core 0
+                                        uni_list.append(0)
+                                    for z in range(1, size):
+                                        uni_flag_temp = comm.recv(source=z)
+                                        if not uni_flag_temp:  # tube is not unique
+                                            uni_list.append(z)
+                                else:
+                                    comm.send(uni_flag, dest=0)
+                                    uni_list = None
+                                uni_list = comm.bcast(uni_list, source=0)
+                                # end of regenerate tube while loop
+                                comm.Barrier()
+                    # now that all tubes are unique, broadcast data to all cores
+                    self.tube_centers = comm.bcast(self.tube_centers, source=0)
+                    self.tube_coords = comm.bcast(self.tube_coords, source=0)
+                    self.tube_coords_l = comm.bcast(self.tube_coords_l, source=0)
+                    self.tube_coords_r = comm.bcast(self.tube_coords_r, source=0)
+                    self.theta = comm.bcast(self.theta, source=0)
                     comm.Barrier()
+                    self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             else:
                 logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
                 l_d = tube_length / (2 * tube_radius)
@@ -273,339 +191,133 @@ class Grid2D_onlat(object):
                     logging.info("L/D is %.4f." % l_d)
                     self.tube_squares = []  # grid squares that a tube passes through, for every tube
                     if num_tubes > 0:  # tubes exist
-                        for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
-                            if (i % 50) == 0:
-                                status_counter += 50
-                                logging.info('Generating tube %d...' % (status_counter - 50))
+                        for i in range(whole_iterations):  # currently no mean dist used, ADD LATER?
                             x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                         tube_radius)
                             tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                            self.tube_centers.append([x_c, y_c])
-                            self.tube_coords.append([x_l, y_l, x_r, y_r])
-                            self.tube_coords_l.append([x_l, y_l])
-                            self.tube_coords_r.append([x_r, y_r])
-                            self.tube_squares.append(tube_squares)
-                            self.theta.append(theta)
+                            local_tube_centers = [x_c, y_c]
+                            local_tube_coords = [x_l, y_l, x_r, y_r]
+                            local_tube_coords_l = [x_l, y_l]
+                            local_tube_coords_r = [x_r, y_r]
+                            local_tube_squares = tube_squares
+                            local_theta = theta
+                            if (i % 5) == 0:
+                                logging.info('Generating tube %d in parallel...' % (i * size))
+                            comm.Barrier()
+                            if rank == 0:
+                                # add work that was already done on core 0 to main lists
+                                self.tube_centers.append(local_tube_centers)
+                                self.tube_coords.append(local_tube_coords)
+                                self.tube_coords_l.append(local_tube_coords_l)
+                                self.tube_coords_r.append(local_tube_coords_r)
+                                self.theta.append(local_theta)
+                                self.tube_squares.append(local_tube_squares)
+                                for z in range(1, size):
+                                    local_tube_centers_temp = comm.recv(source=z, tag=1)
+                                    self.tube_centers.append(local_tube_centers_temp)
+                                    local_tube_coords_temp = comm.recv(source=z, tag=2)
+                                    self.tube_coords.append(local_tube_coords_temp)
+                                    local_tube_coords_l_temp = comm.recv(source=z, tag=3)
+                                    self.tube_coords_l.append(local_tube_coords_l_temp)
+                                    local_tube_coords_r_temp = comm.recv(source=z, tag=4)
+                                    self.tube_coords_r.append(local_tube_coords_r_temp)
+                                    local_theta_temp = comm.recv(source=z, tag=5)
+                                    self.theta.append(local_theta_temp)
+                                    local_tube_squares_temp = comm.recv(source=z, tag=6)
+                                    self.tube_squares.append(local_tube_squares_temp)
+                            else:
+                                comm.send(local_tube_centers, dest=0, tag=1)
+                                comm.send(local_tube_coords, dest=0, tag=2)
+                                comm.send(local_tube_coords_l, dest=0, tag=3)
+                                comm.send(local_tube_coords_r, dest=0, tag=4)
+                                comm.send(local_theta, dest=0, tag=5)
+                                comm.send(local_tube_squares, dest=0, tag=6)
+                            comm.Barrier()
+                            # code above checked and works for sending!
+                            # now send master *self* lists to all cores for checks
+                            # *self* will be stored on core 0 and will hold the final values
+                            checker_tube_squares = comm.bcast(self.tube_squares, root=0)
                             if i >= 1:
-                                uni_flag = self.check_tube_and_vol_unique()
-                                while not uni_flag:
-                                    counter += 1
-                                    self.tube_centers.pop()
-                                    self.tube_coords.pop()
-                                    self.tube_coords_l.pop()
-                                    self.tube_coords_r.pop()
-                                    self.tube_squares.pop()
-                                    self.theta.pop()
+                                uni_flag = self.check_tube_and_vol_unique(checker_tube_squares,
+                                                                          rank)  # checks ends and volume
+                                if rank == 0:
+                                    uni_list = []  # stores list of non-unique tubes
+                                    if not uni_flag:  # check on core 0
+                                        uni_list.append(0)
+                                    for z in range(1, size):
+                                        uni_flag_temp = comm.recv(source=z)
+                                        if not uni_flag_temp:  # tube is not unique
+                                            uni_list.append(z)
+                                else:
+                                    comm.send(uni_flag, dest=0)
+                                    uni_list = None
+                                comm.Barrier()
+                                uni_list = comm.bcast(uni_list, source=0)
+                                # uni_list holds which cores need to generate new tubes
+                                while rank in uni_list:
+                                    # generate new tube
                                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length,
                                                                                                 orientation,
                                                                                                 tube_radius)
                                     tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                                    self.theta.append(theta)
-                                    self.tube_centers.append([x_c, y_c])
-                                    self.tube_coords.append([x_l, y_l, x_r, y_r])
-                                    self.tube_coords_l.append([x_l, y_l])
-                                    self.tube_coords_r.append([x_r, y_r])
-                                    self.tube_squares.append(tube_squares)
-                                    uni_flag = self.check_tube_and_vol_unique()
-                        logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
-                    # get number of squares filled
-                    cube_count = 0  # each cube has area 1
-                    for i in range(len(self.tube_squares)):
-                        cube_count += len(self.tube_squares[i])
-                    fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
-                    # each cube has area 1, times the tube radius (important if not 1)
-                    logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-                    self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-                    self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
-
-                    def tube_gen_2D_real(tube_length, orientation, tube_radius):
-                        x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                    tube_radius)
-                        tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                        self.tube_centers.append([x_c, y_c])
-                        self.tube_coords.append([x_l, y_l, x_r, y_r])
-                        self.tube_coords_l.append([x_l, y_l])
-                        self.tube_coords_r.append([x_r, y_r])
-                        self.tube_squares.append(tube_squares)
-                        self.theta.append(theta)
-
-
-
-                    for i in range(whole_iterations):
-                        if (i % 5) == 0:
-                            logging.info('Generating tube %d in parallel...' % (i * size))
-                        x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                    tube_radius)
-                        # print('core %d here' % rank)
-                        tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                        local_tube_centers.append([x_c, y_c])
-                        local_tube_coords.append([x_l, y_l, x_r, y_r])
-                        local_tube_coords_l.append([x_l, y_l])
-                        local_tube_coords_r.append([x_r, y_r])
-                        local_theta.append(theta)
-                        local_tube_squares.append(tube_squares)
-                        if i >= 1:
-                            uni_flag = self.check_tube_and_vol_unique()
-                            while not uni_flag:
-                                counter += 1
-                                self.tube_centers.pop()
-                                self.tube_coords.pop()
-                                self.tube_coords_l.pop()
-                                self.tube_coords_r.pop()
-                                self.tube_squares.pop()
-                                self.theta.pop()
-                                x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length,
-                                                                                            orientation,
-                                                                                            tube_radius)
-                                tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                                self.theta.append(theta)
-                                self.tube_centers.append([x_c, y_c])
-                                self.tube_coords.append([x_l, y_l, x_r, y_r])
-                                self.tube_coords_l.append([x_l, y_l])
-                                self.tube_coords_r.append([x_r, y_r])
-                                self.tube_squares.append(tube_squares)
-                                uni_flag = self.check_tube_and_vol_unique()
-                    comm.Barrier()
-                    # partial iteration
-                    if rank < partial_iteration_num:
-                        x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                    tube_radius)
-                        tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                        local_tube_centers.append([x_c, y_c])
-                        local_tube_coords.append([x_l, y_l, x_r, y_r])
-                        local_tube_coords_l.append([x_l, y_l])
-                        local_tube_coords_r.append([x_r, y_r])
-                        local_theta.append(theta)
-                        local_tube_squares.append(tube_squares)
-                    # print('core %d here' % rank)
-                    comm.Barrier()
-                    # lists will be uneven now
-                    # send lists to core 0
-                    if rank == 0:
-                        # add work that was already done on core 0 to main lists
-                        self.tube_centers += local_tube_centers
-                        self.tube_coords += local_tube_coords
-                        self.tube_coords_l += local_tube_coords_l
-                        self.tube_coords_r += local_tube_coords_r
-                        self.theta += local_theta
-                        self.tube_squares += local_tube_squares
-                        for z in range(1, size):
-                            local_tube_centers_temp = comm.recv(source=z, tag=1)
-                            self.tube_centers += local_tube_centers_temp
-                            local_tube_coords_temp = comm.recv(source=z, tag=2)
-                            self.tube_coords += local_tube_coords_temp
-                            local_tube_coords_l_temp = comm.recv(source=z, tag=3)
-                            self.tube_coords_l += local_tube_coords_l_temp
-                            local_tube_coords_r_temp = comm.recv(source=z, tag=4)
-                            self.tube_coords_r += local_tube_coords_r_temp
-                            local_theta_temp = comm.recv(source=z, tag=5)
-                            self.theta += local_theta_temp
-                            local_tube_squares_temp = comm.recv(source=z, tag=6)
-                            self.tube_squares += local_tube_squares_temp
-                    else:
-                        comm.send(local_tube_centers, dest=0, tag=1)
-                        comm.send(local_tube_coords, dest=0, tag=2)
-                        comm.send(local_tube_coords_l, dest=0, tag=3)
-                        comm.send(local_tube_coords_r, dest=0, tag=4)
-                        comm.send(local_theta, dest=0, tag=5)
-                        comm.send(local_tube_squares, dest=0, tag=6)
-                    comm.Barrier()
-                    # code above checked and works for sending!
-                    # do checks for identical endpoints
-                    if rank == 0:
-                        # print self.tube_coords_l
-                        duplicates = []
-                        # this should scale with O(n^2)
-                        for i in range(num_tubes):
-                            for j in range(num_tubes):
-                                if i < j:
-                                    if (self.tube_coords_l[i] == self.tube_coords_l[j]) or \
-                                            (self.tube_coords_l[i] == self.tube_coords_r[j]) or \
-                                            (self.tube_coords_r[i] == self.tube_coords_r[j]):
-                                        duplicates.append(i)  # duplicated endpoint
-                            for k in range(len(self.tube_squares[i])):
-                                # create flattened tube volume check list
-                                vol = []
-                                for y in range(len(self.tube_coords)):
-                                    if i != y:  # i is current tube
-                                        for z in range(len(self.tube_squares[y])):
-                                            if k != z:  # k is current cube in current tube
-                                                vol.append(self.tube_squares[y][z])
-                                                # skipping an index doesn't matter on this list as it's only for checking
-                                                # volume elements
-                                current_vol = self.tube_squares[i]
-                                if current_vol[k] in vol:
-                                    duplicates.append(i)  # element from this tube on top of another tube
-                                t_l = self.tube_squares[i][k]
-                                t_r = [self.tube_squares[i][k][0] + 1, self.tube_squares[i][k][1]]
-                                b_l = [self.tube_squares[i][k][0], self.tube_squares[i][k][1] - 1]
-                                b_r = [self.tube_squares[i][k][0] + 1, self.tube_squares[i][k][1] - 1]
-                                if (b_r in current_vol) and (t_r in vol) and (b_l in vol):
-                                    duplicates.append(i)  # crossing tube case 1
-                                t_r = self.tube_squares[i][k]
-                                t_l = [self.tube_squares[i][k][0] - 1, self.tube_squares[i][k][1]]
-                                b_l = [self.tube_squares[i][k][0] - 1, self.tube_squares[i][k][1] - 1]
-                                b_r = [self.tube_squares[i][k][0], self.tube_squares[i][k][1] - 1]
-                                if (t_l in vol) and (b_l in current_vol) and (b_r in vol):
-                                    duplicates.append(i)  # crossing tube case 2
-
-                        # duplicates should have unqiue elements only
-                        uni_duplicates = set(duplicates)
-                        duplicates = list(uni_duplicates)
-                        #
-                        tot_duplicates = len(duplicates)
-                        if tot_duplicates > 0:
-                            logging.info('%d duplicates found. Regenerating...' % tot_duplicates)
-                            whole_new_iteration = tot_duplicates / size
-                            partial_new_iteration = tot_duplicates % size
-                            dups_exist = True
-                        else:
-                            logging.info('No duplicates found. Continuing...')
-                            dups_exist = False
-                    else:
-                        dups_exist = None
-                        whole_new_iteration = None
-                        partial_new_iteration = None
-
-                    dups_exist = comm.bcast(dups_exist, root=0)
-                    whole_new_iteration = comm.bcast(whole_new_iteration, root=0)
-                    partial_new_iteration = comm.bcast(partial_new_iteration, root=0)
-
-                    while dups_exist:
-                        local_tube_coords = []
-                        local_tube_coords_l = []
-                        local_tube_coords_r = []
-                        local_tube_centers = []
-                        local_tube_squares = []
-                        local_theta = []
+                                    # print('core %d here' % rank)
+                                    local_tube_centers = [x_c, y_c]
+                                    local_tube_coords = [x_l, y_l, x_r, y_r]
+                                    local_tube_coords_l = [x_l, y_l]
+                                    local_tube_coords_r = [x_r, y_r]
+                                    local_theta = theta
+                                    local_tube_squares = tube_squares
+                                    # send to core 0
+                                    if rank == 0:
+                                        for z in uni_list:
+                                            temp = z + 1
+                                            local_tube_centers_temp = comm.recv(source=z, tag=1)
+                                            self.tube_centers[-temp] = local_tube_centers_temp
+                                            local_tube_coords_temp = comm.recv(source=z, tag=2)
+                                            self.tube_coords[-temp] = local_tube_coords_temp
+                                            local_tube_coords_l_temp = comm.recv(source=z, tag=3)
+                                            self.tube_coords_l[-temp] = local_tube_coords_l_temp
+                                            local_tube_coords_r_temp = comm.recv(source=z, tag=4)
+                                            self.tube_coords_r[-temp] = local_tube_coords_r_temp
+                                            local_theta_temp = comm.recv(source=z, tag=5)
+                                            self.theta[-temp] = local_theta_temp
+                                            local_tube_squares_temp = comm.recv(source=z, tag=6)
+                                            self.tube_squares[-temp] = local_tube_squares_temp
+                                    else:
+                                        comm.send(local_tube_centers, dest=0, tag=1)
+                                        comm.send(local_tube_coords, dest=0, tag=2)
+                                        comm.send(local_tube_coords_l, dest=0, tag=3)
+                                        comm.send(local_tube_coords_r, dest=0, tag=4)
+                                        comm.send(local_theta, dest=0, tag=5)
+                                        comm.send(local_tube_squares, dest=0, tag=6)
+                                    # regenerate uni_list
+                                    checker_tube_coords = None
+                                    checker_tube_coords = comm.bcast(self.tube_coords, root=0)
+                                    uni_flag = self.check_tube_unique(checker_tube_coords, rank)
+                                    if rank == 0:
+                                        uni_list = []  # stores list of non-unique tubes
+                                        if not uni_flag:  # check on core 0
+                                            uni_list.append(0)
+                                        for z in range(1, size):
+                                            uni_flag_temp = comm.recv(source=z)
+                                            if not uni_flag_temp:  # tube is not unique
+                                                uni_list.append(z)
+                                    else:
+                                        comm.send(uni_flag, dest=0)
+                                        uni_list = None
+                                    uni_list = comm.bcast(uni_list, source=0)
+                                    # end of regenerate tube while loop
+                                    comm.Barrier()
+                        # now that all tubes are unique, broadcast data to all cores
+                        self.tube_centers = comm.bcast(self.tube_centers, source=0)
+                        self.tube_coords = comm.bcast(self.tube_coords, source=0)
+                        self.tube_coords_l = comm.bcast(self.tube_coords_l, source=0)
+                        self.tube_coords_r = comm.bcast(self.tube_coords_r, source=0)
+                        self.theta = comm.bcast(self.theta, source=0)
+                        self.tube_squares = comm.bcast(self.tube_squares, source=0)
                         comm.Barrier()
-
-                        for i in range(whole_new_iteration):
-                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                        tube_radius)
-                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                            # print('core %d here' % rank)
-                            local_tube_centers.append([x_c, y_c])
-                            local_tube_coords.append([x_l, y_l, x_r, y_r])
-                            local_tube_coords_l.append([x_l, y_l])
-                            local_tube_coords_r.append([x_r, y_r])
-                            local_theta.append(theta)
-                            local_tube_squares.append(tube_squares)
-                        comm.Barrier()
-                        # partial iteration
-                        if rank < partial_new_iteration:
-                            x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
-                                                                                        tube_radius)
-                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
-                            local_tube_centers.append([x_c, y_c])
-                            local_tube_coords.append([x_l, y_l, x_r, y_r])
-                            local_tube_coords_l.append([x_l, y_l])
-                            local_tube_coords_r.append([x_r, y_r])
-                            local_theta.append(theta)
-                            local_tube_squares.append(tube_squares)
-                        # print('core %d here' % rank)
-                        comm.Barrier()
-                        # send replacements to core 0
-                        if rank == 0:
-                            # add work that was already done on core 0 to main lists
-                            # these are all the new lists!
-                            local_tube_centers_temp = []
-                            local_tube_coords_temp = []
-                            local_tube_coords_l_temp = []
-                            local_tube_coords_r_temp = []
-                            local_theta_temp = []
-                            local_tube_squares_temp = []
-
-                            local_tube_centers_temp += local_tube_centers
-                            local_tube_coords_temp += local_tube_coords
-                            local_tube_coords_l_temp += local_tube_coords_l
-                            local_tube_coords_r_temp += local_tube_coords_r
-                            local_theta_temp += local_theta
-                            local_tube_squares_temp += local_tube_squares
-
-                            for z in range(1, size):
-                                local_tube_centers_temp += comm.recv(source=z, tag=1)
-                                local_tube_coords_temp += comm.recv(source=z, tag=2)
-                                local_tube_coords_l_temp += comm.recv(source=z, tag=3)
-                                local_tube_coords_r_temp += comm.recv(source=z, tag=4)
-                                local_theta_temp += comm.recv(source=z, tag=5)
-                                local_tube_squares_temp += comm.recv(source=z, tag=6)
-                        else:
-                            comm.send(local_tube_centers, dest=0, tag=1)
-                            comm.send(local_tube_coords, dest=0, tag=2)
-                            comm.send(local_tube_coords_l, dest=0, tag=3)
-                            comm.send(local_tube_coords_r, dest=0, tag=4)
-                            comm.send(local_theta, dest=0, tag=5)
-                            comm.send(local_tube_squares, dest=0, tag=6)
-                        comm.Barrier()
-                        # actual replacements now
-                        if rank == 0:
-                            for a in range(len(duplicates)):
-                                self.tube_centers[duplicates[a]] = local_tube_centers_temp[a]
-                                self.tube_coords[duplicates[a]] = local_tube_coords_temp[a]
-                                self.tube_coords_l[duplicates[a]] = local_tube_coords_l_temp[a]
-                                self.tube_coords_r[duplicates[a]] = local_tube_coords_r_temp[a]
-                                self.theta[duplicates[a]] = local_theta_temp[a]
-                                self.tube_squares[duplicates[a]] = local_tube_squares_temp[a]
-                        comm.Barrier()
-                        # check again for duplicates
-                        if rank == 0:
-                            # print self.tube_coords_l
-                            duplicates = []
-                            # this should scale with O(n^2)
-                            for i in range(num_tubes):
-                                for j in range(num_tubes):
-                                    if i < j:
-                                        if (self.tube_coords_l[i] == self.tube_coords_l[j]) or \
-                                                (self.tube_coords_l[i] == self.tube_coords_r[j]) or \
-                                                (self.tube_coords_r[i] == self.tube_coords_r[j]):
-                                            duplicates.append(i)
-                                for k in range(len(self.tube_squares[i])):
-                                    # create flattened tube volume check list
-                                    vol = []
-                                    for y in range(len(self.tube_coords)):
-                                        if i != y:  # i is current tube
-                                            for z in range(len(self.tube_squares[y])):
-                                                if k != z:  # k is current cube in current tube
-                                                    vol.append(self.tube_squares[y][z])
-                                                    # skipping an index doesn't matter on this list as it's only for checking
-                                                    # volume elements
-                                    current_vol = self.tube_squares[i]
-                                    if current_vol[k] in vol:
-                                        duplicates.append(i)  # element from this tube on top of another tube
-                                    t_l = self.tube_squares[i][k]
-                                    t_r = [self.tube_squares[i][k][0] + 1, self.tube_squares[i][k][1]]
-                                    b_l = [self.tube_squares[i][k][0], self.tube_squares[i][k][1] - 1]
-                                    b_r = [self.tube_squares[i][k][0] + 1, self.tube_squares[i][k][1] - 1]
-                                    if (b_r in current_vol) and (t_r in vol) and (
-                                                b_l in vol):
-                                        duplicates.append(i)  # crossing tube case 1
-                                    t_r = self.tube_squares[i][k]
-                                    t_l = [self.tube_squares[i][k][0] - 1, self.tube_squares[i][k][1]]
-                                    b_l = [self.tube_squares[i][k][0] - 1, self.tube_squares[i][k][1] - 1]
-                                    b_r = [self.tube_squares[i][k][0], self.tube_squares[i][k][1] - 1]
-                                    if (t_l in vol) and (b_l in current_vol) and (
-                                                b_r in vol):
-                                        duplicates.append(i)  # crossing tube case 2
-
-                            # duplicates should have unqiue elements only
-                            uni_duplicates = set(duplicates)
-                            duplicates = list(uni_duplicates)
-                            #
-                            tot_duplicates = len(duplicates)
-                            if tot_duplicates > 0:
-                                logging.info('%d duplicates found. Regenerating...' % tot_duplicates)
-                                whole_new_iteration = tot_duplicates / size
-                                partial_new_iteration = tot_duplicates % size
-                                dups_exist = True
-                            else:
-                                logging.info('No duplicates found. Continuing...')
-                                dups_exist = False
-                        dups_exist = comm.bcast(dups_exist, root=0)
-                        whole_new_iteration = comm.bcast(whole_new_iteration, root=0)
-                        partial_new_iteration = comm.bcast(partial_new_iteration, root=0)
-                        comm.Barrier()
-                    if rank == 0:
+                        # this stuff can be done on all cores since they have all the data now,
+                        # cause why the hell not?
                         # get number of squares filled
                         cube_count = 0  # each cube has area 1
                         for i in range(len(self.tube_squares)):
@@ -613,21 +325,8 @@ class Grid2D_onlat(object):
                         fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
                         # each cube has area 1, times the tube radius (important if not 1)
                         logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-                        self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
                         self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-                    else:
-                        self.tube_check_l = None
-                        self.tube_check_r = None
-                        self.tube_check_bd = None
-                        self.tube_check_bd_vol = None
-                        self.tube_check_index = None
-                    self.tube_check_l = comm.bcast(self.tube_check_l, root=0)
-                    self.tube_check_r = comm.bcast(self.tube_check_r, root=0)
-                    self.tube_check_bd = comm.bcast(self.tube_check_bd, root=0)
-                    self.tube_check_bd_vol = comm.bcast(self.tube_check_bd_vol, root=0)
-                    self.tube_check_index = comm.bcast(self.tube_check_index, root=0)
-                    comm.Barrier()
-
+                        self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
         else:  # serial implementation
             logging.info("Setting up grid and tubes serially")
             self.size = grid_size
@@ -726,7 +425,6 @@ class Grid2D_onlat(object):
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
                 self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
-
 
     def generate_2d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -924,17 +622,23 @@ class Grid2D_onlat(object):
         # print bd_vol
         return bd_vol, index
 
-    def check_tube_unique(self):
+    def check_tube_unique(self, coords_list, rank=None):
         uni_flag = None
-        current = self.tube_coords[-1]
+        if not rank:  # serial case
+            temp = 1
+        else:  # parallel case. numbers have true truth value.
+            temp = rank + 1
+        current = coords_list[-temp]  # self.tube_coords[-1]
         cur_l = [current[0], current[1]]
         cur_r = [current[2], current[3]]
         # separate
         tube_l = []
         tube_r = []
-        for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
-            tube_l.append([self.tube_coords[i][0], self.tube_coords[i][1]])
-            tube_r.append([self.tube_coords[i][2], self.tube_coords[i][3]])
+        exclude_val = len(coords_list) - temp
+        for i in range(len(self.tube_coords)):
+            if i != exclude_val:
+                tube_l.append([coords_list[i][0], coords_list[i][1]])
+                tube_r.append([coords_list[i][2], coords_list[i][3]])
         if (cur_l in tube_l) or (cur_l in tube_r) or (cur_r in tube_l) or (cur_r in tube_r):
             uni_flag = False
         else:
@@ -942,15 +646,21 @@ class Grid2D_onlat(object):
         # ensures no endpoints, left or right, are in the same spot
         return uni_flag
 
-    def check_tube_and_vol_unique(self):
+    def check_tube_and_vol_unique(self, tube_squares, rank=None):
         """Checks all endpoints, boundaries, and volume for uniqueness and no overlap
         tube_squares holds the endpoints too, so just check the current one for uniqueness"""
         uni_flag = True
-        current_vol = self.tube_squares[-1]
+        if not rank:  # serial case
+            temp = 1
+        else:  # parallel case. numbers have true truth value.
+            temp = rank + 1
+        current_vol = tube_squares[-temp]  # self.tube_squares[-1], this holds all the points for one tube
         vol = []
-        for i in range(len(self.tube_coords) - 1):  # -1 accounts for not including the current tube
-            for k in range(len(self.tube_squares[i])):
-                vol.append(self.tube_squares[i][k])
+        exclude_val = len(tube_squares) - temp
+        for i in range(len(self.tube_coords)):
+            if i != exclude_val:
+                for k in range(len(self.tube_squares[i])):
+                    vol.append(self.tube_squares[i][k])
         for l in range(len(current_vol)):
             if current_vol[l] in vol:
                 uni_flag = False
