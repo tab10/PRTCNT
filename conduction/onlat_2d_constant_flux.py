@@ -143,7 +143,12 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size, restart):
     comm = MPI.COMM_WORLD
 
-    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, rank, size)
+    # parallel tube generation
+    # grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, rank, size)
+    # serial tube generation
+    if rank == 0:
+        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False)
+
     if rank == 0:
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
