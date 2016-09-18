@@ -7,11 +7,13 @@ For serial code, options are given by setting up a config.ini in your choice of 
 or else default.ini will be read. For parallel code, options are given on the command line.
 
 Serial code is ran by running "python run.py", for the MPI code
-run "mpirun -np X python mpi_run.py" with X the number of cores available.
+run "mpirun -np X python mpi_run.py" with X the number of cores available. **80** cores seems good, or requesting 
+10 nodes **exclusively** since a standard node has 8 cores.
 
 On OU's Schooner, add this line to your .profile:
 `module load OpenMPI mpi4py numpy matplotlib`. `#SBATCH -p 2650` gives a 10 core node, `#SBATCH -p 2670`
 gives a 12 core node
+
 
 ##### References
 
@@ -19,5 +21,3 @@ gives a 12 core node
   * H. M. Duong, D. V Papavassiliou, K. J. Mullen, and S. Maruyama, Nanotechnology 19, 065702 (2008).
 * Random walks in nanotube composites: Improved algorithms and the role of thermal boundary resistance
   * H. M. Duong, D. V. Papavassiliou, L. L. Lee, and K. J. Mullen, Appl. Phys. Lett. 87, (2005).
-* Transport of a passive scalar in a turbulent channel flow
-  * D. V. D. V. Papavassiliou and T. J. T. J. Hanratty, Int. J. Heat Mass Transf. 40, 1303 (1997).
