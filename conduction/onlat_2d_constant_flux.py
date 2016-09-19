@@ -25,7 +25,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False)
+    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
         plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
@@ -144,10 +144,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     comm = MPI.COMM_WORLD
 
     # parallel tube generation
-    # grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, rank, size)
+    # grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, plot_save_dir, rank, size)
     # serial tube generation
     if rank == 0:
-        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False)
+        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir)
 
     if rank == 0:
         if gen_plots:
