@@ -417,3 +417,74 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     plt.tight_layout()
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
     plt.close()
+
+
+def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tube_length, grid_size, dim,
+                                           exclude_vals='', max_tube_num=100000):
+    # kapitza_vals - a list with vals to use (should be from lowest p to highest)
+    # kapitza_num_configs - a list in order with kapitza vals telling the configs to include
+    exclude_vals = map(str, exclude_vals)  # array of numbers
+    exclude_vals = [x + '_' for x in exclude_vals]
+    plt.figure()
+    num_plots = len(kapitza_vals)
+    for z in range(len(kapitza_vals)):
+        # go into each directory and get this data
+        os.chdir('%dD_kapitza_%s' % (dim, kapitza_vals[z]))
+        num_configs = kapitza_num_configs[z]
+
+        folds = []  # list of all folder name strings
+        zero_folds = []
+        orientations = []  # list of all orientations (not unique yet)
+        for file in glob.glob("*_*_%d_*" % tube_length):
+            checker = file.split('_')[0] + '_'
+            config_num = int(file.split('_')[3])
+            tube_val = int(file.split('_')[0])
+            if (checker not in exclude_vals) and (config_num <= num_configs) and (
+                        tube_val <= max_tube_num):  # throws out extra config
+                folds.append(file)  # all files
+                orientations.append(file.split('_')[1])
+        print folds
+        for file in glob.glob("0_*_*_*"):
+            zero_folds.append(file)
+        uni_orientations = list(set(orientations))
+        sep_folds = []
+        # separate folds by orientation
+        for i in range(len(uni_orientations)):
+            sep_folds.append([x for x in folds if uni_orientations[i] in x])
+            sep_folds[i] = sorted(sep_folds[i])
+            sep_folds[i] += zero_folds
+        for i in range(len(uni_orientations)):
+            uni_tubes = len(sep_folds[i]) / num_configs
+            uni_num_tubes = []
+            for k in range(uni_tubes):
+                uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
+            uni_num_tubes = [float(y) for y in uni_num_tubes]
+            print uni_num_tubes
+            all_k_vals = np.zeros(len(sep_folds[i]))
+            # all_kapitza_vals = np.zeros(len(sep_folds[i]))
+            for j in range(len(sep_folds[i])):
+                os.chdir(sep_folds[i][j])
+                # kapitza = np.loadtxt('prob_m_cn.txt')
+                all_k_vals[j] = np.loadtxt('k.txt')
+                os.chdir('..')
+            k_vals = []
+            k_err = []
+            # build filling fraction on x axis
+            fill_fract = []  # will be in percentage
+            for q in range(len(uni_num_tubes)):
+                fill_fract.append((int(uni_num_tubes[q]) * tube_length * 100.0) / grid_size ** dim)
+            for l in range(len(uni_num_tubes)):
+                k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
+                k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
+            plt.subplot(num_plots, 1, z)
+            plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        # plt.title('Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
+        plt.xlabel('Filling fraction (%)')
+        plt.ylabel('Conductivity k')
+        plt.ylim(0.0, )
+
+        os.chdir('..')
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig('kapitza_k_plot.pdf')
+    plt.close()

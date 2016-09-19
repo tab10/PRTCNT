@@ -61,6 +61,7 @@ class Grid2D_onlat(object):
                 logging.info("Zero tube radius given. Tubes will have no volume.")
                 fill_fract = tube_length * float(num_tubes) / grid_size ** 2
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+                np.savetxt('fill_fract.txt', fill_fract)
                 comm.Barrier()
                 if num_tubes > 0:  # tubes exist
                     # generate all tubes on all cores, no checking yet
@@ -369,6 +370,7 @@ class Grid2D_onlat(object):
                         fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
                         # each cube has area 1, times the tube radius (important if not 1)
                         logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+                        np.savetxt('fill_fract.txt', fill_fract)
                         self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
                         self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
         else:  # serial implementation
@@ -389,6 +391,7 @@ class Grid2D_onlat(object):
                 logging.info("Zero tube radius given. Tubes will have no volume.")
                 fill_fract = tube_length * float(num_tubes) / grid_size ** 2
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+                np.savetxt('fill_fract.txt', fill_fract)
                 if num_tubes > 0:  # tubes exist
                     for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                         if (i % 50) == 0:
@@ -468,6 +471,7 @@ class Grid2D_onlat(object):
                 fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 2
                 # each cube has area 1, times the tube radius (important if not 1)
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+                np.savetxt('fill_fract.txt', fill_fract)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
                 self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
 
@@ -777,6 +781,7 @@ class Grid3D_onlat(object):
             logging.info("Zero tube radius given. Tubes will have no volume.")
             fill_fract = tube_length * float(num_tubes) / grid_size ** 3
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+            np.savetxt('fill_fract.txt', fill_fract)
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                     if (i % 50) == 0:
@@ -867,6 +872,7 @@ class Grid3D_onlat(object):
             fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
+            np.savetxt('fill_fract.txt', fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d()
 
