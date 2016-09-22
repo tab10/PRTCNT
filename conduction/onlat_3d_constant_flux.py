@@ -23,7 +23,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
+    grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, plot_save_dir, False)
     if gen_plots:
         plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
 
@@ -145,8 +145,17 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size, restart):
     comm = MPI.COMM_WORLD
 
+    if size > num_tubes:
+        # serial tube generation
+        if rank == 0:
+            grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False,
+                                         plot_save_dir)
+    else:
+        # parallel tube generation
+        grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, plot_save_dir,
+                                     rank, size)
+
     if rank == 0:
-        grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
         if gen_plots:
             plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
     else:
