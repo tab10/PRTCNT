@@ -81,6 +81,7 @@ if __name__ == "__main__":
         printout_inc = Config.getint('constant_flux', 'printout_inc')
     else:
         printout_inc = 500
+
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
     # Check if inputs valid

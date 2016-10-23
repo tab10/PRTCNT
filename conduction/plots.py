@@ -423,7 +423,7 @@ def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tu
                                            exclude_vals='', max_tube_num=100000):
     # kapitza_vals - a list with vals to use (should be from lowest p to highest)
     # kapitza_num_configs - a list in order with kapitza vals telling the configs to include
-    exclude_vals = map(str, exclude_vals)  # array of numbers
+    exclude_vals = map(str, exclude_vals)  # array of numbers , ['0','1000','2000']
     exclude_vals = [x + '_' for x in exclude_vals]
     plt.figure()
     num_plots = len(kapitza_vals)
@@ -481,7 +481,7 @@ def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tu
         # plt.title('Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
         plt.xlabel('Filling fraction (%)')
         plt.ylabel('Conductivity k')
-        plt.ylim(0.0, )
+        # plt.ylim(0.0,)
 
         os.chdir('..')
     plt.legend()

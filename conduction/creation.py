@@ -10,7 +10,7 @@ def check_for_folder(folder):
         os.mkdir(folder)
 
 
-def get_plot_save_dir(folder, num_tubes, orientation, tube_length, restart):
+def get_plot_save_dir(folder, num_tubes, orientation, tube_length, restart=False):
     ends = []
     for file in glob.glob("%d_%s_%d_*" % (num_tubes, orientation, tube_length)):
         name_temp = file.split('_')
@@ -499,6 +499,7 @@ class Grid2D_onlat(object):
                 l_d = tube_length / (2 * tube_radius)
                 logging.info("L/D is %.4f." % l_d)
                 self.tube_squares = []  # grid squares that a tube passes through, for every tube
+                self.setup_tube_vol_check_array_2d()
                 if num_tubes > 0:  # tubes exist
                     for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                         if (i % 50) == 0:
@@ -514,7 +515,8 @@ class Grid2D_onlat(object):
                         self.tube_squares.append(tube_squares)
                         self.theta.append(theta)
                         if i >= 1:
-                            uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
+                            uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
+                            # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                             while not uni_flag:
                                 counter += 1
                                 self.tube_centers.pop()
@@ -532,7 +534,10 @@ class Grid2D_onlat(object):
                                 self.tube_coords_l.append([x_l, y_l])
                                 self.tube_coords_r.append([x_r, y_r])
                                 self.tube_squares.append(tube_squares)
-                                uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
+                                # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
+                                uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
+                            # uni_flag must have been true to get here, so write it to the array
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares)
                     logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
                 # get number of squares filled
                 cube_count = 0  # each cube has area 1
@@ -741,6 +746,60 @@ class Grid2D_onlat(object):
         # print bd_vol
         return bd_vol, index
 
+    def setup_tube_vol_check_array_2d(self):
+        "Setup of tube check arrays, returns nothing"
+        bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        # add boundary tags
+        for i in range(self.size + 1):
+            bd_vol[0, i] = 10  # x = 0 is reflective
+            bd_vol[self.size, i] = 10  # x = grid.size is reflective
+            bd_vol[i, 0] = 20  # y = 0 is periodic
+            bd_vol[i, self.size] = 20  # y = grid.size is periodic
+        # corners are special
+        bd_vol[0, 0] = 30
+        bd_vol[0, self.size] = 30
+        bd_vol[self.size, 0] = 30
+        bd_vol[self.size, self.size] = 30
+        self.tube_check_bd_vol = bd_vol
+
+    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares):
+        "Adds tube to the current check arrays"
+        self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1]] = 1  # left endpoints
+        self.tube_check_bd_vol[new_tube_coords[2], new_tube_coords[3]] = 1  # right endpoints
+        for j in range(1, len(new_tube_squares) - 1):
+            self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
+
+    def check_tube_and_vol_unique_2d_arraymethod(self, new_tube_squares):
+        uni_flag = True
+        for l in range(len(new_tube_squares)):
+            test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1]]
+            if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint
+                uni_flag = False
+            # generate candidate check positions for tube crossing
+            ###########
+            # this algorithm looks for interweaved diagonal clusters. The only 2 possibilities are checked
+            t_l = new_tube_squares[l]
+            t_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
+            b_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            b_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1]
+            test_b_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1]
+            test_t_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
+            test_b_l = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            if ((test_b_r == 1) or (test_b_r == -1)) and ((test_t_r == 1) or (test_t_r == -1)) \
+                    and ((test_b_l == 1) or (test_b_l == -1)):
+                uni_flag = False
+            t_r = new_tube_squares[l]
+            t_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
+            b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1]
+            b_r = [new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            test_t_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
+            test_b_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1]
+            test_b_r = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+        return uni_flag
+
     @staticmethod
     def check_tube_unique(coords_list, parallel, rank=None, size=None):
         uni_flag = None
@@ -832,10 +891,11 @@ class Grid3D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir, rank=None,
                  size=None):
         """Grid in first quadrant only for convenience"""
+        self.size = grid_size
+        self.tube_radius = tube_radius
         if parallel:
             comm = MPI.COMM_WORLD
             logging.info("Setting up grid and tubes in parallel")
-            self.size = grid_size
             if tube_length > grid_size:
                 logging.error('Nanotube is too large for grid')
                 raise SystemExit
@@ -854,7 +914,6 @@ class Grid3D_onlat(object):
                 self.tube_centers = None
                 self.theta = None
                 self.phi = None
-            self.tube_radius = tube_radius
             counter = 0  # counts num of non-unique tubes replaced
             whole_iterations = num_tubes / size
             partial_iteration_num = num_tubes % size
@@ -1048,6 +1107,7 @@ class Grid3D_onlat(object):
                     self.phi = comm.bcast(self.phi, root=0)
                     comm.Barrier()
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
+                logging.info("Tube generation complete")
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
             else:
                 if rank == 0:
@@ -1246,6 +1306,7 @@ class Grid3D_onlat(object):
                                 uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                     comm.Barrier()
                     # now that all tubes are unique, broadcast data to all cores
+                    logging.info("Tube generation complete")
                     logging.info("Corrected %d overlapping tube endpoints" % counter)
                     self.tube_centers = comm.bcast(self.tube_centers, root=0)
                     self.tube_coords = comm.bcast(self.tube_coords, root=0)
@@ -1269,6 +1330,12 @@ class Grid3D_onlat(object):
         else:  # serial implementation
             status_counter = 0
             counter = 0
+            self.tube_coords = []
+            self.tube_coords_l = []
+            self.tube_coords_r = []
+            self.tube_centers = []
+            self.theta = []
+            self.phi = []
             if tube_radius == 0:
                 logging.info("Zero tube radius given. Tubes will have no volume.")
                 fill_fract = tube_length * float(num_tubes) / grid_size ** 3
@@ -1309,6 +1376,7 @@ class Grid3D_onlat(object):
                                 self.theta.append(theta)
                                 self.phi.append(phi)
                                 uni_flag = self.check_tube_unique(self.tube_coords, False)
+                    logging.info("Tube generation complete")
                     logging.info("Corrected %d overlapping tube endpoints" % counter)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
             else:
@@ -1316,6 +1384,7 @@ class Grid3D_onlat(object):
                 l_d = tube_length / (2 * tube_radius)
                 logging.info("L/D is %.4f." % l_d)
                 self.tube_squares = []
+                self.setup_tube_vol_check_array_3d()
                 if num_tubes > 0:  # tubes exist
                     for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                         if (i % 50) == 0:
@@ -1333,8 +1402,8 @@ class Grid3D_onlat(object):
                         self.phi.append(phi)
                         self.tube_squares.append(tube_squares)
                         if i >= 1:
-                            uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
-                            # print uni_flag
+                            uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
+                            #uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                             while not uni_flag:
                                 counter += 1
                                 self.tube_centers.pop()
@@ -1356,7 +1425,10 @@ class Grid3D_onlat(object):
                                 self.theta.append(theta)
                                 self.phi.append(phi)
                                 self.tube_squares.append(tube_squares)
-                                uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
+                                uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
+                                # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares)
+                logging.info("Tube generation complete")
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
                 # get number of squares filled
                 cube_count = 0  # each cube has volume 1
@@ -1575,6 +1647,115 @@ class Grid3D_onlat(object):
         # np.set_printoptions(threshold=np.inf)
         # print bd_vol
         return bd_vol, index
+
+    def setup_tube_vol_check_array_3d(self):
+        "Setup of tube check arrays, returns nothing"
+        bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        # add boundary tags
+        for i in range(self.size + 1):
+            for j in range(self.size + 1):
+                bd_vol[0, i, j] = 10  # x = 0 is reflective
+                bd_vol[self.size, i, j] = 10  # x = grid.size is reflective
+                bd_vol[i, 0, j] = 20  # y = 0 is periodic
+                bd_vol[i, self.size, j] = 20  # y = grid.size is periodic
+                bd_vol[i, j, 0] = 20  # z = 0 is periodic
+                bd_vol[i, j, self.size] = 20  # z = grid.size is periodic
+        # edges are special
+        for i in range(self.size + 1):
+            bd_vol[i, 0, 0] = 30
+            bd_vol[self.size, i, 0] = 30
+            bd_vol[0, i, 0] = 30
+            bd_vol[0, 0, i] = 30
+            bd_vol[i, self.size, 0] = 30
+            bd_vol[self.size, 0, i] = 30
+            bd_vol[self.size, self.size, i] = 30
+            bd_vol[0, self.size, i] = 30
+            bd_vol[0, i, self.size] = 30
+            bd_vol[i, 0, self.size] = 30
+            bd_vol[i, self.size, self.size] = 30
+            bd_vol[self.size, i, self.size] = 30
+        self.tube_check_bd_vol = bd_vol
+
+    def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares):
+        "Adds tube to the current check arrays"
+        self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = 1  # left endpoints
+        self.tube_check_bd_vol[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = 1  # right endpoints
+        for j in range(1, len(new_tube_squares) - 1):
+            self.tube_check_bd_vol[
+                new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = -1  # volume points
+
+    def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):
+        uni_flag = True
+        for l in range(len(new_tube_squares)):
+            test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2]]
+            if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint
+                uni_flag = False
+            # generate candidate check positions for tube crossing
+            ###########
+            # this algorithm looks for interweaved diagonal clusters. The only 6 possibilities are checked
+            # x-y plane
+            test_t_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+            test_t_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+            # y-z plane
+            test_t_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2] - 1]
+            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+            t_r = new_tube_squares[l]
+            t_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            b_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2] - 1]
+            b_r = [new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            test_t_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2] - 1]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+            # x-z plane
+            test_t_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+            test_t_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            test_b_l = self.tube_check_bd_vol[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            test_b_r = self.tube_check_bd_vol[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
+                    and ((test_b_r == 1) or (test_b_r == -1)):
+                uni_flag = False
+                #########
+        return uni_flag
 
     @staticmethod
     def check_tube_unique(coords_list, parallel, rank=None, size=None):
