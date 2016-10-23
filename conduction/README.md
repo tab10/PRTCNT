@@ -1,7 +1,5 @@
 # CONDUCTION
-#### Package to study nanotubes in a medium
-
-Program implements a random walk in a medium to calculate its conductivity.
+#### Python/MPI4PY package that calculates the thermal conductivity of a medium containing CNTs using random walks.
 
 For serial code, options are given by setting up a config.ini in your choice of save directory
 or else default.ini will be read. For parallel code, options are given on the command line.
