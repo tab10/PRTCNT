@@ -1711,8 +1711,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
             old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            old_t_r_index = self.tube_check_index[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            old_b_l_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
             if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
-                    and (b_r in new_tube_squares):  # we have a crossing
+                    and (b_r in new_tube_squares) and (old_t_r_index == old_b_l_index):  # we have a crossing
                 uni_flag = False
             # old(tl,br) cur(tr,bl) pts wrt current tr
             b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
@@ -1720,8 +1724,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
             old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            old_t_l_index = self.tube_check_index[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            old_b_r_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
             if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
-                    and (b_l in new_tube_squares):  # we have a crossing
+                    and (b_l in new_tube_squares) and (old_t_l_index == old_b_r_index):  # we have a crossing
                 uni_flag = False
             # y-z plane
             # cur(tl,br) old(tr,bl) pts wrt current tl
@@ -1730,8 +1738,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2]]
             old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_r_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2]]
+            old_b_l_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
             if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
-                    and (b_r in new_tube_squares):  # we have a crossing
+                    and (b_r in new_tube_squares) and (old_t_r_index == old_b_l_index):  # we have a crossing
                 uni_flag = False
             # old(tl,br) cur(tr,bl) pts wrt current tr
             b_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2] - 1]
@@ -1739,8 +1751,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
             old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_l_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            old_b_r_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
             if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
-                    and (b_l in new_tube_squares):  # we have a crossing
+                    and (b_l in new_tube_squares) and (old_t_l_index == old_b_r_index):  # we have a crossing
                 uni_flag = False
             # x-z plane
             # cur(tl,br) old(tr,bl) pts wrt current tl
@@ -1749,8 +1765,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
             old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_r_index = self.tube_check_index[
+                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            old_b_l_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
             if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
-                    and (b_r in new_tube_squares):  # we have a crossing
+                    and (b_r in new_tube_squares) and (old_t_r_index == old_b_l_index):  # we have a crossing
                 uni_flag = False
             # old(tl,br) cur(tr,bl) pts wrt current tr
             b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
@@ -1758,8 +1778,12 @@ class Grid3D_onlat(object):
                 new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
             old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_l_index = self.tube_check_index[
+                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
+            old_b_r_index = self.tube_check_index[
+                new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
             if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
-                    and (b_l in new_tube_squares):  # we have a crossing
+                    and (b_l in new_tube_squares) and (old_t_l_index == old_b_r_index):  # we have a crossing
                 uni_flag = False
         return uni_flag
 
