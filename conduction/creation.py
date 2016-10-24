@@ -514,6 +514,8 @@ class Grid2D_onlat(object):
                         self.tube_coords_r.append([x_r, y_r])
                         self.tube_squares.append(tube_squares)
                         self.theta.append(theta)
+                        if i == 0:
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares)
                         if i >= 1:
                             uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                             # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -747,8 +749,9 @@ class Grid2D_onlat(object):
         return bd_vol, index
 
     def setup_tube_vol_check_array_2d(self):
-        "Setup of tube check arrays, returns nothing"
+        "Setup of tube check and index arrays, returns nothing"
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        index = np.zeros((self.size + 1, self.size + 1), dtype=int)
         # add boundary tags
         for i in range(self.size + 1):
             bd_vol[0, i] = 10  # x = 0 is reflective
@@ -761,42 +764,41 @@ class Grid2D_onlat(object):
         bd_vol[self.size, 0] = 30
         bd_vol[self.size, self.size] = 30
         self.tube_check_bd_vol = bd_vol
+        self.tube_check_index = index
 
     def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares):
         "Adds tube to the current check arrays"
+        index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
         self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1]] = 1  # left endpoints
         self.tube_check_bd_vol[new_tube_coords[2], new_tube_coords[3]] = 1  # right endpoints
+        self.tube_check_index[new_tube_coords[0], new_tube_coords[1]] = index_val
+        self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
         for j in range(1, len(new_tube_squares) - 1):
             self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
+            self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
 
     def check_tube_and_vol_unique_2d_arraymethod(self, new_tube_squares):
+        index_val = len(self.tube_coords) + 1  # current tube index
         uni_flag = True
         for l in range(len(new_tube_squares)):
             test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1]]
             if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint
                 uni_flag = False
             # generate candidate check positions for tube crossing
-            ###########
-            # this algorithm looks for interweaved diagonal clusters. The only 2 possibilities are checked
-            t_l = new_tube_squares[l]
-            t_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
-            b_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            # this algorithm looks for interweaved diagonal clusters
+            # check cur(tl,br) and old(tr,bl), pts wrt tl
             b_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1]
-            test_b_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1]
-            test_t_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
-            test_b_l = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
-            if ((test_b_r == 1) or (test_b_r == -1)) and ((test_t_r == 1) or (test_t_r == -1)) \
-                    and ((test_b_l == 1) or (test_b_l == -1)):
+            old_t_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
+            old_b_l = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
+                    and (b_r in new_tube_squares):  # we have a crossing
                 uni_flag = False
-            t_r = new_tube_squares[l]
-            t_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
+            # check old(tl,br) and cur(tr,bl), pts wrt tr
             b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1]
-            b_r = [new_tube_squares[l][0], new_tube_squares[l][1] - 1]
-            test_t_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
-            test_b_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1]
-            test_b_r = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
-            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            old_t_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
+            old_b_r = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
+                    and (b_l in new_tube_squares):  # we have a crossing
                 uni_flag = False
         return uni_flag
 
@@ -1401,6 +1403,8 @@ class Grid3D_onlat(object):
                         self.theta.append(theta)
                         self.phi.append(phi)
                         self.tube_squares.append(tube_squares)
+                        if i == 0:
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares)
                         if i >= 1:
                             uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
                             #uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -1651,6 +1655,7 @@ class Grid3D_onlat(object):
     def setup_tube_vol_check_array_3d(self):
         "Setup of tube check arrays, returns nothing"
         bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        index = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         # add boundary tags
         for i in range(self.size + 1):
             for j in range(self.size + 1):
@@ -1675,86 +1680,87 @@ class Grid3D_onlat(object):
             bd_vol[i, self.size, self.size] = 30
             bd_vol[self.size, i, self.size] = 30
         self.tube_check_bd_vol = bd_vol
+        self.tube_check_index = index
 
     def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares):
         "Adds tube to the current check arrays"
+        index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
         self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = 1  # left endpoints
         self.tube_check_bd_vol[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = 1  # right endpoints
+        self.tube_check_index[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = index_val
+        self.tube_check_index[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = index_val
         for j in range(1, len(new_tube_squares) - 1):
             self.tube_check_bd_vol[
                 new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = -1  # volume points
+            self.tube_check_index[
+                new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = index_val
 
     def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):
         uni_flag = True
+        index_val = len(self.tube_coords) + 1
         for l in range(len(new_tube_squares)):
             test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2]]
             if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint
                 uni_flag = False
             # generate candidate check positions for tube crossing
-            ###########
-            # this algorithm looks for interweaved diagonal clusters. The only 6 possibilities are checked
+            # this algorithm looks for interweaved diagonal clusters. 6 cases in 3D in array method.
             # x-y plane
-            test_t_r = self.tube_check_bd_vol[
+            # cur(tl,br) old(tr,bl) pts wrt current tl
+            b_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            old_t_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
+            old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
-            test_b_r = self.tube_check_bd_vol[
-                new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
-            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
+                    and (b_r in new_tube_squares):  # we have a crossing
                 uni_flag = False
-            test_t_l = self.tube_check_bd_vol[
+            # old(tl,br) cur(tr,bl) pts wrt current tr
+            b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            old_t_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
-                new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
-            test_b_r = self.tube_check_bd_vol[
+            old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
-            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
+                    and (b_l in new_tube_squares):  # we have a crossing
                 uni_flag = False
             # y-z plane
-            test_t_r = self.tube_check_bd_vol[
+            # cur(tl,br) old(tr,bl) pts wrt current tl
+            b_r = [new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2] - 1]
+            old_t_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
+            old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            test_b_r = self.tube_check_bd_vol[
-                new_tube_squares[l][0], new_tube_squares[l][1] + 1, new_tube_squares[l][2] - 1]
-            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
+                    and (b_r in new_tube_squares):  # we have a crossing
                 uni_flag = False
-            t_r = new_tube_squares[l]
-            t_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
+            # old(tl,br) cur(tr,bl) pts wrt current tr
             b_l = [new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2] - 1]
-            b_r = [new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            test_t_l = self.tube_check_bd_vol[
+            old_t_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
-                new_tube_squares[l][0], new_tube_squares[l][1] - 1, new_tube_squares[l][2] - 1]
-            test_b_r = self.tube_check_bd_vol[
+            old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
+                    and (b_l in new_tube_squares):  # we have a crossing
                 uni_flag = False
             # x-z plane
-            test_t_r = self.tube_check_bd_vol[
+            # cur(tl,br) old(tr,bl) pts wrt current tl
+            b_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
+            old_b_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            test_b_r = self.tube_check_bd_vol[
-                new_tube_squares[l][0] + 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            if ((test_t_r == 1) or (test_t_r == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
+                    and (b_r in new_tube_squares):  # we have a crossing
                 uni_flag = False
-            test_t_l = self.tube_check_bd_vol[
+            # old(tl,br) cur(tr,bl) pts wrt current tr
+            b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
+            old_t_l = self.tube_check_bd_vol[
                 new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2]]
-            test_b_l = self.tube_check_bd_vol[
-                new_tube_squares[l][0] - 1, new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            test_b_r = self.tube_check_bd_vol[
+            old_b_r = self.tube_check_bd_vol[
                 new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2] - 1]
-            if ((test_t_l == 1) or (test_t_l == -1)) and ((test_b_l == 1) or (test_b_l == -1)) \
-                    and ((test_b_r == 1) or (test_b_r == -1)):
+            if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
+                    and (b_l in new_tube_squares):  # we have a crossing
                 uni_flag = False
-                #########
         return uni_flag
 
     @staticmethod
