@@ -34,7 +34,8 @@ def save_fill_frac(folder, fill_fract):
 
 
 class Grid2D_onlat(object):
-    def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir, rank=None,
+    def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
+                 disable_func, rank=None,
                  size=None):
         """Grid in first quadrant only for convenience"""
         if parallel:
@@ -459,6 +460,8 @@ class Grid2D_onlat(object):
             status_counter = 0
             if tube_radius == 0:
                 logging.info("Zero tube radius given. Tubes will have no volume.")
+                if disable_func:
+                    logging.info("Ignoring disabling functionalization since tubes are volumeless.")
                 fill_fract = tube_length * float(num_tubes) / grid_size ** 2
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
@@ -515,7 +518,7 @@ class Grid2D_onlat(object):
                         self.tube_squares.append(tube_squares)
                         self.theta.append(theta)
                         if i == 0:
-                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares)
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
                         if i >= 1:
                             uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                             # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -539,7 +542,7 @@ class Grid2D_onlat(object):
                                 # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                                 uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                             # uni_flag must have been true to get here, so write it to the array
-                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares)
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
                     logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
                 # get number of squares filled
                 cube_count = 0  # each cube has area 1
@@ -550,7 +553,7 @@ class Grid2D_onlat(object):
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d()
+                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
 
     def generate_2d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -720,14 +723,18 @@ class Grid2D_onlat(object):
         # print tube_check_l
         return tube_check_l, tube_check_r, bd
 
-    def generate_vol_check_array_2d(self):
+    def generate_vol_check_array_2d(self, disable_func):
         """To be used with tube volume
         Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        if disable_func:
+            endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
+        else:
+            endpoint_val = 1  # leave it as endpoint
         for i in range(len(self.tube_coords)):
-            bd_vol[self.tube_coords[i][0], self.tube_coords[i][1]] = 1  # left endpoints
-            bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = 1  # right endpoints
+            bd_vol[self.tube_coords[i][0], self.tube_coords[i][1]] = endpoint_val  # left endpoints
+            bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
             for j in range(1, len(self.tube_squares[i]) - 1):
@@ -766,11 +773,15 @@ class Grid2D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares):
+    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func):
         "Adds tube to the current check arrays"
         index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
-        self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1]] = 1  # left endpoints
-        self.tube_check_bd_vol[new_tube_coords[2], new_tube_coords[3]] = 1  # right endpoints
+        if disable_func:
+            endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
+        else:
+            endpoint_val = 1  # leave it as endpoint
+        self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1]] = endpoint_val  # left endpoints
+        self.tube_check_bd_vol[new_tube_coords[2], new_tube_coords[3]] = endpoint_val  # right endpoints
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1]] = index_val
         self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
         for j in range(1, len(new_tube_squares) - 1):
@@ -790,15 +801,19 @@ class Grid2D_onlat(object):
             b_r = [new_tube_squares[l][0] + 1, new_tube_squares[l][1] - 1]
             old_t_r = self.tube_check_bd_vol[new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
             old_b_l = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            old_t_r_index = self.tube_check_index[new_tube_squares[l][0] + 1, new_tube_squares[l][1]]
+            old_b_l_index = self.tube_check_index[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
             if ((old_t_r == 1) or (old_t_r == -1)) and ((old_b_l == 1) or (old_b_l == -1)) \
-                    and (b_r in new_tube_squares):  # we have a crossing
+                    and (b_r in new_tube_squares) and (old_t_r_index == old_b_l_index):  # we have a crossing
                 uni_flag = False
             # check old(tl,br) and cur(tr,bl), pts wrt tr
             b_l = [new_tube_squares[l][0] - 1, new_tube_squares[l][1] - 1]
             old_t_l = self.tube_check_bd_vol[new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
             old_b_r = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
+            old_t_l_index = self.tube_check_index[new_tube_squares[l][0] - 1, new_tube_squares[l][1]]
+            old_b_r_index = self.tube_check_index[new_tube_squares[l][0], new_tube_squares[l][1] - 1]
             if ((old_t_l == 1) or (old_t_l == -1)) and ((old_b_r == 1) or (old_b_r == -1)) \
-                    and (b_l in new_tube_squares):  # we have a crossing
+                    and (b_l in new_tube_squares) and (old_t_l_index == old_b_r_index):  # we have a crossing
                 uni_flag = False
         return uni_flag
 
@@ -890,7 +905,8 @@ class Grid2D_onlat(object):
 
 
 class Grid3D_onlat(object):
-    def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir, rank=None,
+    def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
+                 disable_func, rank=None,
                  size=None):
         """Grid in first quadrant only for convenience"""
         self.size = grid_size
@@ -1328,7 +1344,7 @@ class Grid3D_onlat(object):
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
-                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d()
+                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
         else:  # serial implementation
             status_counter = 0
             counter = 0
@@ -1404,7 +1420,7 @@ class Grid3D_onlat(object):
                         self.phi.append(phi)
                         self.tube_squares.append(tube_squares)
                         if i == 0:
-                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares)
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
                         if i >= 1:
                             uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
                             #uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -1431,7 +1447,7 @@ class Grid3D_onlat(object):
                                 self.tube_squares.append(tube_squares)
                                 uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
                                 # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
-                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares)
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
                 logging.info("Tube generation complete")
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
                 # get number of squares filled
@@ -1443,7 +1459,7 @@ class Grid3D_onlat(object):
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
-                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d()
+                self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
 
     def generate_3d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
@@ -1607,14 +1623,20 @@ class Grid3D_onlat(object):
             bd[self.size, i, self.size] = 30
         return tube_check_l, tube_check_r, bd
 
-    def generate_vol_check_array_3d(self):
+    def generate_vol_check_array_3d(self, disable_func):
         """To be used with tube volume
         Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
         bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
+        if disable_func:
+            endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
+        else:
+            endpoint_val = 1  # leave it as endpoint
         for i in range(len(self.tube_coords)):
-            bd_vol[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = 1  # left endpoints
-            bd_vol[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = 1  # right endpoints
+            bd_vol[
+                self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = endpoint_val  # left endpoints
+            bd_vol[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][
+                5]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2]] = i + 1
             # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i + 1
@@ -1682,11 +1704,17 @@ class Grid3D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares):
+    def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares, disable_func):
         "Adds tube to the current check arrays"
         index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
-        self.tube_check_bd_vol[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = 1  # left endpoints
-        self.tube_check_bd_vol[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = 1  # right endpoints
+        if disable_func:
+            endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
+        else:
+            endpoint_val = 1  # leave it as endpoint
+        self.tube_check_bd_vol[
+            new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = endpoint_val  # left endpoints
+        self.tube_check_bd_vol[
+            new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = endpoint_val  # right endpoints
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = index_val
         self.tube_check_index[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = index_val
         for j in range(1, len(new_tube_squares) - 1):

@@ -80,6 +80,7 @@ if __name__ == "__main__":
                                                                     'restart simulation.')
     parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
+    parser.add_argument('--disable_func', type=bool, default=False, help='Turn off functionalization of the tube ends.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
                                                                      'somewhat large because histogramming has to be done every time.')
@@ -121,6 +122,7 @@ if __name__ == "__main__":
     method = args.method
     printout_inc = args.printout_inc
     restart = args.restart
+    disable_func = args.disable_func
 
     os.chdir(save_dir)
 
@@ -189,7 +191,8 @@ if __name__ == "__main__":
             comm.Barrier()
             onlat_2d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                    timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                   num_walkers, printout_inc, k_conv_error_buffer, rank, size, restart)
+                                                   num_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
+                                                   size, restart)
     elif on_lattice and (dim == 3):
         if method == 'variable_flux':
             logging.error('This method is not accurate, stopping')
@@ -200,7 +203,7 @@ if __name__ == "__main__":
             onlat_3d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                    timesteps, quiet, plot_save_dir,
                                                    gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                                   k_conv_error_buffer, rank, size, restart)
+                                                   k_conv_error_buffer, disable_func, rank, size, restart)
     else:
         print 'Off lattice not implemented yet'
         raise SystemExit

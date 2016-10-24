@@ -77,6 +77,7 @@ if __name__ == "__main__":
     run_to_convergence = Config.getboolean('config', 'run_to_convergence')
     num_walkers = Config.getint('config', 'num_walkers')
     method = Config.get('config', 'method')
+    disable_func = Config.getboolean('config', 'disable_func')
     if method == 'constant_flux':
         printout_inc = Config.getint('constant_flux', 'printout_inc')
     else:
@@ -148,7 +149,7 @@ if __name__ == "__main__":
         elif method == 'constant_flux':
             onlat_2d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                  timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                 num_walkers, printout_inc, k_conv_error_buffer)
+                                                 num_walkers, printout_inc, k_conv_error_buffer, disable_func)
     elif on_lattice and (dim == 3):
         if method == 'variable_flux':
             logging.error('This method is not accurate, stopping')
@@ -162,7 +163,7 @@ if __name__ == "__main__":
             onlat_3d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                                  quiet, plot_save_dir,
                                                  gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                                 k_conv_error_buffer)
+                                                 k_conv_error_buffer, disable_func)
     else:
         logging.error('Check inputs')
         raise SystemExit

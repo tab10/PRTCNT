@@ -12,7 +12,7 @@ from mpi4py import MPI
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
-                  gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer):
+                  gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func):
     def histogram_walker_list(hot_walker_master, cold_walker_master):
         H = np.zeros((grid.size + 1, grid.size + 1))  # resets H every time function is called, IMPORTANT
         for i in range(len(hot_walker_master)):
@@ -25,7 +25,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir)
+    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                 disable_func)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
         plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
@@ -140,14 +141,16 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
-                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, rank, size, restart):
+                    gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
+                    size, restart):
     comm = MPI.COMM_WORLD
 
     # serial tube generation
     if rank == 0:
-        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir)
+        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                     disable_func)
     # parallel tube generation, shouldn't be used yet
-    # grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, plot_save_dir, rank, size)
+    # grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, True, plot_save_dir, disable_func, rank, size)
 
     if rank == 0:
         if gen_plots:
