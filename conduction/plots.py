@@ -422,7 +422,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
             fill_fract.append(temp_ff)
         # apply linear fit
         slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
-        x_fit = np.arange(min(fill_fract), max(fill_fract), 100)
+        x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
         y_fit = slope * x_fit + intercept
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
