@@ -363,6 +363,13 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='', max_tube_num=100000):
+    # formulas to calculate fill_fraction
+    def fill_fraction_tubes(x, orientation):
+        if orientation == 'random':
+            fill_fract = 0.0014 * x
+        else:  # h or v
+            fill_fract = 0.0016 * x
+        return x
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
@@ -406,12 +413,22 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
             k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
         # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-        plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        fill_fract = []
+        for a in range(len(uni_num_tubes)):
+            temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i])
+            fill_fract.append(temp_ff)
+        # apply linear fit
+        slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
+        x_fit = np.arange(min(fill_fract), max(fill_fract), 100)
+        y_fit = slope * x_fit + intercept
+        plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        fit_label = '%s, slope %.4f, y-int %.4f' % (uni_orientations[i], slope, intercept)
+        plt.plot(x_fit, y_fit, label=fit_label)
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
-    plt.xlabel('Number of tubes')
-    #plt.xlabel('Filling fraction %')
+    # plt.xlabel('Number of tubes')
+    plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
     plt.legend(loc=2)
     plt.tight_layout()
