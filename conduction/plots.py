@@ -372,7 +372,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
             fill_fract = random[str(int(x))]
         else:  # h or v
             fill_fract = h_v[str(int(x))]
-        return x
+        return fill_fract
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
