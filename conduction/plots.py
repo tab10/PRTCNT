@@ -369,9 +369,9 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         h_v = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
                '8750': 14.42, '10000': 16.48, '11250': 18.56, '12500': 20.62}
         if orientation == 'random':
-            fill_fract = random[str(x)]
+            fill_fract = random[str(int(x))]
         else:  # h or v
-            fill_fract = h_v[str(x)]
+            fill_fract = h_v[str(int(x))]
         return x
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
