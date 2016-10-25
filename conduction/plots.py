@@ -363,12 +363,15 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='', max_tube_num=100000):
-    # formulas to calculate fill_fraction
     def fill_fraction_tubes(x, orientation):
+        random = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
+                  '8750': 12.46, '10000': 14.27, '11250': 16.04, '12500': 17.8}
+        h_v = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
+               '8750': 14.42, '10000': 16.48, '11250': 18.56, '12500': 20.62}
         if orientation == 'random':
-            fill_fract = 0.0014 * x
+            fill_fract = random[str(x)]
         else:  # h or v
-            fill_fract = 0.0016 * x
+            fill_fract = h_v[str(x)]
         return x
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
@@ -422,7 +425,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
         x_fit = np.arange(min(fill_fract), max(fill_fract), 100)
         y_fit = slope * x_fit + intercept
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-        fit_label = '%s, slope %.4f, y-int %.4f' % (uni_orientations[i], slope, intercept)
+        fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
         plt.plot(x_fit, y_fit, label=fit_label)
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
