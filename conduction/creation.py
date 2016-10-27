@@ -456,13 +456,14 @@ class Grid2D_onlat(object):
             self.tube_centers = []
             self.theta = []
             self.tube_radius = tube_radius
+            self.setup_tube_vol_check_array_2d()
             counter = 0  # counts num of non-unique tubes replaced
             status_counter = 0
             if tube_radius == 0:
                 logging.info("Zero tube radius given. Tubes will have no volume.")
                 if disable_func:
                     logging.info("Ignoring disabling functionalization since tubes are volumeless.")
-                fill_fract = tube_length * float(num_tubes) / grid_size ** 2
+                fill_fract = 2.0 * float(num_tubes) / grid_size ** 2
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
                 if num_tubes > 0:  # tubes exist
@@ -477,9 +478,12 @@ class Grid2D_onlat(object):
                         self.tube_coords_l.append([x_l, y_l])
                         self.tube_coords_r.append([x_r, y_r])
                         self.theta.append(theta)
+                        if i == 0:
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                         if i >= 1:
-                            uni_flag = self.check_tube_unique(
-                                self.tube_coords, False)  # ensures no endpoints, left or right, are in the same spot
+                            uni_flag = self.check_tube_and_vol_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
+                            # uni_flag = self.check_tube_unique(self.tube_coords, False)
+                            #  ensures no endpoints, left or right, are in the same spot
                             while not uni_flag:
                                 counter += 1
                                 self.tube_centers.pop()
@@ -494,7 +498,9 @@ class Grid2D_onlat(object):
                                 self.tube_coords_l.append([x_l, y_l])
                                 self.tube_coords_r.append([x_r, y_r])
                                 self.theta.append(theta)
-                                uni_flag = self.check_tube_unique(self.tube_coords, False)
+                                uni_flag = self.check_tube_and_vol_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
+                                # uni_flag = self.check_tube_unique(self.tube_coords, False)
+                            self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                     logging.info("Corrected %d overlapping tube endpoints" % counter)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             else:
@@ -784,11 +790,22 @@ class Grid2D_onlat(object):
         self.tube_check_bd_vol[new_tube_coords[2], new_tube_coords[3]] = endpoint_val  # right endpoints
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1]] = index_val
         self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
-        for j in range(1, len(new_tube_squares) - 1):
-            self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
-            self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
+        if new_tube_squares is not None:  # None used for tunneling only
+            for j in range(1, len(new_tube_squares) - 1):
+                self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
+                self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
+
+    def check_tube_unique_2d_arraymethod(self, new_tube_squares):
+        "No volume"
+        uni_flag = True
+        check_l = self.tube_check_bd_vol[new_tube_squares[0], new_tube_squares[1]]
+        check_r = self.tube_check_bd_vol[new_tube_squares[2], new_tube_squares[3]]
+        if (check_l != 0) or (check_r != 0):
+            uni_flag = False
+        return uni_flag
 
     def check_tube_and_vol_unique_2d_arraymethod(self, new_tube_squares):
+        "Volume"
         index_val = len(self.tube_coords) + 1  # current tube index
         uni_flag = True
         for l in range(len(new_tube_squares)):
@@ -1354,9 +1371,10 @@ class Grid3D_onlat(object):
             self.tube_centers = []
             self.theta = []
             self.phi = []
+            self.setup_tube_vol_check_array_3d()
             if tube_radius == 0:
                 logging.info("Zero tube radius given. Tubes will have no volume.")
-                fill_fract = tube_length * float(num_tubes) / grid_size ** 3
+                fill_fract = 2.0 * float(num_tubes) / grid_size ** 3
                 logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
                 save_fill_frac(plot_save_dir, fill_fract)
                 if num_tubes > 0:  # tubes exist
@@ -1373,8 +1391,11 @@ class Grid3D_onlat(object):
                         self.tube_coords_r.append([x_r, y_r, z_r])
                         self.theta.append(theta)
                         self.phi.append(phi)
+                        if i == 0:
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], None, disable_func)
                         if i >= 1:
-                            uni_flag = self.check_tube_unique(self.tube_coords, False)
+                            uni_flag = self.check_tube_unique_3d_arraymethod([x_l, y_l, z_l, x_r, y_r, z_r])
+                            #uni_flag = self.check_tube_unique(self.tube_coords, False)
                             while not uni_flag:
                                 counter += 1
                                 self.tube_centers.pop()
@@ -1393,7 +1414,9 @@ class Grid3D_onlat(object):
                                 self.tube_coords_r.append([x_r, y_r, z_r])
                                 self.theta.append(theta)
                                 self.phi.append(phi)
-                                uni_flag = self.check_tube_unique(self.tube_coords, False)
+                                uni_flag = self.check_tube_unique_3d_arraymethod([x_l, y_l, z_l, x_r, y_r, z_r])
+                                # uni_flag = self.check_tube_unique(self.tube_coords, False)
+                            self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], None, disable_func)
                     logging.info("Tube generation complete")
                     logging.info("Corrected %d overlapping tube endpoints" % counter)
                 self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
@@ -1717,13 +1740,24 @@ class Grid3D_onlat(object):
             new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = endpoint_val  # right endpoints
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1], new_tube_coords[2]] = index_val
         self.tube_check_index[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = index_val
-        for j in range(1, len(new_tube_squares) - 1):
-            self.tube_check_bd_vol[
-                new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = -1  # volume points
-            self.tube_check_index[
-                new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = index_val
+        if new_tube_squares is not None:
+            for j in range(1, len(new_tube_squares) - 1):
+                self.tube_check_bd_vol[
+                    new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = -1  # volume points
+                self.tube_check_index[
+                    new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = index_val
+
+    def check_tube_unique_3d_arraymethod(self, new_tube_squares):
+        "No volume"
+        uni_flag = True
+        check_l = self.tube_check_bd_vol[new_tube_squares[0], new_tube_squares[1], new_tube_squares[2]]
+        check_r = self.tube_check_bd_vol[new_tube_squares[3], new_tube_squares[4], new_tube_squares[5]]
+        if (check_l != 0) or (check_r != 0):
+            uni_flag = False
+        return uni_flag
 
     def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):
+        "Volume"
         uni_flag = True
         index_val = len(self.tube_coords) + 1
         for l in range(len(new_tube_squares)):
