@@ -362,7 +362,7 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='', max_tube_num=100000):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='', max_tube_num=100000):
     def fill_fraction_tubes(x, orientation):
         random = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
                   '8750': 12.46, '10000': 14.27, '11250': 16.04, '12500': 17.8, '13750': 19.58}
@@ -433,7 +433,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, exclude_vals='
     # plt.xlabel('Number of tubes')
     plt.xlabel('Filling fraction %')
     plt.ylabel('Conductivity k')
-    plt.legend(loc=2)
+    if legend:
+        plt.legend(loc=2)
     plt.tight_layout()
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
     plt.close()
