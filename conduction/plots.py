@@ -362,16 +362,21 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='', max_tube_num=100000):
-    def fill_fraction_tubes(x, orientation):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
+                        tunneling=False, max_tube_num=100000):
+    def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         random = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
                   '8750': 12.46, '10000': 14.27, '11250': 16.04, '12500': 17.8, '13750': 19.58}
         h_v = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
                '8750': 14.42, '10000': 16.48, '11250': 18.56, '12500': 20.62}
-        if orientation == 'random':
-            fill_fract = random[str(int(x))]
-        else:  # h or v
-            fill_fract = h_v[str(int(x))]
+        tunnel = 2.0 * float(x) / grid_size ** dim
+        if not tunneling:
+            if orientation == 'random':
+                fill_fract = random[str(int(x))]
+            else:  # h or v
+                fill_fract = h_v[str(int(x))]
+        else:
+            fill_fract = tunnel
         return fill_fract
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
