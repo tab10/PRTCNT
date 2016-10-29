@@ -423,7 +423,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         fill_fract = []
         for a in range(len(uni_num_tubes)):
-            temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i])
+            temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i], tunneling, grid_size, dim)
             fill_fract.append(temp_ff)
         # apply linear fit
         slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
