@@ -132,6 +132,8 @@ if __name__ == "__main__":
     else:
         logging.error('Check method')
         raise SystemExit
+    if disable_func:
+        logging.info('Functionalization has been disabled, treating ends as volume in rules')
 
     logging.info('Grid size of %d is being used' % (grid_size + 1))
     ##### #####

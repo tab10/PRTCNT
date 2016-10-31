@@ -171,6 +171,8 @@ if __name__ == "__main__":
             logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
             num_walkers *= 3
     logging.info('Grid size of %d is being used' % (grid_size + 1))
+    if disable_func:
+        logging.info('Functionalization has been disabled, treating ends as volume in rules')
     ##### #####
 
     comm.Barrier()
