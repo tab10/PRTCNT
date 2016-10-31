@@ -377,11 +377,11 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         if not tunneling:
             if (orientation == 'random') and (dim == 3):
                 fill_fract = random_3d[str(int(x))]
-            elif (orientation == 'horizontal') or (orientation == 'vertical') and (dim == 3):
+            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 3):
                 fill_fract = h_v_3d[str(int(x))]
             elif (orientation == 'random') and (dim == 2):
                 fill_fract = random_2d[str(int(x))]
-            elif (orientation == 'horizontal') or (orientation == 'vertical') and (dim == 2):
+            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 2):
                 fill_fract = h_v_2d[str(int(x))]
         else:
             fill_fract = tunnel
