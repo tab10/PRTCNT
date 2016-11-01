@@ -439,7 +439,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         y_fit = slope * x_fit + intercept
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
-        plt.plot(x_fit, y_fit, label=fit_label)
+        plt.plot(x_fit, y_fit)  # , label=fit_label)
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
