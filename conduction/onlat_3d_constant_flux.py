@@ -152,12 +152,15 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
                                      disable_func)
 
+    comm.Barrier()
+
     if rank == 0:
         if gen_plots:
             plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
     else:
         grid = None
 
+    comm.Barrier()
     grid = comm.bcast(grid, root=0)
 
     grid_range = [[0, grid.size + 1], [0, grid.size + 1], [0, grid.size + 1]]
