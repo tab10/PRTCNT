@@ -414,6 +414,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         sep_folds[i] = sorted(sep_folds[i])
         sep_folds[i] += zero_folds
     slopes = []
+    y_ints = []
     for i in range(len(uni_orientations)):
         uni_tubes = len(sep_folds[i]) / num_configs
         uni_num_tubes = []
@@ -441,6 +442,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         # apply linear fit
         slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
         slopes.append(slope)
+        y_ints.append(intercept)
         x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
         y_fit = slope * x_fit + intercept
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
@@ -459,6 +461,11 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
     f = open("slope.txt", 'w')
     for i in range(len(uni_orientations)):
         header = '%s %.4E\n' % (uni_orientations[i], slopes[i])
+        f.write(header)
+    f.close()
+    f = open("intercept.txt", 'w')
+    for i in range(len(uni_orientations)):
+        header = '%s %.4E\n' % (uni_orientations[i], y_ints[i])
         f.write(header)
     f.close()
     plt.close()
