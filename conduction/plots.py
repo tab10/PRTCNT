@@ -451,6 +451,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         plt.legend(loc=2)
     plt.tight_layout()
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
+    if len(uni_orientations):
+        np.savetxt('slope.txt', [slope])
     plt.close()
 
 
