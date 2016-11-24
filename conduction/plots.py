@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
+import scipy as sp
 import creation
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
@@ -363,7 +364,7 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
-                        tunneling=False, max_tube_num=100000):
+                        tunneling=False, max_tube_num=100000, force_y_int=True):
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         random_2d = {'0': 0, '10': 1.54, '20': 3.04, '30': 4.47, '40': 6.03, '50': 7.49, '60': 8.89, '70': 10.55,
                      '80': 12.06, '90': 13.65, '100': 14.6, '110': 16.5, '120': 17.88, '130': 19.11,
@@ -387,6 +388,20 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         else:
             fill_fract = tunnel
         return fill_fract
+
+    def lin_fit(x, y, dim):
+        '''Fits a linear fit of the form mx+b to the data'''
+        dim_dict = {2: 0.5, 3: 1.0 / 3.0}
+        fitfunc = lambda params, x: params[0] * x + dim_dict[dim]  # create fitting function of form mx+no_tubes_const
+        errfunc = lambda p, x, y: fitfunc(p, x) - y  # create error function for least squares fit
+
+        init_a = 0.5  # find initial value for a (gradient)
+        init_p = np.array((init_a))  # bundle initial values in initial parameters
+
+        # calculate best fitting parameters (i.e. m and b) using the error function
+        p1, success = sp.optimize.leastsq(errfunc, init_p.copy(), args=(x, y))
+        f = fitfunc(p1, x)  # create a fit with those parameters
+        return p1, f
     exclude_vals = map(str, exclude_vals)  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
@@ -441,7 +456,18 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i], tunneling, grid_size, dim)
             fill_fract.append(temp_ff)
         # apply linear fit
-        slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
+        if force_y_int:
+            dim_dict = {2: 0.5, 3: 1.0 / 300.0}
+            # slope, _ = lin_fit(fill_fract, k_vals, dim)
+            x = np.array(fill_fract)
+            y = np.array(k_vals)
+            # x = x[:, np.newaxis]  # for 0 y intercept
+            intercept = dim_dict[dim]
+            x = np.vstack([x, np.ones(len(x)) * intercept]).T  # forces set y-int
+            slope, _, _, _ = np.linalg.lstsq(x, y)
+            r_value = 0.0
+        else:
+            slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
         slopes.append(slope)
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)
