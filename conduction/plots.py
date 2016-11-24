@@ -476,6 +476,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+        print slope
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], float(slope), intercept)
         plt.plot(x_fit, y_fit)  # , label=fit_label)
     plt.title(
