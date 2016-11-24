@@ -466,13 +466,15 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             x = np.vstack([x, np.ones(len(x)) * intercept]).T  # forces set y-int
             slope, _, _, _ = np.linalg.lstsq(x, y)
             r_value = 0.0
+            x_fit = x
+            y_fit = slope * x
         else:
             slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
+            x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
+            y_fit = slope * x_fit + intercept
         slopes.append(slope)
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)
-        x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
-        y_fit = slope * x_fit + intercept
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
         plt.plot(x_fit, y_fit)  # , label=fit_label)
