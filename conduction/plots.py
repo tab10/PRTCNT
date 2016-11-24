@@ -364,7 +364,7 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
-                        tunneling=False, max_tube_num=100000, force_y_int=True):
+                        tunneling=False, max_tube_num=100000, force_y_int=False):
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         random_2d = {'0': 0, '10': 1.54, '20': 3.04, '30': 4.47, '40': 6.03, '50': 7.49, '60': 8.89, '70': 10.55,
                      '80': 12.06, '90': 13.65, '100': 14.6, '110': 16.5, '120': 17.88, '130': 19.11,
