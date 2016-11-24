@@ -458,7 +458,9 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         # apply linear fit
         if force_y_int:
             dim_dict = {2: 0.5, 3: 1.0 / 300.0}
-            # slope, _ = lin_fit(fill_fract, k_vals, dim)
+            slope, _ = lin_fit(fill_fract, k_vals, dim)
+            print slope
+            raise SystemExit
             x = np.array(fill_fract)
             y = np.array(k_vals)
             # x = x[:, np.newaxis]  # for 0 y intercept
