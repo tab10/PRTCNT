@@ -154,6 +154,8 @@ class Grid2D_onlat(object):
             save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+        self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
+        logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
     def generate_2d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -428,6 +430,16 @@ class Grid2D_onlat(object):
                 uni_flag = False
         return uni_flag
 
+    def check_tube_lengths(self):
+        tube_lengths = np.zeros(len(self.tube_coords))
+        for i in range(len(self.tube_coords)):
+            dist = self.euc_dist(self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2],
+                                 self.tube_coords[i][3])
+            tube_lengths[i] = dist
+        avg_tube_len = np.mean(tube_lengths)
+        std_tube_len = np.std(tube_lengths, ddof=1)
+        return avg_tube_len, std_tube_len, tube_lengths
+
     @staticmethod
     def check_tube_unique(coords_list, parallel, rank=None, size=None):
         uni_flag = None
@@ -643,6 +655,8 @@ class Grid3D_onlat(object):
             save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
+        self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
+        logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
     def generate_3d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough"""
@@ -1008,6 +1022,16 @@ class Grid3D_onlat(object):
                     and (b_l in new_tube_squares) and (old_t_l_index == old_b_r_index):  # we have a crossing
                 uni_flag = False
         return uni_flag
+
+    def check_tube_lengths(self):
+        tube_lengths = np.zeros(len(self.tube_coords))
+        for i in range(len(self.tube_coords)):
+            dist = self.euc_dist(self.tube_coords[i][0], self.tube_coords[i][1], self.tube_coords[i][2],
+                                 self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5])
+            tube_lengths[i] = dist
+        avg_tube_len = np.mean(tube_lengths)
+        std_tube_len = np.std(tube_lengths, ddof=1)
+        return avg_tube_len, std_tube_len, tube_lengths
 
     @staticmethod
     def check_tube_unique(coords_list, parallel, rank=None, size=None):
