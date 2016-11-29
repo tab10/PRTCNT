@@ -1,3 +1,5 @@
+[![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/tab10/conduction/LICENSE)
+
 # CONDUCTION
 #### Python/MPI4PY package that calculates the thermal conductivity of a medium containing CNTs using random walks.
 

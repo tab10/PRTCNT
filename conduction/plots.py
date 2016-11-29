@@ -366,24 +366,24 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
                         tunneling=False, max_tube_num=100000, force_y_int=False):
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
-        random_2d = {'0': 0, '10': 1.54, '20': 3.04, '30': 4.47, '40': 6.03, '50': 7.49, '60': 8.89, '70': 10.55,
+        random_2d_15 = {'0': 0, '10': 1.54, '20': 3.04, '30': 4.47, '40': 6.03, '50': 7.49, '60': 8.89, '70': 10.55,
                      '80': 12.06, '90': 13.65, '100': 14.6, '110': 16.5, '120': 17.88, '130': 19.11,
                      '140': 20.76, '150': 22.21}
-        h_v_2d = {'0': 0, '10': 1.63, '20': 3.27, '30': 4.9, '40': 6.53, '50': 8.16, '60': 9.79, '70': 11.43,
+        h_v_2d_15 = {'0': 0, '10': 1.63, '20': 3.27, '30': 4.9, '40': 6.53, '50': 8.16, '60': 9.79, '70': 11.43,
                   '80': 13.06, '90': 14.69, '100': 16.33, '110': 17.96, '120': 19.59, '130': 21.22, '140': 22.86}
-        random_3d = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
+        random_3d_15 = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
                   '8750': 12.46, '10000': 14.27, '11250': 16.04, '12500': 17.8, '13750': 19.58}
-        h_v_3d = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
+        h_v_3d_15 = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
                '8750': 14.42, '10000': 16.48, '11250': 18.56, '12500': 20.62}
         tunnel = 2.0 * float(x) * 100.0 / grid_size ** dim
         if not tunneling:
-            if (orientation == 'random') and (dim == 3):
-                fill_fract = random_3d[str(int(x))]
-            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 3):
+            if (orientation == 'random') and (dim == 3) and (tube_length == 15):
+                fill_fract = random_3d_15[str(int(x))]
+            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 3) and (tube_length == 15):
                 fill_fract = h_v_3d[str(int(x))]
-            elif (orientation == 'random') and (dim == 2):
+            elif (orientation == 'random') and (dim == 2) and (tube_length == 15):
                 fill_fract = random_2d[str(int(x))]
-            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 2):
+            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 2) and (tube_length == 15):
                 fill_fract = h_v_2d[str(int(x))]
         else:
             fill_fract = tunnel
