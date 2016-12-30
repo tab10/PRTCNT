@@ -75,7 +75,7 @@ class Grid2D_onlat(object):
                     if i == 0:
                         self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                     if i >= 1:
-                        uni_flag = self.check_tube_and_vol_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
+                        uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                         # uni_flag = self.check_tube_unique(self.tube_coords, False)
                         #  ensures no endpoints, left or right, are in the same spot
                         while not uni_flag:
@@ -92,7 +92,7 @@ class Grid2D_onlat(object):
                             self.tube_coords_l.append([x_l, y_l])
                             self.tube_coords_r.append([x_r, y_r])
                             self.theta.append(theta)
-                            uni_flag = self.check_tube_and_vol_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
+                            uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                             # uni_flag = self.check_tube_unique(self.tube_coords, False)
                         self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
