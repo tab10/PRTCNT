@@ -1,11 +1,13 @@
-import ConfigParser
 import logging
+import sys
+import importlib
 import os
 import creation
 import onlat_2d_variable_flux
 import onlat_3d_constant_flux
 import onlat_3d_variable_flux
 import onlat_2d_constant_flux
+
 
 def ConfigSectionMap(section):
     dict1 = {}
@@ -14,9 +16,9 @@ def ConfigSectionMap(section):
         try:
             dict1[option] = Config.get(section, option)
             if dict1[option] == -1:
-                print("skip: %s" % option)
+                print(("skip: %s" % option))
         except:
-            print("exception on %s!" % option)
+            print(("exception on %s!" % option))
             dict1[option] = None
     return dict1
 
@@ -46,7 +48,14 @@ def save_walker_loc(walker, save_dir, walker_index, temp):
 
 
 if __name__ == "__main__":
-    Config = ConfigParser.ConfigParser()
+    print(sys.version_info[0])
+    if sys.version_info[0] < 3:
+        importlib.import_module('ConfigParser')
+        Config = ConfigParser.ConfigParser()
+    else:
+        print('ji')
+        importlib.import_module('configparser')
+        Config = configparser.configparser()
 
     if os.path.exists("config.ini"):
         Config.read("config.ini")

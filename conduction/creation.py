@@ -18,7 +18,7 @@ def get_plot_save_dir(folder, num_tubes, orientation, tube_length, restart=False
     if not ends:  # empty list is false
         maxnum = 1
     else:
-        maxnum = max(map(int, ends)) + 1
+        maxnum = max(list(map(int, ends))) + 1
     if not restart:
         plot_save_dir = "%d_%s_%d_%d" % (num_tubes, orientation, tube_length, maxnum)
         os.mkdir(plot_save_dir)
@@ -169,7 +169,7 @@ class Grid2D_onlat(object):
             y_l = np.random.randint(np.floor(tube_radius) + 1, self.size - np.floor(tube_radius))
         good_angles = []
         if orientation == 'random':
-            angle_range = range(0, 360)
+            angle_range = list(range(0, 360))
         elif orientation == 'vertical':
             angle_range = [90, 270]
         elif orientation == 'horizontal':
@@ -669,8 +669,8 @@ class Grid3D_onlat(object):
             y_l = np.random.randint(1, self.size)
             z_l = np.random.randint(1, self.size)
             if orientation == 'random':
-                theta_angle_range = range(0, 360)  # y-z plane
-                phi_angle_range = range(0, 360)  # x-y plane
+                theta_angle_range = list(range(0, 360))  # y-z plane
+                phi_angle_range = list(range(0, 360))  # x-y plane
                 theta_angle = np.random.choice(theta_angle_range)
                 phi_angle = np.random.choice(phi_angle_range)
             elif orientation == 'vertical':

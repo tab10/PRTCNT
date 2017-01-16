@@ -3,7 +3,6 @@ import logging
 import glob
 import matplotlib as mpl
 import os
-
 # mpl.use('Agg')
 mpl.use('pdf')
 import matplotlib.pyplot as plt
@@ -60,7 +59,7 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir):
     else:
         logging.info("Plotting setup with tube excluded volume")
         for i in range(len(grid.tube_squares)):
-            int_x, int_y = zip(*grid.tube_squares[i])
+            int_x, int_y = list(zip(*grid.tube_squares[i]))
             color = next(colors)
             plt.scatter(int_x[1:-1], int_y[1:-1], c=color)
             plt.scatter(tube_x[i], tube_y[i], c=color, marker=(5, 1))
@@ -100,7 +99,7 @@ def plot_three_d_random_walk_setup(grid, quiet, save_dir):
     else:
         logging.info("Plotting setup with tube excluded volume")
         for i in range(len(grid.tube_squares)):
-            int_x, int_y, int_z = zip(*grid.tube_squares[i])
+            int_x, int_y, int_z = list(zip(*grid.tube_squares[i]))
             color = next(colors)
             ax.scatter(int_x[1:-1], int_y[1:-1], int_z[1:-1], c=color)
             ax.scatter(tube_x[i], tube_y[i], tube_z[i], c=color, marker=(5, 1))
@@ -285,7 +284,7 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     noise_floor_vals = d_conv[2:size / 2]  # these are rough bounds that should work
     plt.plot(d_conv)
     noise_floor = np.mean(noise_floor_vals)
-    x_floor = range(2, 50)
+    x_floor = list(range(2, 50))
     y_floor = [noise_floor for number in range(2, 50)]
     plt.plot(x_floor, y_floor)
     plt.title("Convergence of $\\frac{dT(x)}{dx}$ calculation sweeping from x to the end\n"
@@ -320,7 +319,7 @@ def plot_k_convergence_err(quantity, quiet, save_dir, begin_cov_check, x_list=No
         plt.plot(x_list, quantity)
         plt.xlabel('Timesteps')
     else:
-        x = range(begin_cov_check, len(quantity) + begin_cov_check)
+        x = list(range(begin_cov_check, len(quantity) + begin_cov_check))
         plt.plot(x, quantity)
         plt.xlabel('Total walkers/2')
     plt.title("Error in convergence of conductivity k")
@@ -402,7 +401,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         p1, success = sp.optimize.leastsq(errfunc, init_p.copy(), args=(x, y))
         f = fitfunc(p1, x)  # create a fit with those parameters
         return p1, f
-    exclude_vals = map(str, exclude_vals)  # array of numbers
+
+    exclude_vals = list(map(str, exclude_vals))  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
     zero_folds = []
@@ -418,7 +418,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             tube_val <= max_tube_num):  # throws out extra config
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
-    print folds
+    print(folds)
     for file in glob.glob("0_*_*_*"):
         zero_folds.append(file)
     uni_orientations = list(set(orientations))
@@ -437,7 +437,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
         uni_num_tubes = [float(y) for y in uni_num_tubes]
-        print uni_num_tubes
+        print(uni_num_tubes)
         all_k_vals = np.zeros(len(sep_folds[i]))
         # all_kapitza_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
@@ -459,7 +459,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         if force_y_int:
             dim_dict = {2: 0.5, 3: 1.0 / 300.0}
             slope, _ = lin_fit(fill_fract, k_vals, dim)
-            print slope
+            print(slope)
             raise SystemExit
             x = np.array(fill_fract)
             y = np.array(k_vals)
@@ -513,7 +513,7 @@ def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tu
                                            exclude_vals='', max_tube_num=100000):
     # kapitza_vals - a list with vals to use (should be from lowest p to highest)
     # kapitza_num_configs - a list in order with kapitza vals telling the configs to include
-    exclude_vals = map(str, exclude_vals)  # array of numbers , ['0','1000','2000']
+    exclude_vals = list(map(str, exclude_vals))  # array of numbers , ['0','1000','2000']
     exclude_vals = [x + '_' for x in exclude_vals]
     plt.figure()
     num_plots = len(kapitza_vals)
@@ -533,7 +533,7 @@ def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tu
                         tube_val <= max_tube_num):  # throws out extra config
                 folds.append(file)  # all files
                 orientations.append(file.split('_')[1])
-        print folds
+        print(folds)
         for file in glob.glob("0_*_*_*"):
             zero_folds.append(file)
         uni_orientations = list(set(orientations))
@@ -549,7 +549,7 @@ def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tu
             for k in range(uni_tubes):
                 uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
             uni_num_tubes = [float(y) for y in uni_num_tubes]
-            print uni_num_tubes
+            print(uni_num_tubes)
             all_k_vals = np.zeros(len(sep_folds[i]))
             # all_kapitza_vals = np.zeros(len(sep_folds[i]))
             for j in range(len(sep_folds[i])):

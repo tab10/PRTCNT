@@ -41,9 +41,9 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     dt_dx_list = []
     heat_flux_list = []
     timestep_list = []  # x axis for plots
-    xedges = range(0, bins)
-    yedges = range(0, bins)
-    zedges = range(0, bins)
+    xedges = list(range(0, bins))
+    yedges = list(range(0, bins))
+    zedges = list(range(0, bins))
     start_k_err_check = tot_time / 2
 
     # d_add - how often to add a hot/cold walker pair
@@ -177,9 +177,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     dt_dx_list = []
     heat_flux_list = []
     timestep_list = []  # x axis for plots
-    xedges = range(0, bins)
-    yedges = range(0, bins)
-    zedges = range(0, bins)
+    xedges = list(range(0, bins))
+    yedges = list(range(0, bins))
+    zedges = list(range(0, bins))
     start_k_err_check = tot_time / 2
 
     # d_add - how often to add a hot/cold walker pair

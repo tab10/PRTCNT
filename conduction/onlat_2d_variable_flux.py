@@ -32,8 +32,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
-    xedges = range(0, bins)
-    yedges = range(0, bins)
+    xedges = list(range(0, bins))
+    yedges = list(range(0, bins))
 
     start = time.clock()
 
@@ -133,8 +133,8 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
     heat_flux_list = []
     k_convergence_err_list = []
     k_convergence_err = 1.0
-    xedges = range(0, bins)
-    yedges = range(0, bins)
+    xedges = list(range(0, bins))
+    yedges = list(range(0, bins))
 
     start = MPI.Wtime()
 

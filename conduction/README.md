@@ -3,6 +3,8 @@
 # CONDUCTION
 #### Python/MPI4PY package that calculates the thermal conductivity of a medium containing CNTs using random walks.
 
+Compatible with Python 2.x/3.x
+
 For serial code, options are given by setting up a config.ini in your choice of save directory
 or else default.ini will be read. For parallel code, options are given on the command line.
 

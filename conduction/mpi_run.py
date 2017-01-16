@@ -207,5 +207,5 @@ if __name__ == "__main__":
                                                    gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
                                                    k_conv_error_buffer, disable_func, rank, size, restart)
     else:
-        print 'Off lattice not implemented yet'
+        print('Off lattice not implemented yet')
         raise SystemExit
