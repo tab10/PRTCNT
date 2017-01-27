@@ -1,12 +1,9 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import logging
 import numpy as np
 import time
-import analysis
-import creation
-import plots
-import randomwalk
-import run
-from scipy import stats
 from mpi4py import MPI
 
 
@@ -58,7 +55,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
                 logging.info("k: %.4E" % k_convergence_val)
                 logging.info("k error: %.4E" % k_convergence_err)
     else:
-        for i in range(num_walkers / 2):
+        for i in range(old_div(num_walkers, 2)):
             H = randomwalk_routine_2d_serial(grid, timesteps, save_loc_data, quiet, save_loc_plots, plot_save_dir,
                                              walker_plot_save_dir, walker_data_save_dir,
                                              gen_plots, kapitza, prob_m_cn, i, H)
@@ -80,7 +77,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     logging.info("Simulation has converged with %d total walkers" % (i * 2))
     logging.info("Finished random walks")
     logging.info("Serial simulation time was %.4f s" % (end - start))
-    walk_sec = (i * 2) / (end - start)
+    walk_sec = old_div((i * 2), (end - start))
     logging.info("Crunched %.4f walkers/second" % walk_sec)
     temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, H, xedges, yedges, quiet, plot_save_dir,
                                                       gen_plots)
@@ -173,7 +170,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
 
             comm.Barrier()
     else:
-        for i in range(num_walkers / (2 * size)):  # rounds down total walkers slightly
+        for i in range(old_div(num_walkers, (2 * size))):  # rounds down total walkers slightly
             tot_H = randomwalk_routine_2d_MPI(grid, timesteps, save_loc_data, quiet, save_loc_plots, plot_save_dir,
                                               walker_plot_save_dir, walker_data_save_dir, gen_plots, kapitza,
                                               prob_m_cn, i, H, rank, comm, tot_H)
@@ -209,7 +206,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
         logging.info("Simulation has converged with %d total walkers" % (i * 2 * size))
         logging.info("Finished random walks")
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
-        walk_sec = (i * 2 * size) / (end - start)
+        walk_sec = old_div((i * 2 * size), (end - start))
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, tot_H, xedges, yedges, quiet,
                                                           plot_save_dir,

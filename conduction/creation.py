@@ -1,3 +1,8 @@
+from __future__ import division
+from builtins import map
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import numpy as np
 import logging
 import os
@@ -99,7 +104,7 @@ class Grid2D_onlat(object):
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
         else:
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
-            l_d = tube_length / (2 * tube_radius)
+            l_d = old_div(tube_length, (2 * tube_radius))
             logging.info("L/D is %.4f." % l_d)
             self.tube_squares = []  # grid squares that a tube passes through, for every tube
             self.setup_tube_vol_check_array_2d()
@@ -201,8 +206,8 @@ class Grid2D_onlat(object):
             x_r = x_l_temp
             y_l = y_r_temp
             y_r = y_l_temp
-        x_c = round(radius * np.cos(np.deg2rad(angle)) + x_l) / 2
-        y_c = round(radius * np.sin(np.deg2rad(angle)) + y_l) / 2
+        x_c = old_div(round(radius * np.cos(np.deg2rad(angle)) + x_l), 2)
+        y_c = old_div(round(radius * np.sin(np.deg2rad(angle)) + y_l), 2)
         # print x_l, y_l, x_r, y_r
         # print self.euc_dist(x_l, y_l, x_r, y_r)
         return x_l, y_l, x_r, y_r, x_c, y_c, angle
@@ -239,7 +244,7 @@ class Grid2D_onlat(object):
         dy = y2 - y1
 
         # Calculate error
-        error = int(dx / 2.0)
+        error = int(old_div(dx, 2.0))
         ystep = 1 if y1 < y2 else -1
 
         # Iterate over bounding box generating points between start and end
@@ -594,7 +599,7 @@ class Grid3D_onlat(object):
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
         else:
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
-            l_d = tube_length / (2 * tube_radius)
+            l_d = old_div(tube_length, (2 * tube_radius))
             logging.info("L/D is %.4f." % l_d)
             self.tube_squares = []
             self.setup_tube_vol_check_array_3d()
@@ -703,9 +708,9 @@ class Grid3D_onlat(object):
             y_r = y_l_temp
             z_l = z_r_temp
             z_r = z_l_temp
-        x_c = round(self.coord(radius, theta_angle, phi_angle)[0] + x_l) / 2
-        y_c = round(self.coord(radius, theta_angle, phi_angle)[1] + y_l) / 2
-        z_c = round(self.coord(radius, theta_angle, phi_angle)[2] + z_l) / 2
+        x_c = old_div(round(self.coord(radius, theta_angle, phi_angle)[0] + x_l), 2)
+        y_c = old_div(round(self.coord(radius, theta_angle, phi_angle)[1] + y_l), 2)
+        z_c = old_div(round(self.coord(radius, theta_angle, phi_angle)[2] + z_l), 2)
         return x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta_angle, phi_angle
 
     def find_cubes(self, start, end):
@@ -719,7 +724,7 @@ class Grid3D_onlat(object):
         p = p1.astype(float)
         d = p2 - p1
         N = int(max(abs(d)))
-        s = d / float(N)
+        s = old_div(d, float(N))
         points = []
         for i in range(N):
             p += s

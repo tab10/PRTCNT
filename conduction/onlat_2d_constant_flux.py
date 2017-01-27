@@ -1,13 +1,10 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import logging
 import numpy as np
 import time
-import analysis
-import creation
-import plots
-import randomwalk
 import os
-import run
-from scipy import stats
 from mpi4py import MPI
 
 
@@ -46,15 +43,15 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     timestep_list = []  # x axis for plots
     xedges = list(range(0, bins))
     yedges = list(range(0, bins))
-    start_k_err_check = tot_time / 2
+    start_k_err_check = old_div(tot_time, 2)
 
     # d_add - how often to add a hot/cold walker pair
-    d_add = tot_time / (tot_walkers / 2.0)  # as a float
+    d_add = old_div(tot_time, (old_div(tot_walkers, 2.0)))  # as a float
     if d_add.is_integer() and d_add >= 1:
-        d_add = int(tot_time / (tot_walkers / 2.0))
+        d_add = int(old_div(tot_time, (old_div(tot_walkers, 2.0))))
         walker_frac_trigger = 0  # add a pair every d_add timesteps
     elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
-        d_add = int(1.0 / d_add)
+        d_add = int(old_div(1.0, d_add))
         walker_frac_trigger = 1
     else:  # change num_walkers or timesteps
         logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1')
@@ -178,16 +175,16 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     timestep_list = []  # x axis for plots
     xedges = list(range(0, bins))
     yedges = list(range(0, bins))
-    start_k_err_check = tot_time / 2
+    start_k_err_check = old_div(tot_time, 2)
 
     # d_add - how often to add a hot/cold walker pair
-    d_add = tot_time / (tot_walkers / 2.0)  # as a float
+    d_add = old_div(tot_time, (old_div(tot_walkers, 2.0)))  # as a float
     # print d_add
     if d_add.is_integer() and d_add >= 1:
-        d_add = int(tot_time / (tot_walkers / 2.0))
+        d_add = int(old_div(tot_time, (old_div(tot_walkers, 2.0))))
         walker_frac_trigger = 0  # add a pair every d_add timesteps
     elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
-        d_add = 1.0 / d_add
+        d_add = old_div(1.0, d_add)
         if not d_add.is_integer():
             logging.error('Choose tot_time / (tot_walkers / 2.0) so that it is integer or less than 1 and whole')
             raise SystemExit
@@ -199,11 +196,11 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         raise SystemExit
     if walker_frac_trigger == 1:
         logging.info('Adding %d hot/cold walker pair(s) every timestep' % d_add)
-        walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size * d_add)))
+        walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (2.0 * size * d_add))))
     elif walker_frac_trigger == 0:
         logging.info(
             'Adding 1 hot/cold walker pair(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
-        walkers_per_core_whole = int(np.floor(tot_walkers / (2.0 * size)))
+        walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (2.0 * size))))
 
     comm.Barrier()
 
@@ -266,8 +263,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         analysis.final_conductivity_onlat(plot_save_dir, prob_m_cn, dt_dx_list, k_list, k_conv_error_buffer)
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
-        logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
-        walk_sec = tot_walkers / (end - start)
+        logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, old_div((end - start), 60.0)))
+        walk_sec = old_div(tot_walkers, (end - start))
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H_master, xedges, yedges, quiet,
                                                           plot_save_dir,

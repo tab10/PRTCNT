@@ -1,3 +1,9 @@
+from __future__ import division
+from builtins import map
+from builtins import zip
+from builtins import next
+from builtins import range
+from past.utils import old_div
 import itertools
 import logging
 import glob
@@ -10,7 +16,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
 import scipy as sp
-import creation
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
 
@@ -281,7 +286,7 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     for i in range(len(conv) - 1):
         temp = np.abs(conv[i + 1] - conv[i])
         d_conv.append(temp)
-    noise_floor_vals = d_conv[2:size / 2]  # these are rough bounds that should work
+    noise_floor_vals = d_conv[2:old_div(size, 2)]  # these are rough bounds that should work
     plt.plot(d_conv)
     noise_floor = np.mean(noise_floor_vals)
     x_floor = list(range(2, 50))
@@ -362,35 +367,54 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True, legend=True, exclude_vals='',
                         tunneling=False, max_tube_num=100000, force_y_int=False):
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
-        random_2d_15 = {'0': 0, '10': 1.54, '20': 3.04, '30': 4.47, '40': 6.03, '50': 7.49, '60': 8.89, '70': 10.55,
-                     '80': 12.06, '90': 13.65, '100': 14.6, '110': 16.5, '120': 17.88, '130': 19.11,
-                     '140': 20.76, '150': 22.21}
-        h_v_2d_15 = {'0': 0, '10': 1.63, '20': 3.27, '30': 4.9, '40': 6.53, '50': 8.16, '60': 9.79, '70': 11.43,
-                  '80': 13.06, '90': 14.69, '100': 16.33, '110': 17.96, '120': 19.59, '130': 21.22, '140': 22.86}
+        random_2d_15 = {'0': 0, '10': 1.51, '20': 3.03, '30': 4.49, '40': 5.93, '50': 7.51, '60': 9.11, '70': 10.5,
+                        '80': 11.88, '90': 13.52, '100': 14.7, '110': 16.07, '120': 17.59, '130': 19.68,
+                        '140': 20.56, '150': 22.58}
+        h_v_2d_15 = {'0': 0, '10': 1.63, '20': 3.26, '30': 4.9, '40': 6.53, '50': 8.16, '60': 9.79, '70': 11.43,
+                     '80': 13.06, '90': 14.69, '100': 16.32, '110': 17.96, '120': 19.59, '130': 21.22, '140': 22.85}
         random_3d_15 = {'0': 0, '1250': 1.78, '2500': 3.58, '3750': 5.36, '5000': 7.14, '6250': 8.92, '7500': 10.7,
                   '8750': 12.46, '10000': 14.27, '11250': 16.04, '12500': 17.8, '13750': 19.58}
         h_v_3d_15 = {'0': 0, '1250': 2.06, '2500': 4.12, '3750': 6.18, '5000': 8.24, '6250': 10.3, '7500': 12.36,
                '8750': 14.42, '10000': 16.48, '11250': 18.56, '12500': 20.62}
+
+        random_2d_10 = {'0': 0, '14': 1.51, '30': 3.03, '45': 4.49, '58': 5.93, '75': 7.51, '88': 9.11, '102': 10.5,
+                        '115': 11.88, '131': 13.52, '143': 14.7, '156': 16.07, '172': 17.59, '191': 19.68,
+                        '201': 20.56, '220': 22.58}
+        h_v_2d_10 = {'0': 0, '15': 1.63, '29': 3.26, '44': 4.9, '58': 6.53, '73': 8.16, '87': 9.79, '102': 11.43,
+                     '116': 13.06, '131': 14.69, '145': 16.32, '160': 17.96, '175': 19.59, '189': 21.22, '204': 22.85}
+        random_3d_10 = {'0': 0, '1794': 1.78, '3609': 3.58, '5403': 5.36, '7212': 7.14, '8992': 8.92, '10801': 10.7,
+                        '12604': 12.46, '14429': 14.27, '16228': 16.04, '18060': 17.8, '19845': 19.6}
+        h_v_3d_10 = {'0': 0, '1813': 2.06, '3640': 4.12, '5453': 6.18, '7266': 8.24, '9080': 10.3, '10906': 12.36,
+                     '12719': 14.42, '14533': 16.48, '16376': 18.56, '18190': 20.62}
+
+        random_2d_20 = {'0': 0, '8': 1.51, '15': 3.03, '23': 4.49, '30': 5.93, '39': 7.51, '46': 9.11, '53': 10.5,
+                        '60': 11.88, '70': 13.52, '75': 14.7, '82': 16.07, '89': 17.59, '99': 19.68,
+                        '108': 20.56, '116': 22.58}
+        h_v_2d_20 = {'0': 0, '8': 1.63, '15': 3.26, '23': 4.9, '30': 6.53, '38': 8.16, '46': 9.79, '53': 11.43,
+                     '61': 13.06, '69': 14.69, '76': 16.32, '84': 17.96, '91': 19.59, '99': 21.22, '107': 22.85}
+        random_3d_20 = {'0': 0, '951': 1.78, '1904': 3.58, '2863': 5.36, '3822': 7.14, '4757': 8.92, '5728': 10.7,
+                        '6660': 12.46, '7627': 14.27, '8638': 16.04, '9562': 17.8, '10519': 19.6}
+        h_v_3d_20 = {'0': 0, '950': 2.06, '1904': 4.12, '2854': 6.18, '3808': 8.24, '4758': 10.3, '5712': 12.36,
+                     '6662': 14.42, '7616': 16.48, '8575': 18.56, '9529': 20.62}
+
         tunnel = 2.0 * float(x) * 100.0 / grid_size ** dim
         if not tunneling:
-            if (orientation == 'random') and (dim == 3) and (tube_length == 15):
-                fill_fract = random_3d_15[str(int(x))]
-            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 3) and (tube_length == 15):
-                fill_fract = h_v_3d[str(int(x))]
-            elif (orientation == 'random') and (dim == 2) and (tube_length == 15):
-                fill_fract = random_2d[str(int(x))]
-            elif ((orientation == 'horizontal') or (orientation == 'vertical')) and (dim == 2) and (tube_length == 15):
-                fill_fract = h_v_2d[str(int(x))]
+            if orientation == 'random':
+                search_str = 'random_%dd_%d[str(int(x))]' % (dim, tube_length)
+                fill_fract = eval(search_str)
+            elif (orientation == 'horizontal') or (orientation == 'vertical'):
+                search_str = 'h_v_%dd_%d[str(int(x))]' % (dim, tube_length)
+                fill_fract = eval(search_str)
         else:
             fill_fract = tunnel
         return fill_fract
 
     def lin_fit(x, y, dim):
         '''Fits a linear fit of the form mx+b to the data'''
-        dim_dict = {2: 0.5, 3: 1.0 / 3.0}
+        dim_dict = {2: 0.5, 3: old_div(1.0, 3.0)}
         fitfunc = lambda params, x: params[0] * x + dim_dict[dim]  # create fitting function of form mx+no_tubes_const
         errfunc = lambda p, x, y: fitfunc(p, x) - y  # create error function for least squares fit
 
@@ -407,6 +431,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
     folds = []  # list of all folder name strings
     zero_folds = []
     orientations = []  # list of all orientations (not unique yet)
+    dim = int(dim[0])
+    tube_length = int(tube_length)
     old_plot = 'k_num_tubes_%d_%dD.pdf' % (tube_length, dim)  # let's get rid of the old one!
     if os.path.isfile(old_plot):
         os.remove(old_plot)
@@ -418,7 +444,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             tube_val <= max_tube_num):  # throws out extra config
             folds.append(file)  # all files
             orientations.append(file.split('_')[1])
-    print(folds)
     for file in glob.glob("0_*_*_*"):
         zero_folds.append(file)
     uni_orientations = list(set(orientations))
@@ -429,15 +454,15 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         sep_folds[i] = sorted(sep_folds[i])
         sep_folds[i] += zero_folds
     slopes = []
+    d_slopes = []  # error on the slope
     y_ints = []
     r_twos = []
     for i in range(len(uni_orientations)):
-        uni_tubes = len(sep_folds[i]) / num_configs
+        uni_tubes = old_div(len(sep_folds[i]), num_configs)
         uni_num_tubes = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
         uni_num_tubes = [float(y) for y in uni_num_tubes]
-        print(uni_num_tubes)
         all_k_vals = np.zeros(len(sep_folds[i]))
         # all_kapitza_vals = np.zeros(len(sep_folds[i]))
         for j in range(len(sep_folds[i])):
@@ -449,15 +474,33 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         k_err = []
         for l in range(len(uni_num_tubes)):
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
-            k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
-        # plt.errorbar(uni_num_tubes, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
+            k_err.append(
+                old_div(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1), np.sqrt(num_configs)))
         fill_fract = []
         for a in range(len(uni_num_tubes)):
             temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i], tunneling, grid_size, dim)
             fill_fract.append(temp_ff)
+        # sort data ascending
+        fill_fract_temp = np.array(fill_fract)
+        k_err_temp = np.array(k_err)
+        k_vals_temp = np.array(k_vals)
+        idx = np.argsort(fill_fract)
+        fill_fract = fill_fract_temp[idx]
+        k_err = k_err_temp[idx]
+        k_vals = k_vals_temp[idx]
+        # sort should be working
+        # remove duplicate fill fractions
+        unq, unq_idx = np.unique(fill_fract, return_index=True)
+        fill_fract = fill_fract[unq_idx]
+        k_vals = k_vals[unq_idx]
+        k_err = k_err[unq_idx]
+        # divide by k0?
+        if div_by_k0:
+            k0 = k_vals[0]
+            k_vals = k_vals / k_vals[0]
         # apply linear fit
         if force_y_int:
-            dim_dict = {2: 0.5, 3: 1.0 / 300.0}
+            dim_dict = {2: 0.5, 3: old_div(1.0, 300.0)}
             slope, _ = lin_fit(fill_fract, k_vals, dim)
             print(slope)
             raise SystemExit
@@ -475,106 +518,149 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
             x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
             y_fit = slope * x_fit + intercept
+            d_slope = slope * np.sqrt(old_div(((old_div(1, r_value ** 2)) - 1), (num_configs - 2)))
         slopes.append(slope)
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)
+        d_slopes.append(d_slope)
         plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
         plt.plot(x_fit, y_fit)  # , label=fit_label)
+        g = open("%s_data.txt" % uni_orientations[i], 'w')
+        g.write('fill_fract k k_err\n')
+        for i in range(len(fill_fract)):
+            header = '%.4E %.4E %.4E\n' % (fill_fract[i], k_vals[i], k_err[i])
+            g.write(header)
+        g.close()
     plt.title(
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
     # plt.xlabel('Number of tubes')
     plt.xlabel('Filling fraction %')
-    plt.ylabel('Conductivity k')
+    if div_by_k0:
+        plt.ylabel('Thermal conductivity $k/k_0$')
+    else:
+        plt.ylabel('Thermal conductivity k')
     if legend:
         plt.legend(loc=2)
     plt.tight_layout()
+    plt.ylim(ymin=0)
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
-    f = open("slope.txt", 'w')
+    f = open("fit.txt", 'w')
+    f.write('orientation slope d_slope y_int r_twos\n')
     for i in range(len(uni_orientations)):
-        header = '%s %.4E\n' % (uni_orientations[i], slopes[i])
-        f.write(header)
-    f.close()
-    f = open("intercept.txt", 'w')
-    for i in range(len(uni_orientations)):
-        header = '%s %.4E\n' % (uni_orientations[i], y_ints[i])
-        f.write(header)
-    f.close()
-    f = open("r_squared.txt", 'w')
-    for i in range(len(uni_orientations)):
-        header = '%s %.4E\n' % (uni_orientations[i], r_twos[i])
+        header = '%s %.4E %.4E %.4E %.4E\n' % (uni_orientations[i], slopes[i], d_slopes[i], y_ints[i], r_twos[i])
         f.write(header)
     f.close()
     plt.close()
 
 
-def plot_k_kapitza_fill_fract_side_by_side(kapitza_vals, kapitza_num_configs, tube_length, grid_size, dim,
-                                           exclude_vals='', max_tube_num=100000):
-    # kapitza_vals - a list with vals to use (should be from lowest p to highest)
-    # kapitza_num_configs - a list in order with kapitza vals telling the configs to include
-    exclude_vals = list(map(str, exclude_vals))  # array of numbers , ['0','1000','2000']
-    exclude_vals = [x + '_' for x in exclude_vals]
-    plt.figure()
-    num_plots = len(kapitza_vals)
-    for z in range(len(kapitza_vals)):
-        # go into each directory and get this data
-        os.chdir('%dD_kapitza_%s' % (dim, kapitza_vals[z]))
-        num_configs = kapitza_num_configs[z]
+def plot_all_tube_length(tube_length, num_configs, grid_size, div_by_k0=True):
+    # Runs plot analysis in all folders for a tube length
+    # div_by_k0 True or False divides the k values by k0 at 0 fill fraction
+    os.chdir('tube_length_%d' % tube_length)
+    for file in glob.glob("*_*"):
+        if 'kapitza' in file:
+            dim = file.split('_')[0]
+            prob = file.split('_')[2]
+            os.chdir(file)
+            print('In directory %s' % file)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0)
+            os.chdir('..')
+        elif ('tunneling' in file) and ('novol' not in file):
+            dim = file.split('_')[0]
+            os.chdir(file)
+            print('In directory %s' % file)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0)
+            os.chdir('..')
+        elif ('tunneling' in file) and ('novol' in file):
+            dim = file.split('_')[0]
+            os.chdir(file)
+            print('In directory %s' % file)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0, tunneling=True)
+            os.chdir('..')
+    os.chdir('..')
+    print('Done!')
 
-        folds = []  # list of all folder name strings
-        zero_folds = []
-        orientations = []  # list of all orientations (not unique yet)
-        for file in glob.glob("*_*_%d_*" % tube_length):
-            checker = file.split('_')[0] + '_'
-            config_num = int(file.split('_')[3])
-            tube_val = int(file.split('_')[0])
-            if (checker not in exclude_vals) and (config_num <= num_configs) and (
-                        tube_val <= max_tube_num):  # throws out extra config
-                folds.append(file)  # all files
-                orientations.append(file.split('_')[1])
-        print(folds)
-        for file in glob.glob("0_*_*_*"):
-            zero_folds.append(file)
-        uni_orientations = list(set(orientations))
-        sep_folds = []
-        # separate folds by orientation
-        for i in range(len(uni_orientations)):
-            sep_folds.append([x for x in folds if uni_orientations[i] in x])
-            sep_folds[i] = sorted(sep_folds[i])
-            sep_folds[i] += zero_folds
-        for i in range(len(uni_orientations)):
-            uni_tubes = len(sep_folds[i]) / num_configs
-            uni_num_tubes = []
-            for k in range(uni_tubes):
-                uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
-            uni_num_tubes = [float(y) for y in uni_num_tubes]
-            print(uni_num_tubes)
-            all_k_vals = np.zeros(len(sep_folds[i]))
-            # all_kapitza_vals = np.zeros(len(sep_folds[i]))
-            for j in range(len(sep_folds[i])):
-                os.chdir(sep_folds[i][j])
-                # kapitza = np.loadtxt('prob_m_cn.txt')
-                all_k_vals[j] = np.loadtxt('k.txt')
+
+def plot_multi_tube_lengths(tube_lengths_str, type, num_configs=5, mark_size='6_7.5_9',
+                            leg_loc=2, leg_size=9, div_by_k0=True, plot_fits=True):
+    # plot multiple tube lengths on same plot for each folder
+    # one type only, like kapitzaX
+    # tube_lengths_str separated with _
+    # leg_loc and leg_size define legend location and size
+    # errorbar size for the 3 sizes given above
+    mark_size_spl = mark_size.split('_')
+    color_list = {'10': "r", "15": "g", '20': "b"}
+    marker_list = {'horizontal': "^", "vertical": "v", 'random': "o"}
+    size_list = {'10': float(mark_size_spl[0]), "15": float(mark_size_spl[1]), '20': float(mark_size_spl[2])}
+    tube_lengths_str = tube_lengths_str.split('_')
+    for i in range(len(tube_lengths_str)):
+        tube_lengths_str[i] = int(tube_lengths_str[i])
+        os.chdir('tube_length_%d' % tube_lengths_str[i])
+        dirs = []  # directories to check in all tube length folders
+        in_dirs = []
+        for file in glob.glob("*_*"):
+            if os.path.isdir(file) and type == file:
+                os.chdir(file)
+                dirs.append(file)
+                data_files = glob.glob("*_data.txt")
+                for j in range(len(data_files)):
+                    in_dirs.append(data_files[j])
+                    f = open(data_files[j], 'r')
+                    lines = f.readlines()[1:]
+                    f.close()
+                    fill_fract = []
+                    k_vals = []
+                    k_err = []
+                    uni_orientations = []
+                    slopes = []
+                    d_slopes = []
+                    y_ints = []
+                    r_twos = []
+                    for k in range(len(lines)):
+                        fill_fract_t, k_vals_t, k_err_t = lines[k].split(" ")
+                        fill_fract.append(float(fill_fract_t))
+                        k_vals.append(float(k_vals_t))
+                        k_err.append(float(k_err_t[:-1]))  # -1 for the newline removal
+                    # import fit
+                    g = open('fit.txt', 'r')
+                    lines = g.readlines()[1:]
+                    for l in range(len(lines)):
+                        uni_orientations_t, slopes_t, d_slopes_t, y_ints_t, r_twos_t = lines[l].split(" ")
+                        uni_orientations.append(uni_orientations_t)
+                        slopes.append(float(slopes_t))
+                        d_slopes.append(float(d_slopes_t))
+                        y_ints.append(float(y_ints_t))
+                        r_twos.append(float(r_twos_t[:-1]))  # -1 for the newline removal
+                    g.close()
+                    orientation_str = data_files[j].replace('_data.txt', '')
+                    model_str = file.replace('_', ' ')
+                    tube_l_str = tube_lengths_str[i]
+                    for m in range(len(uni_orientations)):
+                        if orientation_str == uni_orientations[m]:
+                            x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
+                            y_fit = slopes[m] * x_fit + y_ints[m]
+                    # let's plot here
+                    legend_label = 'Tube length %d %s %s' % (tube_l_str, model_str, orientation_str)
+                    print('Plotting %s' % legend_label)
+                    plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt=marker_list[orientation_str],
+                                 c=color_list[str(tube_l_str)], label=legend_label,
+                                 markersize=size_list[str(tube_l_str)])
+                    if plot_fits:
+                        plt.plot(x_fit, y_fit, c=color_list[str(tube_l_str)], linewidth=0.25)
                 os.chdir('..')
-            k_vals = []
-            k_err = []
-            # build filling fraction on x axis
-            fill_fract = []  # will be in percentage
-            for q in range(len(uni_num_tubes)):
-                fill_fract.append((int(uni_num_tubes[q]) * tube_length * 100.0) / grid_size ** dim)
-            for l in range(len(uni_num_tubes)):
-                k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
-                k_err.append(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
-            plt.subplot(num_plots, 1, z)
-            plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt='o', label=uni_orientations[i])
-        # plt.title('Tubes of length %d in a %dD cube of length %d\n%d configurations' % (tube_length, dim, grid_size, num_configs))
-        plt.xlabel('Filling fraction (%)')
-        plt.ylabel('Conductivity k')
-        # plt.ylim(0.0,)
-
         os.chdir('..')
-    plt.legend()
+    plt.legend(loc=leg_loc, prop={'size': leg_size})
+    plt.title('Thermal conductivity vs. filling fraction percentage\nTubes of length 10, 15, '
+              '20 with different orientations, %d configurations\nModel: %s' % (num_configs, model_str))
+    plt.xlabel('Filling fraction %')
+    if div_by_k0:
+        plt.ylabel('Thermal conductivity $k/k_0$ (dimensionless units)')
+    else:
+        plt.ylabel('Thermal conductivity k (dimensionless units)')
+    plt.ylim(ymin=0)
+    plt.xlim(xmax=22)
     plt.tight_layout()
-    plt.savefig('kapitza_k_plot.pdf')
+    plt.savefig('%s_%s_plot.pdf' % (tube_lengths_str, type))
     plt.close()

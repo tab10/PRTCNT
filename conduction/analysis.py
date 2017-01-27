@@ -1,3 +1,6 @@
+from __future__ import division
+from builtins import range
+from past.utils import old_div
 import numpy as np
 import logging
 # import numericalunits
@@ -30,12 +33,12 @@ def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
-    heat_flux = float(cur_num_walkers) / ((float(grid_size + 1)) * float(timesteps))
+    heat_flux = old_div(float(cur_num_walkers), ((float(grid_size + 1)) * float(timesteps)))
     gradient_err = np.mean(test_std)
     x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
-    k = - heat_flux / slope
-    k_err = (heat_flux / slope ** 2) * gradient_err
+    k = old_div(- heat_flux, slope)
+    k_err = (old_div(heat_flux, slope ** 2)) * gradient_err
     return slope, heat_flux, gradient_err, k, k_err, r_value**2
 
 
@@ -48,10 +51,10 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
-    heat_flux = float(cur_num_walkers) / (float(grid_size + 1) ** 2 * float(timesteps))
+    heat_flux = old_div(float(cur_num_walkers), (float(grid_size + 1) ** 2 * float(timesteps)))
     gradient_err = np.mean(test_std)
     x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
-    k = - heat_flux / slope
-    k_err = (heat_flux / slope ** 2) * gradient_err
+    k = old_div(- heat_flux, slope)
+    k_err = (old_div(heat_flux, slope ** 2)) * gradient_err
     return slope, heat_flux, gradient_err, k, k_err, r_value ** 2, temp_profile_sum

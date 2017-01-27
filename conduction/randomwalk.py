@@ -1,8 +1,7 @@
+from builtins import range
 import logging
 
 import numpy as np
-
-import creation
 
 
 def runrandomwalk_2d_onlat(grid, timesteps, temp, kapitza, prob_m_cn, object):

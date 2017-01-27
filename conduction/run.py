@@ -1,12 +1,12 @@
+from future import standard_library
+
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 import logging
 import sys
 import importlib
 import os
-import creation
-import onlat_2d_variable_flux
-import onlat_3d_constant_flux
-import onlat_3d_variable_flux
-import onlat_2d_constant_flux
 
 
 def ConfigSectionMap(section):

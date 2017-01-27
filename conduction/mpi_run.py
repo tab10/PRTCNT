@@ -1,11 +1,8 @@
+from builtins import str
+from builtins import range
 import logging
 import os
 import argparse
-import creation
-import onlat_2d_constant_flux
-import onlat_2d_variable_flux
-import onlat_3d_variable_flux
-import onlat_3d_constant_flux
 from mpi4py import MPI
 
 

@@ -12,6 +12,9 @@ Serial code is ran by running "python run.py", for the MPI code
 run "mpirun -np X python mpi_run.py" with X the number of cores available. **80** cores seems good, or requesting 
 10 nodes **exclusively** since a standard node has 8 cores.
 
+Plotting analysis after simulation can be found in plots.py, with stand-alone definitions for individual plots. 
+**ipython** can be used to run them.
+
 On OU's Schooner, add this line to your .profile:
 `module load OpenMPI mpi4py numpy matplotlib`. `#SBATCH -p 2650` gives a 10 core node, `#SBATCH -p 2670`
 gives a 12 core node
