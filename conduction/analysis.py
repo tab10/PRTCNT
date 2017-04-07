@@ -86,8 +86,3 @@ def rules_test_analysis(H_tot, cur_num_walkers):
     return mean_temp, mean_temp_norm, std_temp, std_temp_norm
 
 
-def cut_3d_array()
-    temp_profile_sum = np.zeros((len(temp_profile), len(temp_profile)))
-    for i in range(len(temp_profile)):
-        for j in range(len(temp_profile)):
-            temp_profile_sum[i][j] = np.sum(temp_profile[i][j])
