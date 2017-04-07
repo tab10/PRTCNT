@@ -1,9 +1,22 @@
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
+
+
 from __future__ import division
 from builtins import range
 from past.utils import old_div
 import numpy as np
 import logging
-# import numericalunits
 from scipy import stats
 
 
@@ -58,3 +71,23 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     k = old_div(- heat_flux, slope)
     k_err = (old_div(heat_flux, slope ** 2)) * gradient_err
     return slope, heat_flux, gradient_err, k, k_err, r_value ** 2, temp_profile_sum
+
+
+def rules_test_analysis(H_tot, cur_num_walkers):
+    """As this is the rules test, temperature is times visited by walkers"""
+    temp_profile = H_tot
+    # generate histogram in terms of probability of visiting a spot (normalize)
+    temp_profile_norm = np.divide(H_tot, float(cur_num_walkers))
+    # averaging
+    mean_temp = np.mean(temp_profile)
+    std_temp = np.std(temp_profile, ddof=1)
+    mean_temp_norm = np.mean(temp_profile_norm)
+    std_temp_norm = np.std(temp_profile_norm, ddof=1)
+    return mean_temp, mean_temp_norm, std_temp, std_temp_norm
+
+
+def cut_3d_array()
+    temp_profile_sum = np.zeros((len(temp_profile), len(temp_profile)))
+    for i in range(len(temp_profile)):
+        for j in range(len(temp_profile)):
+            temp_profile_sum[i][j] = np.sum(temp_profile[i][j])

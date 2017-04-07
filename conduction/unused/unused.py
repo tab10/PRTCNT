@@ -846,3 +846,46 @@
 #         save_fill_frac(plot_save_dir, fill_fract)
 #         self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
 #         self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
+
+
+def generate_bd_and_vol(self, tube_squares, theta, phi):
+    """3D, This takes the bottom left squares from find_squares and creates volume and boundaries based
+    on the tube radius, for one tube
+    In 3D, there are top left, top right, bottom left, and bottom right boundaries to worry about too?
+    Currently not used for anything
+    """
+    top = []
+    bot = []
+    left = []
+    right = []
+    l_end = tube_squares[0]
+    r_end = tube_squares[-1]
+    occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
+    for i in range(1, self.tube_radius + 1):
+        l_x_above = int(round(self.coord(i, theta + 90, phi + 90)[0] + l_end[0]))
+        l_y_above = int(round(self.coord(i, theta + 90, phi + 90)[1] + l_end[1]))
+        l_z_above = int(round(self.coord(i, theta + 90, phi + 90)[2] + l_end[2]))
+        r_x_above = int(round(self.coord(i, theta + 90, phi + 90)[0] + r_end[0]))
+        r_y_above = int(round(self.coord(i, theta + 90, phi + 90)[1] + r_end[1]))
+        r_z_above = int(round(self.coord(i, theta + 90, phi + 90)[2] + r_end[2]))
+        l_x_below = int(round(self.coord(i, theta - 90, phi - 90)[0] + l_end[0]))
+        l_y_below = int(round(self.coord(i, theta - 90, phi - 90)[1] + l_end[1]))
+        l_z_below = int(round(self.coord(i, theta - 90, phi - 90)[2] + l_end[2]))
+        r_x_below = int(round(self.coord(i, theta - 90, phi - 90)[0] + r_end[0]))
+        r_y_below = int(round(self.coord(i, theta - 90, phi - 90)[1] + r_end[1]))
+        r_z_below = int(round(self.coord(i, theta - 90, phi - 90)[2] + r_end[2]))
+        left.append([l_x_above, l_y_above, l_z_above])
+        left.append([l_x_below, l_y_below, l_z_below])
+        right.append([r_x_above, r_y_above, r_z_above])
+        right.append([r_x_below, r_y_below, r_z_below])
+    for i in range(len(tube_squares)):
+        t_x = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[0] + tube_squares[i][0]))
+        t_y = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[1] + tube_squares[i][1]))
+        t_z = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[2] + tube_squares[i][2]))
+        b_x = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[0] + tube_squares[i][0]))
+        b_y = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[1] + tube_squares[i][1]))
+        b_z = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[2] + tube_squares[i][2]))
+        top.append([t_x, t_y, t_z])
+        bot.append([b_x, b_y, b_z])
+    total = top + bot + left + right
+    return top, bot, left, right, total, occupied_cubes

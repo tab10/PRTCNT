@@ -1,10 +1,24 @@
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
+
+
 from builtins import str
 from builtins import range
 import logging
 import os
 import argparse
 from mpi4py import MPI
-
+from conduction import *
 
 def logging_setup(save_dir):
     creation.check_for_folder(save_dir)
@@ -38,6 +52,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='.')
 
+    parser.add_argument('--rules_test', type=bool, default=False, help='Starts a rules test only simulation. '
+                                                                       'This checks that the simulation will obey'
+                                                                       'detailed balance. Available with serial'
+                                                                       'or MPI options as in the primary '
+                                                                       'program.')
     parser.add_argument('--dim', type=int, required=True, help='Dimensionality of simulation.')
     parser.add_argument('--grid_size', type=int, default=99, help='Size of grid of use. TRUE SIZE USED IS VALUE + 1, '
                                                                   'TO COMPARE WITH ANALYTICAL.')
@@ -66,7 +85,6 @@ if __name__ == "__main__":
     parser.add_argument('--save_loc_plots', type=bool, default=False, help='Save location plots for all walkers.')
     parser.add_argument('--save_loc_data', type=bool, default=False, help='Save location data for all walkers.')
     parser.add_argument('--quiet', type=bool, default=True, help='Show various plots throughout simulation.')
-    parser.add_argument('--on_lattice', type=bool, default=True, help='True for on lattice random walk.')
     parser.add_argument('--kapitza', type=bool, default=False, help='Adds kapitza resistance '
                                                                     'to simulation, see readme.md.')
     parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the nanotube. '
@@ -101,7 +119,6 @@ if __name__ == "__main__":
     tube_length = args.tube_length
     tube_radius = args.tube_radius
     num_tubes = args.num_tubes
-    on_lattice = args.on_lattice
     timesteps = args.timesteps
     save_dir = args.save_dir
     quiet = args.quiet
@@ -120,6 +137,7 @@ if __name__ == "__main__":
     printout_inc = args.printout_inc
     restart = args.restart
     disable_func = args.disable_func
+    rules_test = args.rules_test
 
     os.chdir(save_dir)
 
@@ -181,28 +199,36 @@ if __name__ == "__main__":
         logging.info('Using last %d k values to check for convergence' % k_conv_error_buffer)
 
     #  all processes have control now
-    if on_lattice and (dim == 2):
-        if method == 'variable_flux':
-            logging.error('This method is not accurate, stopping')
-            raise SystemExit
-        elif method == 'constant_flux':
-            logging.info("Starting 2D constant flux MPI on-lattice simulation")
-            comm.Barrier()
-            onlat_2d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-                                                   timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                                   num_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
-                                                   size, restart)
-    elif on_lattice and (dim == 3):
-        if method == 'variable_flux':
-            logging.error('This method is not accurate, stopping')
-            raise SystemExit
-        elif method == 'constant_flux':
-            logging.info("Starting 3D constant flux MPI on-lattice simulation")
-            comm.Barrier()
-            onlat_3d_constant_flux.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-                                                   timesteps, quiet, plot_save_dir,
-                                                   gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                                   k_conv_error_buffer, disable_func, rank, size, restart)
+    if rules_test:
+        logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
+                     "Principle of Detailed Balance.\nTo do this, we don't use Fourier's Law as our walkers are"
+                     "all positive and no heat flux is generated.\nDifferences include:\nWalkers can start from "
+                     "anywhere in the box\nALL boundaries are periodic\nWalkers are all positive\nALL visited"
+                     "positions are histogrammed as opposed to keeping just 1")
+        if dim == 2:
+            test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                    timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                    num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+        elif dim == 3:
+            test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
+                                    plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,
+                                    size, rules_test, restart)
+
+    elif not rules_test:
+        logging.info("Starting %dD constant flux on-lattice random walk." % dim)
+        if dim == 2:
+            randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                          timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                          num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+        elif dim == 3:
+            (grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
+             gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
+             size, restart, bound, rules_test)
+            randomwalk_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
+                                          quiet, plot_save_dir,
+                                          gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                          k_conv_error_buffer, disable_func)
     else:
-        print('Off lattice not implemented yet')
+        logging.error('Check inputs')
         raise SystemExit
+

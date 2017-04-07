@@ -4,6 +4,7 @@ from past.utils import old_div
 import logging
 import numpy as np
 from mpi4py import MPI
+from conduction import *
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
@@ -77,8 +78,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     logging.info("Simulation has converged with %d total walkers" % (i * 2))
     logging.info("Finished random walks")
     if gen_plots:
-        temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, temp_profile_sum, x_edges, y_edges,
-                                                          quiet, plot_save_dir, gen_plots)
+        temp_profile = plots.plot_colormap_2d(grid, temp_profile_sum, quiet, plot_save_dir, gen_plots)
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
         plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir)
@@ -212,8 +212,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         walk_sec = old_div((i * 2 * size), (end - start))
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         if gen_plots:
-            temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, temp_profile_sum, x_edges, y_edges,
-                                                              quiet, plot_save_dir, gen_plots)
+            temp_profile = plots.plot_colormap_2d(grid, timesteps, temp_profile_sum, x_edges, y_edges,
+                                                  quiet, plot_save_dir, gen_plots)
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
             plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir)

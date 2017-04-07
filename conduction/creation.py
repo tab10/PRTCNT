@@ -1,13 +1,25 @@
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
+
+
 from __future__ import division
-from builtins import map
-from builtins import range
-from builtins import object
 from past.utils import old_div
 import numpy as np
 import logging
 import os
 import glob
 from mpi4py import MPI
+from conduction import *
 
 
 def check_for_folder(folder):
@@ -161,6 +173,7 @@ class Grid2D_onlat(object):
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
+
 
     def generate_2d_tube(self, radius, orientation, tube_radius):
         """Finds appropriate angles within one degree that can be chosen from for random, should be good enough.
@@ -534,7 +547,7 @@ class Grid2D_onlat(object):
 
 class Grid3D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
-                 disable_func, rank=None,
+                 disable_func, rules_test, rank=None,
                  size=None):
         """Grid in first quadrant only for convenience"""
         self.size = grid_size
@@ -549,6 +562,11 @@ class Grid3D_onlat(object):
         self.theta = []
         self.phi = []
         self.setup_tube_vol_check_array_3d()
+        if rules_test:
+            bound = [20, 20, 20]  # all periodic
+        else:
+            bound = [10, 20, 20]  # X reflective, YZ periodic
+        self.bound = bound
         if tube_radius == 0:
             logging.info("Zero tube radius given. Tubes will have no volume.")
             fill_fract = 2.0 * float(num_tubes) / grid_size ** 3
@@ -596,7 +614,7 @@ class Grid3D_onlat(object):
                         self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], None, disable_func)
                 logging.info("Tube generation complete")
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
-            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
         else:
             logging.info("Non-zero tube radius given. Tubes will have excluded volume.")
             l_d = old_div(tube_length, (2 * tube_radius))
@@ -623,7 +641,6 @@ class Grid3D_onlat(object):
                         self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
-                        # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                         while not uni_flag:
                             counter += 1
                             self.tube_centers.pop()
@@ -646,7 +663,6 @@ class Grid3D_onlat(object):
                             self.phi.append(phi)
                             self.tube_squares.append(tube_squares)
                             uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
-                            # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                         self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
             logging.info("Tube generation complete")
             logging.info("Corrected %d overlapping tube endpoints" % counter)
@@ -658,7 +674,7 @@ class Grid3D_onlat(object):
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             save_fill_frac(plot_save_dir, fill_fract)
-            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d()
+            self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
@@ -744,49 +760,7 @@ class Grid3D_onlat(object):
         # plt.show()
         return points
 
-    def generate_bd_and_vol(self, tube_squares, theta, phi):
-        """3D, This takes the bottom left squares from find_squares and creates volume and boundaries based
-        on the tube radius, for one tube
-        In 3D, there are top left, top right, bottom left, and bottom right boundaries to worry about too?
-        Currently not used for anything
-        """
-        top = []
-        bot = []
-        left = []
-        right = []
-        l_end = tube_squares[0]
-        r_end = tube_squares[-1]
-        occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
-        for i in range(1, self.tube_radius + 1):
-            l_x_above = int(round(self.coord(i, theta + 90, phi + 90)[0] + l_end[0]))
-            l_y_above = int(round(self.coord(i, theta + 90, phi + 90)[1] + l_end[1]))
-            l_z_above = int(round(self.coord(i, theta + 90, phi + 90)[2] + l_end[2]))
-            r_x_above = int(round(self.coord(i, theta + 90, phi + 90)[0] + r_end[0]))
-            r_y_above = int(round(self.coord(i, theta + 90, phi + 90)[1] + r_end[1]))
-            r_z_above = int(round(self.coord(i, theta + 90, phi + 90)[2] + r_end[2]))
-            l_x_below = int(round(self.coord(i, theta - 90, phi - 90)[0] + l_end[0]))
-            l_y_below = int(round(self.coord(i, theta - 90, phi - 90)[1] + l_end[1]))
-            l_z_below = int(round(self.coord(i, theta - 90, phi - 90)[2] + l_end[2]))
-            r_x_below = int(round(self.coord(i, theta - 90, phi - 90)[0] + r_end[0]))
-            r_y_below = int(round(self.coord(i, theta - 90, phi - 90)[1] + r_end[1]))
-            r_z_below = int(round(self.coord(i, theta - 90, phi - 90)[2] + r_end[2]))
-            left.append([l_x_above, l_y_above, l_z_above])
-            left.append([l_x_below, l_y_below, l_z_below])
-            right.append([r_x_above, r_y_above, r_z_above])
-            right.append([r_x_below, r_y_below, r_z_below])
-        for i in range(len(tube_squares)):
-            t_x = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[0] + tube_squares[i][0]))
-            t_y = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[1] + tube_squares[i][1]))
-            t_z = int(round(self.coord(self.tube_radius, theta + 90, phi + 90)[2] + tube_squares[i][2]))
-            b_x = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[0] + tube_squares[i][0]))
-            b_y = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[1] + tube_squares[i][1]))
-            b_z = int(round(self.coord(self.tube_radius, theta - 90, phi - 90)[2] + tube_squares[i][2]))
-            top.append([t_x, t_y, t_z])
-            bot.append([b_x, b_y, b_z])
-        total = top + bot + left + right
-        return top, bot, left, right, total, occupied_cubes
-
-    def generate_tube_check_array_3d(self):
+    def generate_tube_check_array_3d(self, rules_test):
         tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         tube_check_r = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         bd = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
@@ -801,10 +775,15 @@ class Grid3D_onlat(object):
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
         # add boundary tags
         # entire planes hold bd conditions, so start at a corner and fill every plane
+        # 4/7/17 - I think most of below is unneeded, but leaving it for now. It will be bypassed in main code
         for i in range(self.size + 1):
             for j in range(self.size + 1):
-                bd[0, i, j] = 10  # x = 0 is reflective
-                bd[self.size, i, j] = 10  # x = grid.size is reflective
+                if rules_test:
+                    bd[0, i, j] = 20  # x = 0 is periodic
+                    bd[self.size, i, j] = 20  # x = grid.size is periodic
+                else:
+                    bd[0, i, j] = 10  # x = 0 is reflective
+                    bd[self.size, i, j] = 10  # x = grid.size is reflective
                 bd[i, 0, j] = 20  # y = 0 is periodic
                 bd[i, self.size, j] = 20  # y = grid.size is periodic
                 bd[i, j, 0] = 20  # z = 0 is periodic
@@ -1164,14 +1143,18 @@ class Grid3D_onlat(object):
 class Walker2D_onlat(object):
     '''For variable_flux we can plot an entire trajectory and keep track of 2 complete walker trajectories at a
     time. Only the last position should be stored for constant_flux'''
-    def __init__(self, grid_size, temp):
-        if temp == 'hot':
-            start_x = 0
-        elif temp == 'cold':
-            start_x = grid_size
+
+    def __init__(self, grid_size, temp, rules_test):
+        if not rules_test:
+            if temp == 'hot':
+                start_x = 0
+            elif temp == 'cold':
+                start_x = grid_size
+            else:
+                logging.error('Invalid walker temperature')
+                raise SystemExit
         else:
-            logging.error('Invalid walker temperature')
-            raise SystemExit
+            start_x = np.random.randint(0, grid_size + 1)
         start_y = np.random.randint(0, grid_size + 1)
         start = [start_x, start_y]
         self.pos = [start]
@@ -1191,14 +1174,18 @@ class Walker2D_onlat(object):
 class Walker3D_onlat(object):
     '''For variable_flux we can plot an entire trajectory and keep track of 2 complete walker trajectories at a
     time. Only the last position should be stored for constant_flux'''
-    def __init__(self, grid_size, temp):
-        if temp == 'hot':
-            start_x = 0
-        elif temp == 'cold':
-            start_x = grid_size
+
+    def __init__(self, grid_size, temp, rules_test):
+        if not rules_test:
+            if temp == 'hot':
+                start_x = 0
+            elif temp == 'cold':
+                start_x = grid_size
+            else:
+                logging.error('Invalid walker temperature')
+                raise SystemExit
         else:
-            logging.error('Invalid walker temperature')
-            raise SystemExit
+            start_x = np.random.randint(0, grid_size + 1)
         start_y = np.random.randint(0, grid_size + 1)
         start_z = np.random.randint(0, grid_size + 1)
         start = [start_x, start_y, start_z]

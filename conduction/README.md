@@ -1,8 +1,11 @@
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://github.com/tab10/conduction/LICENSE)
 
-# CONDUCTION
-#### Python/MPI4PY package that calculates the thermal conductivity of a medium containing CNTs using random walks.
+# PRTCNT
+## (Python)(Randomwalksimulationforobtaining)(Thermalconductiviesof)(Carbon)(Nano)(Tubecomposites)
 
+#### Python/MPI-based simulation package to measure the thermal transport properties of a carbon nanotube - polymer composite using random walks 
+###### *Developed by Timothy Burt in the Mullen theoretical condensed matter physics research group at the University of Oklahoma (OU)*
+                  
 Compatible with Python 2.x/3.x
 
 For serial code, options are given by setting up a config.ini in your choice of save directory

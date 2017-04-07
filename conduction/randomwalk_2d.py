@@ -1,11 +1,25 @@
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
+
+
 from __future__ import division
 from builtins import range
 from past.utils import old_div
 import logging
 import numpy as np
 import time
-import os
 from mpi4py import MPI
+from conduction import *
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
@@ -100,12 +114,12 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # let's update all the positions of the activated walkers
         for j in range(len(hot_walker_master) - trigger):  # except the new ones
             hot_temp = hot_walker_master[j]
-            current_hot_updated = randomwalk.apply_moves_2d(hot_temp, kapitza, grid, prob_m_cn, True)
+            current_hot_updated = rules_2d.apply_moves_2d(hot_temp, kapitza, grid, prob_m_cn, True)
             current_hot_updated.erase_prev_pos()
             hot_walker_master[j] = current_hot_updated
 
             cold_temp = cold_walker_master[j]
-            current_cold_updated = randomwalk.apply_moves_2d(cold_temp, kapitza, grid, prob_m_cn, True)
+            current_cold_updated = rules_2d.apply_moves_2d(cold_temp, kapitza, grid, prob_m_cn, True)
             current_cold_updated.erase_prev_pos()
             cold_walker_master[j] = current_cold_updated
 
@@ -123,8 +137,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     logging.info("Constant flux simulation has completed")
     logging.info("Serial simulation time was %.4f s" % (end - start))
 
-    temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H, xedges, yedges, quiet, plot_save_dir,
-                                                         gen_plots)
+    temp_profile = plots.plot_colormap_2d(grid, H, quiet, plot_save_dir, gen_plots)
     if gen_plots:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
         plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)
@@ -226,8 +239,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         for j in range(walkers_per_timestep):
             # print '%d on core %d' % (core_time, rank)
             # run trajectories for that long
-            hot_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
-            cold_temp = randomwalk.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
+            hot_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
+            cold_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
             # get last position of walker
             hot_temp_pos = hot_temp.pos[-1]
             cold_temp_pos = cold_temp.pos[-1]
@@ -266,9 +279,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, old_div((end - start), 60.0)))
         walk_sec = old_div(tot_walkers, (end - start))
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        temp_profile = plots.plot_histogram_walkers_onlat(grid, tot_time, H_master, xedges, yedges, quiet,
-                                                          plot_save_dir,
-                                                          gen_plots)
+        temp_profile = plots.plot_colormap_2d(grid, H_master, quiet, plot_save_dir, gen_plots)
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
             plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)

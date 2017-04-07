@@ -1,3 +1,17 @@
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
+
+
 from __future__ import division
 from builtins import map
 from builtins import zip
@@ -16,6 +30,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
 import scipy as sp
+from conduction import *
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
 
@@ -144,27 +159,61 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
         plt.close()
 
 
-def plot_histogram_walkers_onlat(grid, timesteps, H_tot, xedges, yedges, quiet, save_dir, gen_plots):
-    """Plots temperature profile for all walkers"""
-    logging.info("Plotting temperature profile")
-    # H_tot /= float(timesteps)  # normalization condition
+def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature density (dimensionless units)',
+                     xlab='X', ylab='Y', filename='temp'):
+    """Plots temperature profile for all walkers
+    Can be called anywhere a 2D colormap (of 2D data), basically a histogram, is needed"""
+    logging.info("Plotting 2D temperature (histogram")
     creation.check_for_folder(save_dir)
     # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
     if gen_plots:
-        plt.title('Temperature density (dimensionless units)')
+        plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
         plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
-        plt.xlabel('X')
-        plt.ylabel('Y')
+        plt.xlabel(xlab)
+        plt.ylabel(ylab)
         plt.xlim(0, grid.size + 1)
         plt.ylim(0, grid.size + 1)
         plt.colorbar()
-        plt.savefig('%s/temp.pdf' % save_dir)
+        plt.savefig('%s/%s.pdf' % (save_dir, filename))
         if not quiet:
             plt.show()
         plt.close()
     return temp_profile
+
+
+def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
+                     title='Temperature density (dimensionless units)', xlab='X', ylab='Y', zlab='Z', filename='temp'):
+    """Plots histogram profile for all walkers
+    Can be called anywhere a 3D bar-type histogram (of 2D data) is needed"""
+    logging.info("Plotting 3D temperature (bar-type) histogram")
+    if gen_plots:
+        creation.check_for_folder(save_dir)
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+        # Construct arrays for the anchor positions of bars
+        xpos, ypos = np.meshgrid(x_edges[:-1] + 0.25, y_edges[:-1] + 0.25)
+        xpos = xpos.flatten('F')
+        ypos = ypos.flatten('F')
+        zpos = np.zeros_like(xpos)
+        # Construct arrays with the dimensions for bars
+        dx = 0.5 * np.ones_like(zpos)
+        dy = dx.copy()
+        dz = H_tot.flatten()
+        # plot
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+        ax.set_title(title)
+        ax.set_xlabel(xlab)
+        ax.set_ylabel(ylab)
+        ax.set_zlabel(zlab)
+        ax.set_xlim(0, grid.size + 1)
+        ax.set_ylim(0, grid.size + 1)
+        plt.savefig('%s/%s.pdf' % (save_dir, filename))
+        if not quiet:
+            plt.show()
+        plt.close()
+    return H_tot
 
 
 def plot_linear_temp(temp_profile, grid_size, quiet, save_dir, plots, cutoff_frac=0.25):
@@ -302,6 +351,16 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     plt.close()
 
 
+# def plot_distribution_tube_lengths
+
+
+# def plot_distribution_tube_angles
+
+
+# def plot_distribution_tube_distances(centers or ends)
+
+
+
 def plot_k_convergence(quantity, quiet, save_dir, x_list=None):
     logging.info("Plotting k convergence")
     if x_list is not None:
@@ -368,7 +427,9 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 
 
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True, legend=True, exclude_vals='',
-                        tunneling=False, max_tube_num=100000, force_y_int=False):
+                        tunneling=False, max_tube_num=100000, force_y_int=False, y_max=None,
+                        units=False, dec_fill_fract=False, w_err=True):
+    """w_err - weighted linear fit based on k error bars from configurations"""
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         random_2d_15 = {'0': 0, '10': 1.51, '20': 3.03, '30': 4.49, '40': 5.93, '50': 7.51, '60': 9.11, '70': 10.5,
                         '80': 11.88, '90': 13.52, '100': 14.7, '110': 16.07, '120': 17.59, '130': 19.68,
@@ -426,6 +487,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         f = fitfunc(p1, x)  # create a fit with those parameters
         return p1, f
 
+    scaling_factor = 87.0  # FOR UNITS
     exclude_vals = list(map(str, exclude_vals))  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
@@ -498,6 +560,12 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         if div_by_k0:
             k0 = k_vals[0]
             k_vals = k_vals / k_vals[0]
+        # add units (if requested)
+        if units:
+            k_vals *= scaling_factor  # adds W/m*K units based on polystyrene matrix as measured by Matt Houck
+            k_err *= scaling_factor
+        if dec_fill_fract:
+            fill_fract *= 0.01  # uses decimal for fill fraction values, more reasonable slopes
         # apply linear fit
         if force_y_int:
             dim_dict = {2: 0.5, 3: old_div(1.0, 300.0)}
@@ -515,10 +583,19 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
             x_fit = x
             y_fit = slope * x
         else:
-            slope, intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
+            if w_err:
+                k_err_weights = 1.0 / k_err
+                p, V = np.polyfit(fill_fract, k_vals, 1, cov=True, w=k_err_weights)
+            else:
+                p, V = np.polyfit(fill_fract, k_vals, 1, cov=True, w=k_err)
+            slope = p[0]
+            intercept = p[1]
+            d_slope = np.sqrt(V[0][0])
+            d_yint = np.sqrt(V[1][1])
+            notused_slope, notused_intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
             x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
             y_fit = slope * x_fit + intercept
-            d_slope = slope * np.sqrt(old_div(((old_div(1, r_value ** 2)) - 1), (num_configs - 2)))
+            #d_slope = np.abs(slope) * np.sqrt(old_div(((old_div(1, r_value ** 2)) - 1), (num_configs - 2)))
         slopes.append(slope)
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)
@@ -536,15 +613,24 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         'Tubes of length %d in a %dD cube of length %d\n%d configurations' % (
             tube_length, dim, grid_size, num_configs))
     # plt.xlabel('Number of tubes')
-    plt.xlabel('Filling fraction %')
+    if dec_fill_fract:
+        plt.xlabel('Volume fraction')
+    else:
+        plt.xlabel('Volume fraction %')
     if div_by_k0:
         plt.ylabel('Thermal conductivity $k/k_0$')
     else:
-        plt.ylabel('Thermal conductivity k')
+        if units:
+            plt.ylabel('Thermal conductivity k (W/(M*K))')
+        else:
+            plt.ylabel('Thermal conductivity k')
     if legend:
         plt.legend(loc=2)
     plt.tight_layout()
-    plt.ylim(ymin=0)
+    if y_max:
+        plt.ylim((0, y_max))
+    else:
+        plt.ylim(ymin=0)
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
     f = open("fit.txt", 'w')
     f.write('orientation slope d_slope y_int r_twos\n')
@@ -555,7 +641,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
     plt.close()
 
 
-def plot_all_tube_length(tube_length, num_configs, grid_size, div_by_k0=True):
+def plot_all_tube_length(tube_length, num_configs, grid_size, div_by_k0=True, y_max=None, units=False,
+                         dec_fill_fract=False, w_err=True):
     # Runs plot analysis in all folders for a tube length
     # div_by_k0 True or False divides the k values by k0 at 0 fill fraction
     os.chdir('tube_length_%d' % tube_length)
@@ -565,19 +652,22 @@ def plot_all_tube_length(tube_length, num_configs, grid_size, div_by_k0=True):
             prob = file.split('_')[2]
             os.chdir(file)
             print('In directory %s' % file)
-            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=div_by_k0, units=units,
+                                dec_fill_fract=dec_fill_fract, w_err=w_err)
             os.chdir('..')
         elif ('tunneling' in file) and ('novol' not in file):
             dim = file.split('_')[0]
             os.chdir(file)
             print('In directory %s' % file)
-            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=div_by_k0,
+                                units=units, dec_fill_fract=dec_fill_fract, w_err=w_err)
             os.chdir('..')
         elif ('tunneling' in file) and ('novol' in file):
             dim = file.split('_')[0]
             os.chdir(file)
             print('In directory %s' % file)
-            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0, tunneling=True)
+            plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=div_by_k0,
+                                units=units, dec_fill_fract=dec_fill_fract, tunneling=True, w_err=w_err)
             os.chdir('..')
     os.chdir('..')
     print('Done!')
@@ -593,6 +683,91 @@ def plot_multi_tube_lengths(tube_lengths_str, type, num_configs=5, mark_size='6_
     mark_size_spl = mark_size.split('_')
     color_list = {'10': "r", "15": "g", '20': "b"}
     marker_list = {'horizontal': "^", "vertical": "v", 'random': "o"}
+    size_list = {'10': float(mark_size_spl[0]), "15": float(mark_size_spl[1]), '20': float(mark_size_spl[2])}
+    tube_lengths_str = tube_lengths_str.split('_')
+    for i in range(len(tube_lengths_str)):
+        tube_lengths_str[i] = int(tube_lengths_str[i])
+        os.chdir('tube_length_%d' % tube_lengths_str[i])
+        dirs = []  # directories to check in all tube length folders
+        in_dirs = []
+        for file in glob.glob("*_*"):
+            if os.path.isdir(file) and type == file:
+                os.chdir(file)
+                dirs.append(file)
+                data_files = glob.glob("*_data.txt")
+                for j in range(len(data_files)):
+                    in_dirs.append(data_files[j])
+                    f = open(data_files[j], 'r')
+                    lines = f.readlines()[1:]
+                    f.close()
+                    fill_fract = []
+                    k_vals = []
+                    k_err = []
+                    uni_orientations = []
+                    slopes = []
+                    d_slopes = []
+                    y_ints = []
+                    r_twos = []
+                    for k in range(len(lines)):
+                        fill_fract_t, k_vals_t, k_err_t = lines[k].split(" ")
+                        fill_fract.append(float(fill_fract_t))
+                        k_vals.append(float(k_vals_t))
+                        k_err.append(float(k_err_t[:-1]))  # -1 for the newline removal
+                    # import fit
+                    g = open('fit.txt', 'r')
+                    lines = g.readlines()[1:]
+                    for l in range(len(lines)):
+                        uni_orientations_t, slopes_t, d_slopes_t, y_ints_t, r_twos_t = lines[l].split(" ")
+                        uni_orientations.append(uni_orientations_t)
+                        slopes.append(float(slopes_t))
+                        d_slopes.append(float(d_slopes_t))
+                        y_ints.append(float(y_ints_t))
+                        r_twos.append(float(r_twos_t[:-1]))  # -1 for the newline removal
+                    g.close()
+                    orientation_str = data_files[j].replace('_data.txt', '')
+                    model_str = file.replace('_', ' ')
+                    tube_l_str = tube_lengths_str[i]
+                    for m in range(len(uni_orientations)):
+                        if orientation_str == uni_orientations[m]:
+                            x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
+                            y_fit = slopes[m] * x_fit + y_ints[m]
+                    # let's plot here
+                    legend_label = 'Tube length %d %s %s' % (tube_l_str, model_str, orientation_str)
+                    print('Plotting %s' % legend_label)
+                    plt.errorbar(fill_fract, k_vals, yerr=k_err, fmt=marker_list[orientation_str],
+                                 c=color_list[str(tube_l_str)], label=legend_label,
+                                 markersize=size_list[str(tube_l_str)])
+                    if plot_fits:
+                        plt.plot(x_fit, y_fit, c=color_list[str(tube_l_str)], linewidth=0.25)
+                os.chdir('..')
+        os.chdir('..')
+    plt.legend(loc=leg_loc, prop={'size': leg_size})
+    plt.title('Thermal conductivity vs. filling fraction percentage\nTubes of length 10, 15, '
+              '20 with different orientations, %d configurations\nModel: %s' % (num_configs, model_str))
+    plt.xlabel('Filling fraction %')
+    if div_by_k0:
+        plt.ylabel('Thermal conductivity $k/k_0$ (dimensionless units)')
+    else:
+        plt.ylabel('Thermal conductivity k (dimensionless units)')
+    plt.ylim(ymin=0)
+    plt.xlim(xmax=22)
+    plt.tight_layout()
+    plt.savefig('%s_%s_plot.pdf' % (tube_lengths_str, type))
+    plt.close()
+
+
+def plot_slopes_bar_graph(tube_lengths_str, type, num_configs=5, mark_size='6_7.5_9',
+                          leg_loc=2, leg_size=9, div_by_k0=True, plot_fits=True):
+    # plot multiple tube lengths on same plot for each folder
+    # one type only, like kapitzaX
+    # tube_lengths_str separated with _
+    # leg_loc and leg_size define legend location and size
+    # errorbar size for the 3 sizes given above
+    plot_list = ['random_func', 'random_nofunc', 'horizontal_func', 'horizontal_nofunc', 'vertical_func',
+                 'vertical_nofunc']
+    mark_size_spl = mark_size.split('_')
+    color_list = {'10': "r", "15": "g", '20': "b"}
+
     size_list = {'10': float(mark_size_spl[0]), "15": float(mark_size_spl[1]), '20': float(mark_size_spl[2])}
     tube_lengths_str = tube_lengths_str.split('_')
     for i in range(len(tube_lengths_str)):

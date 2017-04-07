@@ -5,6 +5,7 @@ import logging
 import numpy as np
 import time
 from mpi4py import MPI
+from conduction import *
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
@@ -79,8 +80,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     logging.info("Serial simulation time was %.4f s" % (end - start))
     walk_sec = old_div((i * 2), (end - start))
     logging.info("Crunched %.4f walkers/second" % walk_sec)
-    temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, H, xedges, yedges, quiet, plot_save_dir,
-                                                      gen_plots)
+    temp_profile = plots.plot_colormap_2d(grid, H, quiet, plot_save_dir, gen_plots)
     if gen_plots == True:
         plots.plot_k_convergence(k_list, quiet, plot_save_dir)
         plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)
@@ -208,9 +208,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
         logging.info("Using %d cores, parallel simulation time was %.4f s" % (size, end - start))
         walk_sec = old_div((i * 2 * size), (end - start))
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        temp_profile = plots.plot_histogram_walkers_onlat(grid, timesteps, tot_H, xedges, yedges, quiet,
-                                                          plot_save_dir,
-                                                          gen_plots)
+        temp_profile = plots.plot_colormap_2d(grid, tot_H, quiet, plot_save_dir, gen_plots)
         if gen_plots:
             plots.plot_k_convergence(k_list, quiet, plot_save_dir)
             plots.plot_k_convergence_err(k_convergence_err_list, quiet, plot_save_dir, begin_cov_check)

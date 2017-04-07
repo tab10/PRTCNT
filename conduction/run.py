@@ -1,5 +1,18 @@
-from future import standard_library
+# //////////////////////////////////////////////////////////////////////////////////// #
+# ////////////////////////////// ##  ##  ###  ## ### ### ///////////////////////////// #
+# ////////////////////////////// # # # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// ##  ##   #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #  #   # #  #  ///////////////////////////// #
+# ////////////////////////////// #   # #  #   ## # #  #  ///////////////////////////// #
+# ////////////////////////////// ###  #          ##           # ///////////////////////#
+# //////////////////////////////  #      ###     # # # # ### ### ///////////////////// #
+# //////////////////////////////  #   #  ###     ##  # # #    # ////////////////////// #
+# //////////////////////////////  #   ## # #     # # ### #    ## ///////////////////// #
+# //////////////////////////////  #              ## ////////////////////////////////// #
+# //////////////////////////////////////////////////////////////////////////////////// #
 
+
+from future import standard_library
 standard_library.install_aliases()
 from builtins import str
 from builtins import range
@@ -7,6 +20,7 @@ import logging
 import sys
 import importlib
 import os
+from conduction import *
 
 
 def ConfigSectionMap(section):
@@ -70,7 +84,6 @@ if __name__ == "__main__":
     tube_length = Config.getfloat('config','tube_length')
     tube_radius = Config.getfloat('config', 'tube_radius')
     num_tubes = Config.getint('config','num_tubes')
-    on_lattice = Config.getboolean('config','on_lattice')
     timesteps = Config.getint('config','timesteps')
     save_dir = Config.get('config', 'save_dir')
     quiet = Config.getboolean('config', 'quiet')
@@ -85,12 +98,9 @@ if __name__ == "__main__":
     prob_m_cn = Config.getfloat('config', 'prob_m_cn')
     run_to_convergence = Config.getboolean('config', 'run_to_convergence')
     num_walkers = Config.getint('config', 'num_walkers')
-    method = Config.get('config', 'method')
     disable_func = Config.getboolean('config', 'disable_func')
-    if method == 'constant_flux':
-        printout_inc = Config.getint('constant_flux', 'printout_inc')
-    else:
-        printout_inc = 500
+    rules_test = Config.getboolean('rules_simulation', 'rules_test')
+    printout_inc = Config.getint('constant_flux', 'printout_inc')
 
     #mean_dist_tubes = Config.get('config','mean_dist_tubes')
     #std_dist_tubes = Config.get('config', 'std_dist_tubes')
@@ -128,53 +138,41 @@ if __name__ == "__main__":
     else:
         logging.info('Kapitza modeling is OFF')
         prob_m_cn = 0.0
-    if method == 'variable_flux':
-        if run_to_convergence:
-            logging.info('Simulation will run to convergence')
-            if begin_cov_check >= num_walkers:
-                logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
-                num_walkers *= 3
-        else:
-            logging.info('Simulation will run to %d walkers' % num_walkers)
-    elif method == 'constant_flux':
-        logging.info('Simulation will run for %d timesteps' % timesteps)
-    else:
-        logging.error('Check method')
-        raise SystemExit
+
+    logging.info('Simulation will run for %d timesteps' % timesteps)
+
     if disable_func:
         logging.info('Functionalization has been disabled, treating ends as volume in rules')
 
     logging.info('Grid size of %d is being used' % (grid_size + 1))
     ##### #####
 
-    if on_lattice & (dim == 2):
-        if method == 'variable_flux':
-            logging.error('This method is not accurate, stopping')
-            raise SystemExit
-            # logging.info("Starting 2D variable flux on-lattice simulation")
-            # onlat_2d_variable_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes,
-            #                                                  orientation, timesteps, save_loc_data,
-            #                                                  quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-            #                                                  k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-            #                                                  run_to_convergence, num_walkers)
-        elif method == 'constant_flux':
-            onlat_2d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+    if rules_test:
+        logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
+                     "Principle of Detailed Balance.")
+        logging.info("k will not be computed, so only simulation setup parameters are used. All others"
+                     "are ignored.")
+        if dim == 2:
+            test_2d.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                  timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
                                                  num_walkers, printout_inc, k_conv_error_buffer, disable_func)
-    elif on_lattice and (dim == 3):
-        if method == 'variable_flux':
-            logging.error('This method is not accurate, stopping')
-            raise SystemExit
-            # logging.info("Starting 3D variable flux on-lattice simulation")
-            # onlat_3d_variable_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, save_loc_data,
-            #      quiet, save_loc_plots, save_dir, k_convergence_tolerance, begin_cov_check,
-            #      k_conv_error_buffer, plot_save_dir, gen_plots, kapitza, prob_m_cn, run_to_convergence, num_walkers)
-        elif method == 'constant_flux':
-            logging.info("Starting 3D constant flux on-lattice simulation")
-            onlat_3d_constant_flux.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
-                                                 quiet, plot_save_dir,
-                                                 gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                                 k_conv_error_buffer, disable_func)
+        elif dim == 3:
+            test_3d.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
+                                  quiet, plot_save_dir,
+                                  gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                  k_conv_error_buffer, disable_func)
+
+    elif not rules_test:
+        logging.info("Starting %dD constant flux on-lattice random walk." % dim)
+        if dim == 2:
+            randomwalk_2d.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                        timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                        num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+        elif dim == 3:
+            randomwalk_3d.serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
+                                        quiet, plot_save_dir,
+                                        gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                        k_conv_error_buffer, disable_func)
     else:
         logging.error('Check inputs')
         raise SystemExit
