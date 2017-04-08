@@ -19,8 +19,6 @@ This file is designed to test the random walk rules to make sure they satisfy de
 system has microscopic reversibility and locations are equally probable as they must be in equilibrium"""
 
 from __future__ import division
-# from builtins import range
-from past.utils import old_div
 import logging
 import numpy as np
 import time
@@ -61,7 +59,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     xedges = list(range(0, bins))
     yedges = list(range(0, bins))
     zedges = list(range(0, bins))
-    start_k_err_check = old_div(tot_time, 2)
+    start_k_err_check = tot_time / 2
     prev_type = 0  # assume walker was in matrix before 1st step. this tells the previous type of
     # cell the walker was on
 
@@ -71,7 +69,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         d_add = int(tot_time, tot_walkers)
         walker_frac_trigger = 0  # add a walker every d_add timesteps
     elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker should be added every timestep
-        d_add = int(old_div(1.0, d_add))
+        d_add = int(1.0 / d_add)
         walker_frac_trigger = 1
     else:  # change num_walkers or timesteps
         logging.error('Choose tot_time / (tot_walkers) so that it is integer or less than 1')
@@ -84,7 +82,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     for i in range(tot_time):
         if (i % printout_inc) == 0 and (i >= (2 * printout_inc)):
             cur_num_walkers = len(walker_master)
-            Htemp = histogram_walker_list(H, walker_master)
+            # Htemp = histogram_walker_list(H, walker_master)
             dt_dx, heat_flux, dt_dx_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(Htemp,
                                                                                                               cur_num_walkers,
                                                                                                               grid.size,
@@ -185,7 +183,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     x_edges = list(range(0, bins))
     y_edges = list(range(0, bins))
     z_edges = list(range(0, bins))
-    # start_k_err_check = old_div(tot_time, 2)
+    # start_k_err_check = tot_time / 2
 
     # d_add - how often to add a hot/cold walker pair
     # d_add = old_div(tot_time, (old_div(tot_walkers, 2.0)))  # as a float
@@ -211,7 +209,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     #         'Adding 1 walker(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
     # walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
 
-    walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
+    walkers_per_core_whole = int(np.floor(tot_walkers / (size)))
 
     comm.Barrier()
 
@@ -271,8 +269,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         #                 filename='temp')
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
-        logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, old_div((end - start), 60.0)))
-        walk_sec = old_div(tot_walkers, (end - start))
+        logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
+        walk_sec = tot_walkers / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
         # temp_profile = plots.plot_colormap_2d(grid, tot_time, temp_profile_sum, xedges, yedges, quiet,
         #                                      plot_save_dir, gen_plots)

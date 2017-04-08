@@ -13,24 +13,19 @@
 
 
 from __future__ import division
-# from builtins import map
-# from builtins import zip
-# from builtins import next
-# from builtins import range
-from past.utils import old_div
 import itertools
 import logging
 import glob
 import matplotlib as mpl
 import os
 # mpl.use('Agg')
-mpl.use('pdf')
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
 import scipy as sp
-from conduction import *
+
+mpl.use('pdf')
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
 
@@ -335,7 +330,7 @@ def plot_check_gradient_noise_floor(temp_gradient_x, quiet, save_dir):
     for i in range(len(conv) - 1):
         temp = np.abs(conv[i + 1] - conv[i])
         d_conv.append(temp)
-    noise_floor_vals = d_conv[2:old_div(size, 2)]  # these are rough bounds that should work
+    noise_floor_vals = d_conv[2:size / 2]  # these are rough bounds that should work
     plt.plot(d_conv)
     noise_floor = np.mean(noise_floor_vals)
     x_floor = list(range(2, 50))
@@ -475,7 +470,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
 
     def lin_fit(x, y, dim):
         '''Fits a linear fit of the form mx+b to the data'''
-        dim_dict = {2: 0.5, 3: old_div(1.0, 3.0)}
+        dim_dict = {2: 0.5, 3: 1.0 / 3.0}
         fitfunc = lambda params, x: params[0] * x + dim_dict[dim]  # create fitting function of form mx+no_tubes_const
         errfunc = lambda p, x, y: fitfunc(p, x) - y  # create error function for least squares fit
 
@@ -520,7 +515,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
     y_ints = []
     r_twos = []
     for i in range(len(uni_orientations)):
-        uni_tubes = old_div(len(sep_folds[i]), num_configs)
+        uni_tubes = len(sep_folds[i]) / num_configs
         uni_num_tubes = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
@@ -537,7 +532,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         for l in range(len(uni_num_tubes)):
             k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
             k_err.append(
-                old_div(np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1), np.sqrt(num_configs)))
+                np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
         fill_fract = []
         for a in range(len(uni_num_tubes)):
             temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i], tunneling, grid_size, dim)
@@ -568,7 +563,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
             fill_fract *= 0.01  # uses decimal for fill fraction values, more reasonable slopes
         # apply linear fit
         if force_y_int:
-            dim_dict = {2: 0.5, 3: old_div(1.0, 300.0)}
+            dim_dict = {2: 0.5, 3: 1.0 / 300.0}
             slope, _ = lin_fit(fill_fract, k_vals, dim)
             print(slope)
             raise SystemExit
@@ -595,7 +590,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
             notused_slope, notused_intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
             x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
             y_fit = slope * x_fit + intercept
-            #d_slope = np.abs(slope) * np.sqrt(old_div(((old_div(1, r_value ** 2)) - 1), (num_configs - 2)))
+            # d_slope = np.abs(slope) * np.sqrt(((1 / r_value ** 2) - 1) / (num_configs - 2))
         slopes.append(slope)
         y_ints.append(intercept)
         r_twos.append(r_value ** 2)

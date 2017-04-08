@@ -10,4 +10,4 @@ setup(name='conduction',
       author_email='taburt@ou.edu',
       url='https://github.com/tab10/conduction',
       packages=find_packages(),
-      install_requires=['numpy', 'matplotlib', 'scipy', 'mpi4py', 'past'], )
+      install_requires=['numpy', 'matplotlib', 'scipy', 'mpi4py'], )
