@@ -12,14 +12,15 @@
 # //////////////////////////////////////////////////////////////////////////////////// #
 
 
-from future import standard_library
+# from future import standard_library
 import logging
 import sys
 import importlib
 import os
 from conduction import *
 
-standard_library.install_aliases()
+
+#standard_library.install_aliases()
 
 def ConfigSectionMap(section):
     dict1 = {}
