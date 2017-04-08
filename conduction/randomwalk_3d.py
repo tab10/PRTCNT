@@ -160,13 +160,13 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
-                    size, restart, bound, rules_test):
+                    size, rules_test, restart):
     comm = MPI.COMM_WORLD
 
     # serial tube generation
     if rank == 0:
         grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                     disable_func)
+                                     disable_func, rules_test)
 
     comm.Barrier()
 

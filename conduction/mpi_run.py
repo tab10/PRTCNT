@@ -99,15 +99,6 @@ if __name__ == "__main__":
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
                                                                      'somewhat large because histogramming has to be done every time.')
-    parser.add_argument('--method', type=str, default='constant_flux',
-                        help='constant_flux sets a constant flux, num_walkers, ' \
-                             'and simulation time, adding a hot and ' \
-                             'cold walker every so often. ' \
-                             'variable_flux runs a hot and cold ' \
-                             'walker for a certain ' \
-                             'amount of time, and' \
-                             'the simulation can converge as walkers' \
-                             'are added or stop at a value of walkers.')
 
     args = parser.parse_args()
 
@@ -133,7 +124,6 @@ if __name__ == "__main__":
     prob_m_cn = args.prob_m_cn
     run_to_convergence = args.run_to_convergence
     num_walkers = args.num_walkers
-    method = args.method
     printout_inc = args.printout_inc
     restart = args.restart
     disable_func = args.disable_func
@@ -206,9 +196,10 @@ if __name__ == "__main__":
                      "anywhere in the box\nALL boundaries are periodic\nWalkers are all positive\nALL visited"
                      "positions are histogrammed as opposed to keeping just 1")
         if dim == 2:
-            test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-                                    timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                    num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+            """"""
+            # test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+            #                        timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+            #                        num_walkers, printout_inc, k_conv_error_buffer, disable_func)
         elif dim == 3:
             test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
                                     plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,
@@ -217,17 +208,15 @@ if __name__ == "__main__":
     elif not rules_test:
         logging.info("Starting %dD constant flux on-lattice random walk." % dim)
         if dim == 2:
-            randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-                                          timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                          num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+            """"""
+            # randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+            #                              timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+            #                              num_walkers, printout_inc, k_conv_error_buffer, disable_func)
         elif dim == 3:
-            (grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
-             gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
-             size, restart, bound, rules_test)
             randomwalk_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                           quiet, plot_save_dir,
                                           gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
-                                          k_conv_error_buffer, disable_func)
+                                          k_conv_error_buffer, disable_func, rank, size, rules_test, restart)
     else:
         logging.error('Check inputs')
         raise SystemExit
