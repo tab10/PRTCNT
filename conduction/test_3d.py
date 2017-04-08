@@ -182,34 +182,36 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     walker_master_pos = []
     timestep_list = []  # x axis for plots
-    xedges = list(range(0, bins))
-    yedges = list(range(0, bins))
-    zedges = list(range(0, bins))
+    x_edges = list(range(0, bins))
+    y_edges = list(range(0, bins))
+    z_edges = list(range(0, bins))
     # start_k_err_check = old_div(tot_time, 2)
 
     # d_add - how often to add a hot/cold walker pair
-    d_add = old_div(tot_time, (old_div(tot_walkers, 2.0)))  # as a float
-    if d_add.is_integer() and d_add >= 1:
-        d_add = int(tot_time / tot_walkers)
-        walker_frac_trigger = 0  # add a pair every d_add timesteps
-    elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
-        d_add = old_div(1.0, d_add)
-        if not d_add.is_integer():
-            logging.error('Choose tot_time / tot_walkers so that it is integer or less than 1 and whole')
-            raise SystemExit
-        else:
-            d_add = int(d_add)
-        walker_frac_trigger = 1
-    else:  # change num_walkers or timesteps
-        logging.error('Choose tot_time / tot_walkers so that it is integer or less than 1')
-        raise SystemExit
-    if walker_frac_trigger == 1:
-        logging.info('Adding %d walkers pair(s) every timestep' % d_add)
-        walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size * d_add))))
-    elif walker_frac_trigger == 0:
-        logging.info(
-            'Adding 1 walker(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
-        walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
+    # d_add = old_div(tot_time, (old_div(tot_walkers, 2.0)))  # as a float
+    # if d_add.is_integer() and d_add >= 1:
+    #     d_add = int(tot_time / tot_walkers)
+    #     walker_frac_trigger = 0  # add a pair every d_add timesteps
+    # elif d_add < 1:  # this is a fractional number < 1, implies more than 1 walker pair should be added every timestep
+    #     d_add = old_div(1.0, d_add)
+    #     if not d_add.is_integer():
+    #         logging.error('Choose tot_time / tot_walkers so that it is integer or less than 1 and whole')
+    #         raise SystemExit
+    #     else:
+    #         d_add = int(d_add)
+    #     walker_frac_trigger = 1
+    # else:  # change num_walkers or timesteps
+    #     logging.error('Choose tot_time / tot_walkers so that it is integer or less than 1')
+    #     raise SystemExit
+    # if walker_frac_trigger == 1:
+    #     logging.info('Adding %d walkers pair(s) every timestep' % d_add)
+    #     walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size * d_add))))
+    # elif walker_frac_trigger == 0:
+    #     logging.info(
+    #         'Adding 1 walker(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
+    # walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
+
+    walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
 
     comm.Barrier()
 
@@ -223,34 +225,31 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     H_local = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)
     for i in range(walkers_per_core_whole):
         H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
-        if walker_frac_trigger == 0:
-            core_time = ((i * size) + rank) * d_add
-            cur_num_walkers = i * size
-            walkers_per_timestep = 1
-        elif walker_frac_trigger == 1:
-            core_time = i * size + rank
-            cur_num_walkers = i * size * d_add
-            walkers_per_timestep = d_add
-        for j in range(walkers_per_timestep):
-            # print '%d on core %d' % (core_time, rank)
-            # run trajectories for that long
-            walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, grid.bound,
+        # if walker_frac_trigger == 0:
+        #     core_time = ((i * size) + rank) * d_add
+        #     cur_num_walkers = i * size
+        #     walkers_per_timestep = 1
+        # elif walker_frac_trigger == 1:
+        #     core_time = i * size + rank
+        #     cur_num_walkers = i * size * d_add
+        #     walkers_per_timestep = d_add
+        cur_num_walkers = i * size
+        walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, tot_time, 'hot', kapitza, prob_m_cn, grid.bound,
                                                           rules_test)  # 'hot' since +1
-            # get last position of walker
-            walker_temp_pos = walker_temp.pos[-1]
-            # histogram
-            H_local[walker_temp_pos[0], walker_temp_pos[1], walker_temp_pos[2]] += 1
-            # send to core 0
-            # as long as size is somewhat small, this barrier won't slow things down much and ensures a correct k value
-            comm.Barrier()
+        # histogram ALL positions
+        for j in range(len(walker_temp.pos)):
+            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1
+        # send to core 0
+        # as long as size is somewhat small, this barrier won't slow things down much
+        # H_local now has all walker positions.
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
         # analysis
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
-            timestep_list.append(core_time)
-            logging.info("Parallel iteration %d out of %d, timestep %d, %d walkers"
-                         % (i, walkers_per_core_whole, core_time, cur_num_walkers))
+            timestep_list.append(tot_time)
+            logging.info("Parallel iteration %d out of %d, %d walkers"
+                         % (i, walkers_per_core_whole, cur_num_walkers))
         comm.Barrier()
 
     comm.Barrier()  # make sure whole walks are done
