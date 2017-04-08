@@ -18,6 +18,7 @@ import argparse
 from mpi4py import MPI
 from conduction import *
 
+
 def logging_setup(save_dir):
     creation.check_for_folder(save_dir)
     logging.basicConfig(level=logging.DEBUG,

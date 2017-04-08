@@ -17,6 +17,8 @@ import itertools
 import logging
 import glob
 import matplotlib as mpl
+
+mpl.use('pdf')
 import os
 # mpl.use('Agg')
 import matplotlib.pyplot as plt
@@ -24,8 +26,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
 import scipy as sp
+from conduction import *
 
-mpl.use('pdf')
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner
 
