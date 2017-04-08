@@ -13,10 +13,10 @@
 
 
 from __future__ import division
-from builtins import map
-from builtins import zip
-from builtins import next
-from builtins import range
+# from builtins import map
+# from builtins import zip
+# from builtins import next
+# from builtins import range
 from past.utils import old_div
 import itertools
 import logging

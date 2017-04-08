@@ -12,7 +12,7 @@
 # //////////////////////////////////////////////////////////////////////////////////// #
 
 
-from builtins import range
+# from builtins import range
 import logging
 from conduction import *
 import numpy as np

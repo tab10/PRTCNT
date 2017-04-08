@@ -19,7 +19,7 @@ This file is designed to test the random walk rules to make sure they satisfy de
 system has microscopic reversibility and locations are equally probable as they must be in equilibrium"""
 
 from __future__ import division
-from builtins import range
+# from builtins import range
 from past.utils import old_div
 import logging
 import numpy as np
