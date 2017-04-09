@@ -38,8 +38,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                 disable_func, rules_test)
+    grid = creation_3d.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                    disable_func, rules_test)
     if gen_plots:
         plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
 
@@ -103,7 +103,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             if (i % d_add) == 0:
                 trigger = 1
                 # let's add the 1 new walker
-                walker_temp = creation.Walker3D_onlat(grid.size, 'hot', rules_test)
+                walker_temp = creation_3d.Walker3D_onlat(grid.size, 'hot', rules_test)
                 walker_master.append(walker_temp)
             else:
                 trigger = 0
@@ -111,13 +111,12 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             trigger = d_add  # trigger never 0 in this case
             # let's add the 1 new walkers, several times
             for k in range(d_add):
-                walker_temp = creation.Walker3D_onlat(grid.size, 'hot', rules_test)
+                walker_temp = creation_3d.Walker3D_onlat(grid.size, 'hot', rules_test)
                 walker_master.append(walker_temp)
         # let's update all the positions of the activated walkers
         for j in range(len(walker_master) - trigger):  # except the new ones
             temp = walker_master[j]
-            current_updated, prev_type_hot = rules_3d.apply_moves_3d(temp, kapitza, grid, prob_m_cn, prev_type_hot)(
-                walker, kapitza, grid, prob_m_cn, inside_cnt, bound)
+            current_updated = rules_3d.apply_moves_3d(temp, kapitza, grid, prob_m_cn, bound)
             current_updated.erase_prev_pos()
             walker_master[j] = current_updated
 
@@ -157,8 +156,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     # serial tube generation
     if rank == 0:
-        grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                     disable_func, rules_test)
+        grid = creation_3d.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False,
+                                        plot_save_dir,
+                                        disable_func, rules_test)
 
     comm.Barrier()
 

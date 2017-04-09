@@ -37,7 +37,7 @@ def ConfigSectionMap(section):
 
 
 def logging_setup(save_dir):
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     logging.basicConfig(level=logging.DEBUG,
                         format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
@@ -52,7 +52,7 @@ def logging_setup(save_dir):
 
 def save_walker_loc(walker, save_dir, walker_index, temp):
     header = "timestep [x,y]\n"
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     f = open("%s/%s_walker_%d_traj.txt" % (save_dir, temp, walker_index + 1), "w")
     f.write(header)
     for i in range(len(walker.pos)):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
 
     os.chdir(save_dir)
 
-    plot_save_dir = creation.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
+    plot_save_dir = backend.get_plot_save_dir(save_dir, num_tubes, orientation, tube_length)
     logging_setup(plot_save_dir)
     logging.info(config_used)
 
