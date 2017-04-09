@@ -8,3 +8,4 @@ mpirun -np 80 python /home/tab10/code/conduction/conduction/mpi_run.py --dim 3 -
 done
 
 
+mpirun -np 2 python mpi_run.py --dim 3 --orientation horizontal --num_tubes 5000 --tube_length 15 --gen_plots True --rules_test True --timesteps 35000 --num_walkers 100

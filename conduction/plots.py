@@ -86,7 +86,7 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir):
     plt.xlabel('X')
     plt.ylabel('Y')
     plt.grid()
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     plt.savefig('%s/setup.pdf' % save_dir)
     if not quiet:
         plt.show()
@@ -128,7 +128,7 @@ def plot_three_d_random_walk_setup(grid, quiet, save_dir):
     ax.set_ylabel('Y')
     ax.set_zlabel('Z')
     ax.grid()
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     plt.savefig('%s/setup.pdf' % save_dir)
     if not quiet:
         plt.show()
@@ -138,7 +138,7 @@ def plot_three_d_random_walk_setup(grid, quiet, save_dir):
 def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
     """Plots array with bd/vol locations"""
     logging.info("Plotting check array")
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     if gen_plots:
         if grid.tube_radius == 0:
             plt.pcolor(grid.tube_check_bd.T)  # since pcolor reverses axes
@@ -161,7 +161,7 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
     """Plots temperature profile for all walkers
     Can be called anywhere a 2D colormap (of 2D data), basically a histogram, is needed"""
     logging.info("Plotting 2D temperature (histogram)")
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
     if gen_plots:
@@ -186,7 +186,7 @@ def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
     Can be called anywhere a 3D bar-type histogram (of 2D data) is needed"""
     logging.info("Plotting 3D temperature (bar-type) histogram")
     if gen_plots:
-        creation.check_for_folder(save_dir)
+        backend.check_for_folder(save_dir)
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         # Construct arrays for the anchor positions of bars
@@ -199,7 +199,7 @@ def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
         dy = dx.copy()
         dz = H_tot.flatten()
         # plot
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average', edgecolor="none")
         ax.set_title(title)
         ax.set_xlabel(xlab)
         ax.set_ylabel(ylab)
@@ -257,7 +257,7 @@ def plot_walker_path_2d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     plt.ylabel('Y')
     plt.grid()
     plt.title('Walker %d path taken (%s)' % (label, temp))
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     plt.savefig('%s/%s_walker_%d_path.pdf' % (save_dir, temp, label))
     if not quiet:
         plt.show()
@@ -289,7 +289,7 @@ def plot_walker_path_3d_onlat(walker, grid_size, temp, quiet, label, save_dir):
     ax.scatter(pos_x[0], pos_y[0], pos_z[0], 'o', c='red', s=200, label="Start", zorder=2)
     ax.scatter(pos_x[-1], pos_y[-1], pos_z[-1], 'o', c='yellow', s=200, label="End", zorder=3)
     plt.legend()
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     plt.savefig('%s/%s_walker_%d_path.pdf' % (save_dir, temp, label))
     if not quiet:
         plt.show()
@@ -314,7 +314,7 @@ def plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet, save_
     plt.xlim(0, grid.size + 1)
     plt.ylim(0, grid.size + 1)
     plt.colorbar()
-    creation.check_for_folder(save_dir)
+    backend.check_for_folder(save_dir)
     plt.savefig('%s/temp_gradient.pdf' % save_dir)
     if not quiet:
         plt.show()

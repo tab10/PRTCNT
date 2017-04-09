@@ -229,8 +229,14 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
-            logging.info("Parallel iteration %d out of %d, %d walkers"
-                         % (i, walkers_per_core_whole + 1, cur_num_walkers))
+            per_complete = float(i) * 100.0 / float(walkers_per_core_whole + 1)
+            """DEBUG - if temp_profile_norm_sum is 1, the histogram reductions are working correctly"""
+            temp_profile_norm = np.divide(H_master, (float(cur_num_walkers) * float(tot_time)))
+            temp_profile_norm_sum = np.sum(temp_profile_norm)
+            print(temp_profile_norm_sum)
+            """END DEBUG"""
+            logging.info("Parallel iteration %d out of %d, %d walkers, %d percent complete"
+                         % (i, walkers_per_core_whole + 1, cur_num_walkers, per_complete))
         comm.Barrier()
 
     comm.Barrier()  # now remainder set
@@ -261,8 +267,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     # analysis
     if rank == 0:
         final_iter = walkers_per_core_whole + 1
-        logging.info("Parallel iteration %d out of %d, %d walkers"
-                     % (final_iter, final_iter, cur_num_walkers))
+        per_complete = final_iter / ((walkers_per_core_whole + 1) * 100.0)
+        logging.info("Parallel iteration %d out of %d, %d walkers, %.2f percent complete"
+                     % (final_iter, final_iter, cur_num_walkers, per_complete))
     comm.Barrier()
 
     comm.Barrier()  # make sure whole walks are done
@@ -270,36 +277,36 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     if rank == 0:
         logging.info('Finished random walk rules test. Analyzing....')
         mean_temp, mean_temp_norm, std_temp, std_temp_norm, temp_profile_norm = analysis.rules_test_analysis \
-            (H_local, tot_walkers, tot_time)
+            (H_master, tot_walkers, tot_time)
         logging.info('Histogram: mean %.4E, std %.4E' % (mean_temp, std_temp))
         logging.info('Histogram normalized: mean %.4E, std %.4E' % (mean_temp_norm, std_temp_norm))
         # plot 2d cuts in each of the 3 planes, all directions periodic
-        temp_profile_yz = np.sum(H_local, axis=0)
-        temp_profile_xz = np.sum(H_local, axis=1)
-        temp_profile_xy = np.sum(H_local, axis=2)
+        temp_profile_yz = np.sum(H_master, axis=0)
+        temp_profile_xz = np.sum(H_master, axis=1)
+        temp_profile_xy = np.sum(H_master, axis=2)
         temp_profile_yz_norm = np.sum(temp_profile_norm, axis=0)
         temp_profile_xz_norm = np.sum(temp_profile_norm, axis=1)
         temp_profile_xy_norm = np.sum(temp_profile_norm, axis=2)
         plots.plot_colormap_2d(grid, temp_profile_xy, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)',
+                               title='Number of times visited (sum along Z-axis)',
                                xlab='X', ylab='Y', filename='H_xy')
         plots.plot_colormap_2d(grid, temp_profile_xz, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)',
+                               title='Number of times visited (sum along Y-axis)',
                                xlab='X', ylab='Z', filename='H_xz')
         plots.plot_colormap_2d(grid, temp_profile_yz, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)',
+                               title='Number of times visited (sum along X-axis)',
                                xlab='Y', ylab='Z', filename='H_yz')
         plots.plot_bargraph_3d(grid, temp_profile_xy_norm, x_edges, y_edges, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)', xlab='X', ylab='Y', zlab='Z',
+                               title='Probability of being visited (sum along Z-axis)', xlab='X', ylab='Y', zlab='Z',
                                filename='B_xy')
         plots.plot_bargraph_3d(grid, temp_profile_xz_norm, x_edges, z_edges, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)', xlab='X', ylab='Z', zlab='Y',
+                               title='Probability of being visited (sum along Y-axis)', xlab='X', ylab='Z', zlab='Y',
                                filename='B_xy')
         plots.plot_bargraph_3d(grid, temp_profile_yz_norm, y_edges, z_edges, quiet, plot_save_dir, gen_plots,
-                               title='Temperature density (dimensionless units)', xlab='Y', ylab='Z', zlab='X',
+                               title='Probability of being visited (sum along X-axis)', xlab='Y', ylab='Z', zlab='X',
                                filename='B_xy')
         end = MPI.Wtime()
-        logging.info("Constant flux simulation has completed")
+        logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
         walk_sec = tot_walkers / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
