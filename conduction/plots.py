@@ -160,7 +160,7 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
                      xlab='X', ylab='Y', filename='temp'):
     """Plots temperature profile for all walkers
     Can be called anywhere a 2D colormap (of 2D data), basically a histogram, is needed"""
-    logging.info("Plotting 2D temperature (histogram")
+    logging.info("Plotting 2D temperature (histogram)")
     creation.check_for_folder(save_dir)
     # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
@@ -190,7 +190,7 @@ def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
         # Construct arrays for the anchor positions of bars
-        xpos, ypos = np.meshgrid(x_edges[:-1] + 0.25, y_edges[:-1] + 0.25)
+        xpos, ypos = np.meshgrid(x_edges[:-1], y_edges[:-1])  # +0.25 already added
         xpos = xpos.flatten('F')
         ypos = ypos.flatten('F')
         zpos = np.zeros_like(xpos)

@@ -164,7 +164,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     if rank == 0:
         if gen_plots:
-            plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
+            """"""
+            # plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
     else:
         grid = None
 
@@ -180,9 +181,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     walker_master_pos = []
     timestep_list = []  # x axis for plots
-    x_edges = list(range(0, bins))
-    y_edges = list(range(0, bins))
-    z_edges = list(range(0, bins))
+    x_edges = np.asarray(range(0, bins)) + 0.25
+    y_edges = np.asarray(range(0, bins)) + 0.25
+    z_edges = np.asarray(range(0, bins)) + 0.25
     # start_k_err_check = tot_time / 2
 
     # d_add - how often to add a hot/cold walker pair
@@ -209,64 +210,94 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     #         'Adding 1 walker(s) every %d timesteps. Likely will not have enough walkers.' % d_add)
     # walkers_per_core_whole = int(np.floor(old_div(tot_walkers, (size))))
 
-    walkers_per_core_whole = int(np.floor(tot_walkers / (size)))
-
-    comm.Barrier()
-
-    walkers_per_core_remain = int(tot_walkers % size)
-    if walkers_per_core_remain != 0:
-        logging.error('Algorithm cannot currently handle a remainder between tot_walkers and tot_cores')
-        raise SystemExit
+    walkers_per_core_whole = int(np.floor(tot_walkers / size))
+    walkers_per_core_remain = int(tot_walkers % size)  # run a last iteration on only this many cores
 
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)
     for i in range(walkers_per_core_whole):
-        H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
-        # if walker_frac_trigger == 0:
-        #     core_time = ((i * size) + rank) * d_add
-        #     cur_num_walkers = i * size
-        #     walkers_per_timestep = 1
-        # elif walker_frac_trigger == 1:
-        #     core_time = i * size + rank
-        #     cur_num_walkers = i * size * d_add
-        #     walkers_per_timestep = d_add
         cur_num_walkers = i * size
+        H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1),
+                            dtype=int)  # should be reset every iteration
         walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, tot_time, 'hot', kapitza, prob_m_cn, grid.bound,
-                                                          rules_test)  # 'hot' since +1
+                                                      rules_test)  # 'hot' since +1
         # histogram ALL positions
         for j in range(len(walker_temp.pos)):
             H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1
-        # send to core 0
-        # as long as size is somewhat small, this barrier won't slow things down much
-        # H_local now has all walker positions.
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
-        # analysis
         if rank == 0 and (i > 0):
             # print np.count_nonzero(H_master)
-            timestep_list.append(tot_time)
             logging.info("Parallel iteration %d out of %d, %d walkers"
-                         % (i, walkers_per_core_whole, cur_num_walkers))
+                         % (i, walkers_per_core_whole + 1, cur_num_walkers))
         comm.Barrier()
+
+    comm.Barrier()  # now remainder set
+
+    if rank < walkers_per_core_remain:
+        cur_num_walkers = walkers_per_core_whole * size + walkers_per_core_remain
+        H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
+        walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, tot_time, 'hot', kapitza, prob_m_cn, grid.bound,
+                                                      rules_test)  # 'hot' since +1
+        # histogram ALL positions
+        for j in range(len(walker_temp.pos)):
+            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1
+    comm.Barrier()
+    comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
+    # if walker_frac_trigger == 0:
+    #     core_time = ((i * size) + rank) * d_add
+    #     cur_num_walkers = i * size
+    #     walkers_per_timestep = 1
+    # elif walker_frac_trigger == 1:
+    #     core_time = i * size + rank
+    #     cur_num_walkers = i * size * d_add
+    #     walkers_per_timestep = d_add
+    # send to core 0
+    # as long as size is somewhat small, this barrier won't slow things down much
+    # H_local now has all walker positions.
+    # comm.Barrier()
+    # comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
+    # analysis
+    if rank == 0:
+        final_iter = walkers_per_core_whole + 1
+        logging.info("Parallel iteration %d out of %d, %d walkers"
+                     % (final_iter, final_iter, cur_num_walkers))
+    comm.Barrier()
 
     comm.Barrier()  # make sure whole walks are done
 
     if rank == 0:
         logging.info('Finished random walk rules test. Analyzing....')
-        mean_temp, mean_temp_norm, std_temp, std_temp_norm = analysis.rules_test_analysis(H_local, cur_num_walkers)
-        logging.info('Histogram: mean-%.4E, std-%.4E' % (mean_temp, std_temp))
-        logging.info('Histogram normalized: mean-%.4E, std-%.4E' % (mean_temp_norm, std_temp_norm))
+        mean_temp, mean_temp_norm, std_temp, std_temp_norm, temp_profile_norm = analysis.rules_test_analysis \
+            (H_local, tot_walkers, tot_time)
+        logging.info('Histogram: mean %.4E, std %.4E' % (mean_temp, std_temp))
+        logging.info('Histogram normalized: mean %.4E, std %.4E' % (mean_temp_norm, std_temp_norm))
         # plot 2d cuts in each of the 3 planes, all directions periodic
         temp_profile_yz = np.sum(H_local, axis=0)
         temp_profile_xz = np.sum(H_local, axis=1)
         temp_profile_xy = np.sum(H_local, axis=2)
+        temp_profile_yz_norm = np.sum(temp_profile_norm, axis=0)
+        temp_profile_xz_norm = np.sum(temp_profile_norm, axis=1)
+        temp_profile_xy_norm = np.sum(temp_profile_norm, axis=2)
         plots.plot_colormap_2d(grid, temp_profile_xy, quiet, plot_save_dir, gen_plots,
                                title='Temperature density (dimensionless units)',
-                               xlab='X', ylab='Y', filename='temp_xy')
-        # plots.plot_bargraph_3d(grid, temp_profile_xy, x_edges, y_edges, quiet, save_dir, gen_plots,
-        #                 title='Temperature density (dimensionless units)', xlab='X', ylab='Y', zlab='Z',
-        #                 filename='temp')
+                               xlab='X', ylab='Y', filename='H_xy')
+        plots.plot_colormap_2d(grid, temp_profile_xz, quiet, plot_save_dir, gen_plots,
+                               title='Temperature density (dimensionless units)',
+                               xlab='X', ylab='Z', filename='H_xz')
+        plots.plot_colormap_2d(grid, temp_profile_yz, quiet, plot_save_dir, gen_plots,
+                               title='Temperature density (dimensionless units)',
+                               xlab='Y', ylab='Z', filename='H_yz')
+        plots.plot_bargraph_3d(grid, temp_profile_xy_norm, x_edges, y_edges, quiet, plot_save_dir, gen_plots,
+                               title='Temperature density (dimensionless units)', xlab='X', ylab='Y', zlab='Z',
+                               filename='B_xy')
+        plots.plot_bargraph_3d(grid, temp_profile_xz_norm, x_edges, z_edges, quiet, plot_save_dir, gen_plots,
+                               title='Temperature density (dimensionless units)', xlab='X', ylab='Z', zlab='Y',
+                               filename='B_xy')
+        plots.plot_bargraph_3d(grid, temp_profile_yz_norm, y_edges, z_edges, quiet, plot_save_dir, gen_plots,
+                               title='Temperature density (dimensionless units)', xlab='Y', ylab='Z', zlab='X',
+                               filename='B_xy')
         end = MPI.Wtime()
         logging.info("Constant flux simulation has completed")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))

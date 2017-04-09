@@ -61,10 +61,10 @@ def generate_novol_choices_3d(grid, moves_3d, cur_pos, tube_index, kapitza, retu
         return possible_locs, num_possible_locs
 
 
-def apply_bd_cond_3d(grid, moves_3d, cur_pos, cur_type, bound):
-    choices = generate_bc_choices_3d(grid, cur_pos, moves_3d, bound)
+def apply_bd_cond_3d(grid, moves_3d, cur_pos, bound):
+    choices = generate_bd_choices_3d(grid, cur_pos, moves_3d, bound)
     # pick random choice
-    new_pos = np.asarray(choices[np.random.randint(0, 6)])
+    new_pos = np.asarray(choices[np.random.randint(0, len(choices))])
     final_pos = new_pos
     # if rules_test:
     #     choices = generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d)
@@ -106,26 +106,27 @@ def apply_bd_cond_3d(grid, moves_3d, cur_pos, cur_type, bound):
     return final_pos
 
 
-def generate_bc_choices_3d(grid, cur_pos, moves_3d, bound):
+def generate_bd_choices_3d(grid, cur_pos, moves_3d, bound):
     choices = cur_pos + moves_3d
     # get edge locations
+    idx_remove = []
     min_val = 0
     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
     for i in range(len(choices)):
         temp = choices[i]
-        for j in range(len(bound)):
+        for j in range(len(temp)):
             type_bound = bound[j]
             coord_temp = temp[j]
             if type_bound == 10:  # reflective
                 if (coord_temp < min_val) or (coord_temp > max_val):
                     coord_temp = None
+                    idx_remove.append(i)
             elif type_bound == 20:  # periodic
                 coord_temp = (coord_temp % max_val)
             temp[j] = coord_temp
-        if None in temp:
-            del choices[i]
-        else:
-            choices[i] = temp
+        choices[i] = temp
+    for index in sorted(idx_remove, reverse=True):
+        del choices[index]
     return choices
 
 
@@ -215,9 +216,11 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         elif cur_type == -1:  # CNT volume
             final_pos, inside_cnt = kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt)
             walker.add_pos(final_pos)
-        else:  # boundary rules
-            final_pos = apply_bd_cond_3d(grid, moves_3d, cur_pos, cur_type, bound)
+        elif cur_type == -1000:  # boundary
+            final_pos = apply_bd_cond_3d(grid, moves_3d, cur_pos, bound)
             walker.add_pos(final_pos)
+        else:
+            exit()
     elif not kapitza:  # tunneling with/without inert volume models
         # check if we have inert volume, boolean
         inert_vol = ('grid.tube_check_bd_vol' in locals()) or ('grid.tube_check_bd_vol' in globals())
@@ -233,9 +236,11 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         elif cur_type == 1:  # endpoint
             final_pos = tunneling_cntend(grid, jump_moves_3d, cur_pos)
             walker.add_pos(final_pos)
-        else:  # boundary rules
-            final_pos = apply_bd_cond_3d(grid, moves_3d, cur_pos, cur_type, bound)
+        elif cur_type == -1000:  # boundary
+            final_pos = apply_bd_cond_3d(grid, moves_3d, cur_pos, bound)
             walker.add_pos(final_pos)
+        else:
+            exit()
     return walker, inside_cnt
 
 

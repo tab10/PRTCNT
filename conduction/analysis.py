@@ -71,16 +71,14 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     return slope, heat_flux, gradient_err, k, k_err, r_value ** 2, temp_profile_sum
 
 
-def rules_test_analysis(H_tot, cur_num_walkers):
+def rules_test_analysis(H_tot, cur_num_walkers, tot_time):
     """As this is the rules test, temperature is times visited by walkers"""
     temp_profile = H_tot
     # generate histogram in terms of probability of visiting a spot (normalize)
-    temp_profile_norm = np.divide(H_tot, float(cur_num_walkers))
+    temp_profile_norm = np.divide(H_tot, (float(cur_num_walkers) * float(tot_time)))
     # averaging
     mean_temp = np.mean(temp_profile)
     std_temp = np.std(temp_profile, ddof=1)
     mean_temp_norm = np.mean(temp_profile_norm)
     std_temp_norm = np.std(temp_profile_norm, ddof=1)
-    return mean_temp, mean_temp_norm, std_temp, std_temp_norm
-
-
+    return mean_temp, mean_temp_norm, std_temp, std_temp_norm, temp_profile_norm
