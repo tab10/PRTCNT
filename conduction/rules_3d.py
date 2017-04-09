@@ -250,7 +250,7 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
     d_b_choice = np.random.choice(d_b, p=probs)
     if d_b_choice == 'stay_enter':  # move to random volume/endpoint within same CNT
         #  remove current spot from choices
-        new_choices = grid.tube_squares[cur_index - 1].pop(list(cur_pos))  # -1 because of above statement
+        new_choices = grid.tube_squares[cur_index - 1].remove(list(cur_pos))  # -1 because of above statement
         num_new_choices = len(new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
     elif d_b_choice == 'leave_notenter':  # exit CNT, on EITHER side randomly
@@ -322,7 +322,7 @@ def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, insid
         # OR
         # (Detailed balance leave) AND (Kapitza stay)
         # move to random volume/endpoint within same CNT, remove current spot from choices
-        new_choices = grid.tube_squares[cur_index - 1].pop(list(cur_pos))
+        new_choices = grid.tube_squares[cur_index - 1].remove(list(cur_pos))
         num_new_choices = len(new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
     elif ((d_b_choice == 'stay_enter') and kap_leave_notenter) \
