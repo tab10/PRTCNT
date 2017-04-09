@@ -215,25 +215,24 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     comm.Barrier()
 
-    H_local = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)
+    H_local = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=float)
     for i in range(walkers_per_core_whole):
         cur_num_walkers = i * size
         H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1),
-                            dtype=int)  # should be reset every iteration
+                            dtype=float)  # should be reset every iteration
         walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, tot_time, 'hot', kapitza, prob_m_cn, grid.bound,
                                                       rules_test)  # 'hot' since +1
         # histogram ALL positions
         for j in range(len(walker_temp.pos)):
-            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1
+            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1.0
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
         if rank == 0 and (i > 0):
-            # print np.count_nonzero(H_master)
             per_complete = float(i) * 100.0 / float(walkers_per_core_whole + 1)
             """DEBUG - if temp_profile_norm_sum is 1, the histogram reductions are working correctly"""
-            temp_profile_norm = np.divide(H_master, (float(cur_num_walkers) * float(tot_time)))
-            temp_profile_norm_sum = np.sum(temp_profile_norm)
-            print(temp_profile_norm_sum)
+            # temp_profile_norm = np.divide(H_master, (float(cur_num_walkers) * float(tot_time)))
+            # temp_profile_norm_sum = np.sum(temp_profile_norm)
+            # print(temp_profile_norm_sum)
             """END DEBUG"""
             logging.info("Parallel iteration %d out of %d, %d walkers, %d percent complete"
                          % (i, walkers_per_core_whole + 1, cur_num_walkers, per_complete))

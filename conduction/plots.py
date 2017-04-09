@@ -148,8 +148,8 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
         plt.colorbar()
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.xlim(0, grid.size + 1)
-        plt.ylim(0, grid.size + 1)
+        plt.xlim(0, grid.size)
+        plt.ylim(0, grid.size)
         plt.savefig('%s/setup_array.pdf' % save_dir)
         if not quiet:
             plt.show()
@@ -167,11 +167,12 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
     if gen_plots:
         plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
-        plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
+        plt.pcolor(temp_profile.T, vmin=min(temp_profile),
+                   vmax=max(temp_profile))  # transpose since pcolormesh reverses axes
         plt.xlabel(xlab)
         plt.ylabel(ylab)
-        plt.xlim(0, grid.size + 1)
-        plt.ylim(0, grid.size + 1)
+        plt.xlim(0, grid.size)
+        plt.ylim(0, grid.size)
         plt.colorbar()
         plt.savefig('%s/%s.pdf' % (save_dir, filename))
         if not quiet:
@@ -199,13 +200,13 @@ def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
         dy = dx.copy()
         dz = H_tot.flatten()
         # plot
-        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average', edgecolor="none")
+        ax.bar3d(xpos, ypos, zpos, dx, dy, dz, color='b', zsort='average')
         ax.set_title(title)
         ax.set_xlabel(xlab)
         ax.set_ylabel(ylab)
         ax.set_zlabel(zlab)
-        ax.set_xlim(0, grid.size + 1)
-        ax.set_ylim(0, grid.size + 1)
+        ax.set_xlim(0, grid.size)
+        ax.set_ylim(0, grid.size)
         plt.savefig('%s/%s.pdf' % (save_dir, filename))
         if not quiet:
             plt.show()
