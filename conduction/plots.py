@@ -167,8 +167,8 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
     if gen_plots:
         plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
-        plt.pcolor(temp_profile.T, vmin=min(temp_profile),
-                   vmax=max(temp_profile))  # transpose since pcolormesh reverses axes
+        plt.pcolor(temp_profile.T, vmin=np.min(temp_profile),
+                   vmax=np.max(temp_profile))  # transpose since pcolormesh reverses axes
         plt.xlabel(xlab)
         plt.ylabel(ylab)
         plt.xlim(0, grid.size)
