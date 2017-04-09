@@ -252,6 +252,7 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
         #  remove current spot from choices
         new_choices = grid.tube_squares[cur_index - 1].remove(cur_pos)  # -1 because of above statement
         num_new_choices = len(new_choices)
+        logging.info(num_new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
     elif d_b_choice == 'leave_notenter':  # exit CNT, on EITHER side randomly
         # it will walk off either of the two ends, checking that current CNT volume is not a possibility
@@ -303,30 +304,28 @@ def kapitza_matrix(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, insid
 
 
 def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
-    # this has been written to follow coding best practices, for in or out of CNT in the same IF statement
     random_num = np.random.random()  # [0.0, 1.0)
     # check if the walker is inside or outside of a CNT
     if inside_cnt:
-        probs = [2.0 / 6.0, 4.0 / 6.0]  # detailed balance
+        # probs = [2.0 / 6.0, 4.0 / 6.0]  # detailed balance
         kap_stay_enter = (random_num > prob_m_cn)
         kap_leave_notenter = (random_num < prob_m_cn)
     else:
-        probs = [1.0 / 6.0, 5.0 / 6.0]  # detailed balance
+        #probs = [1.0 / 6.0, 5.0 / 6.0]  # detailed balance
         kap_stay_enter = (random_num < prob_m_cn)
         kap_leave_notenter = (random_num > prob_m_cn)
-    d_b = ['stay_enter', 'leave_notenter']  # two possibilities
-    d_b_choice = np.random.choice(d_b, p=probs)
-    if ((d_b_choice == 'stay_enter') and kap_stay_enter) \
-            or ((d_b_choice == 'leave_notenter') and kap_stay_enter):
+    # d_b = ['stay_enter', 'leave_notenter']  # two possibilities
+    # d_b_choice = np.random.choice(d_b, p=probs)
+    if kap_stay_enter:
         # (Detailed balance stay) AND (Kapitza stay)
         # OR
         # (Detailed balance leave) AND (Kapitza stay)
         # move to random volume/endpoint within same CNT, remove current spot from choices
         new_choices = grid.tube_squares[cur_index - 1].remove(cur_pos)
         num_new_choices = len(new_choices)
+        logging.info(num_new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
-    elif ((d_b_choice == 'stay_enter') and kap_leave_notenter) \
-            or ((d_b_choice == 'leave_notenter') and kap_leave_notenter):
+    elif kap_leave_notenter:
         # (Detailed balance stay) AND (Kapitza leave)
         # OR
         # (Detailed balance leave) AND (Kapitza leave)
