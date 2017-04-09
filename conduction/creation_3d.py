@@ -44,7 +44,7 @@ class Grid3D_onlat(object):
             logging.info("Zero tube radius given. Tubes will have no volume.")
             fill_fract = 2.0 * float(num_tubes) / grid_size ** 3
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-            save_fill_frac(plot_save_dir, fill_fract)
+            backend.save_fill_frac(plot_save_dir, fill_fract)
             if num_tubes > 0:  # tubes exist
                 for i in range(num_tubes):  # currently no mean dist used, ADD LATER?
                     if (i % 50) == 0:
@@ -146,7 +146,7 @@ class Grid3D_onlat(object):
             fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
-            save_fill_frac(plot_save_dir, fill_fract)
+            backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()

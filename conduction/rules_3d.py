@@ -25,7 +25,7 @@ def kill(message="Invalid random walk rule. Check rules."):
 
 def runrandomwalk_3d_onlat(grid, timesteps, temp, kapitza, prob_m_cn, bound, rules_test):
     # Start the random walk, for one walker
-    walker = creation.Walker3D_onlat(grid.size, temp, rules_test)
+    walker = creation_3d.Walker3D_onlat(grid.size, temp, rules_test)
     inside_cnt = False
     for i in range(1, timesteps + 1):
         walker, inside_cnt = apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound)
