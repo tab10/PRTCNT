@@ -265,8 +265,8 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     # comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
     # analysis
     if rank == 0:
-        final_iter = walkers_per_core_whole + 1
-        per_complete = final_iter / ((walkers_per_core_whole + 1) * 100.0)
+        final_iter = walkers_per_core_whole
+        per_complete = final_iter * 100.0 / (walkers_per_core_whole)
         logging.info("Parallel iteration %d out of %d, %d walkers, %.2f percent complete"
                      % (final_iter, final_iter, cur_num_walkers, per_complete))
     comm.Barrier()
@@ -300,10 +300,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                filename='B_xy')
         plots.plot_bargraph_3d(grid, temp_profile_xz_norm, x_edges, z_edges, quiet, plot_save_dir, gen_plots,
                                title='Probability of being visited (sum along Y-axis)', xlab='X', ylab='Z', zlab='Y',
-                               filename='B_xy')
+                               filename='B_xz')
         plots.plot_bargraph_3d(grid, temp_profile_yz_norm, y_edges, z_edges, quiet, plot_save_dir, gen_plots,
                                title='Probability of being visited (sum along X-axis)', xlab='Y', ylab='Z', zlab='X',
-                               filename='B_xy')
+                               filename='B_yz')
         end = MPI.Wtime()
         logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
