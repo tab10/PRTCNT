@@ -150,13 +150,14 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
-                    size, restart):
+                    size, rules_test, restart):
     comm = MPI.COMM_WORLD
 
     # serial tube generation
     if rank == 0:
-        grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                     disable_func)
+        grid = creation_2d.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False,
+                                        plot_save_dir,
+                                        disable_func, rules_test)
 
     comm.Barrier()
 
@@ -237,8 +238,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         for j in range(walkers_per_timestep):
             # print '%d on core %d' % (core_time, rank)
             # run trajectories for that long
-            hot_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, True)
-            cold_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, True)
+            hot_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, grid.bound,
+                                                       rules_test)
+            cold_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, grid.bound,
+                                                        rules_test)
             # get last position of walker
             hot_temp_pos = hot_temp.pos[-1]
             cold_temp_pos = cold_temp.pos[-1]
@@ -257,7 +260,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                                                             grid.size, tot_time)
             # since final k is based on core 0 calculations, heat flux will slide a little since
             # core 0 will run slower, and this gives a more accurate result
-            np.savetxt("%s/H.txt" % plot_save_dir, H_master, fmt='%d')  # write histo to file
+            # np.savetxt("%s/H.txt" % plot_save_dir, H_master, fmt='%d')  # write histo to file
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)

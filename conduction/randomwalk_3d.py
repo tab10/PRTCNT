@@ -34,8 +34,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                 disable_func)
+    grid = creation_3d.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                    disable_func)
     if gen_plots:
         plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
 
@@ -163,13 +163,14 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     # serial tube generation
     if rank == 0:
-        grid = creation.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                     disable_func, rules_test)
+        grid = creation_3d.Grid3D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False,
+                                        plot_save_dir,
+                                        disable_func, rules_test)
 
     comm.Barrier()
 
     if rank == 0:
-        if gen_plots:
+        if gen_plots == 'True':
             plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
     else:
         grid = None
@@ -243,8 +244,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         for j in range(walkers_per_timestep):
             # print '%d on core %d' % (core_time, rank)
             # run trajectories for that long
-            hot_temp = rules_3d.runrandomwalk_3d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, bound, rules_test)
-            cold_temp = rules_3d.runrandomwalk_3d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn)
+            hot_temp = rules_3d.runrandomwalk_3d_onlat(grid, core_time, 'hot', kapitza, prob_m_cn, grid.bound,
+                                                       rules_test)
+            cold_temp = rules_3d.runrandomwalk_3d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, grid.bound,
+                                                        rules_test)
             # get last position of walker
             hot_temp_pos = hot_temp.pos[-1]
             cold_temp_pos = cold_temp.pos[-1]
@@ -262,7 +265,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
             dt_dx, heat_flux, gradient_err, k, k_err, r2, temp_profile_sum = analysis.check_convergence_3d_onlat(
                 H_master, tot_walkers,
                 grid.size, tot_time)
-            np.savetxt("%s/H.txt" % plot_save_dir, temp_profile_sum, fmt='%d')  # write histo to file
+            # np.savetxt("%s/H.txt" % plot_save_dir, temp_profile_sum, fmt='%d')  # write histo to file
             k_list.append(k)
             dt_dx_list.append(dt_dx)
             heat_flux_list.append(heat_flux)

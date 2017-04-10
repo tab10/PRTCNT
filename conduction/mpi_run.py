@@ -51,19 +51,12 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description='.')
 
-    parser.add_argument('--rules_test', type=bool, default=False, help='Starts a rules test only simulation. '
-                                                                       'This checks that the simulation will obey'
-                                                                       'detailed balance. Available with serial'
-                                                                       'or MPI options as in the primary '
-                                                                       'program.')
     parser.add_argument('--dim', type=int, required=True, help='Dimensionality of simulation.')
     parser.add_argument('--grid_size', type=int, default=99, help='Size of grid of use. TRUE SIZE USED IS VALUE + 1, '
                                                                   'TO COMPARE WITH ANALYTICAL.')
     parser.add_argument('--tube_length', type=float, default=15, help='Length of nanotubes.')
     parser.add_argument('--num_tubes', type=int, default=0,
                         help='How many tubes are there for random walker to use.')
-    parser.add_argument('--tube_radius', type=float, default=0.5,
-                        help='Radius of tubes. Only used if kapitza is True.')
     parser.add_argument('--orientation', type=str, default='horizontal', help='Orientation of nanotubes in medium. '
                                                                        'random, horizontal, vertical, or'
                                                                        ' angle in DEGREES.')
@@ -78,26 +71,31 @@ if __name__ == "__main__":
                                                                             'in the std. dev. of k calculation. '
                                                                             'Reduced automatically depending on '
                                                                             '# of cores.')
-    parser.add_argument('--gen_plots', type=bool, default=True, help='Gives the option to not generate any plots. '
+    parser.add_argument('--gen_plots', type=str, default=True, help='Gives the option to not generate any plots. '
                                                                       'Useful on the supercomputer.')
     parser.add_argument('--save_dir', type=str, default=os.getcwd(), help='Path for plots and data and config.ini.')
-    parser.add_argument('--save_loc_plots', type=bool, default=False, help='Save location plots for all walkers.')
-    parser.add_argument('--save_loc_data', type=bool, default=False, help='Save location data for all walkers.')
-    parser.add_argument('--quiet', type=bool, default=True, help='Show various plots throughout simulation.')
-    parser.add_argument('--kapitza', type=bool, default=False, help='Adds kapitza resistance '
-                                                                    'to simulation, see readme.md.')
-    parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the nanotube. '
-                                                                     'kapitza must be true.')
-    parser.add_argument('--run_to_convergence', type=bool, default=True, help='True does this or False runs '
+    parser.add_argument('--save_loc_plots', type=str, default=False, help='Save location plots for all walkers.')
+    parser.add_argument('--save_loc_data', type=str, default=False, help='Save location data for all walkers.')
+    parser.add_argument('--quiet', type=str, default=True, help='Do not show various plots throughout simulation.')
+    parser.add_argument('--model', type=str, required=True, help='Simulation model type. kapitza, tunneling_w_vol, '
+                                                                 'tunneling_wo_vol')
+    parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the CNT. '
+                                                                     'Only used in kapitza models.')
+    parser.add_argument('--run_to_convergence', type=str, default=False, help='True does this or False runs '
                                                                               'for number of walkers.')
-    parser.add_argument('--restart', type=bool, default=False, help='Looks in previous directory for H to extend or '
+    parser.add_argument('--restart', type=str, default=False, help='Looks in previous directory for H to extend or '
                                                                     'restart simulation.')
     parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
-    parser.add_argument('--disable_func', type=bool, default=False, help='Turn off functionalization of the tube ends.')
+    parser.add_argument('--disable_func', type=str, default=False, help='Turn off functionalization of the tube ends.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
                                                                      'somewhat large because histogramming has to be done every time.')
+    parser.add_argument('--rules_test', type=str, default=False, help='Starts a rules test only simulation. '
+                                                                      'This checks that the simulation will obey'
+                                                                      'detailed balance. Available with serial'
+                                                                      'or MPI options as in the primary '
+                                                                      'program.')
 
     args = parser.parse_args()
 
@@ -107,7 +105,6 @@ if __name__ == "__main__":
     grid_size = args.grid_size
     orientation = args.orientation
     tube_length = args.tube_length
-    tube_radius = args.tube_radius
     num_tubes = args.num_tubes
     timesteps = args.timesteps
     save_dir = args.save_dir
@@ -119,7 +116,6 @@ if __name__ == "__main__":
     save_loc_plots = args.save_loc_plots
     save_loc_data = args.save_loc_data
     gen_plots = args.gen_plots
-    kapitza = args.kapitza
     prob_m_cn = args.prob_m_cn
     run_to_convergence = args.run_to_convergence
     num_walkers = args.num_walkers
@@ -127,6 +123,7 @@ if __name__ == "__main__":
     restart = args.restart
     disable_func = args.disable_func
     rules_test = args.rules_test
+    model = args.model
 
     os.chdir(save_dir)
 
@@ -143,6 +140,27 @@ if __name__ == "__main__":
 
     ##### VALUE & COMMON SENSE CHECKS#####
     possible_dim = [2, 3]
+    if model == 'kapitza':
+        tube_radius = 0.5
+        kapitza = True
+        logging.info('Simulation model: kapitza. CNTs have volume, functionalized/non-functionalized ends, and '
+                     'kapitza resistance')
+        logging.info('Using prob_m_cn value of %.4f' % prob_m_cn)
+    elif model == 'tunneling_w_vol':
+        tube_radius = 0.5
+        prob_m_cn = 0.0
+        kapitza = False
+        logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
+                     'functionalized ends. CNTs cannot cross in space. Limit of infinite kapitza resistance.')
+    elif model == 'tunneling_wo_vol':
+        tube_radius = 0.0
+        prob_m_cn = 0.0
+        kapitza = False
+        logging.info('Simulation model: tunneling without volume. CNTs only have '
+                     'functionalized ends. CNTs can cross in space. Limit of infinite kapitza resistance.')
+    else:
+        logging.error('Incorrect simulation model specified.')
+        raise SystemExit
     if dim not in possible_dim:
         logging.error('Invalid dimension')
         raise SystemExit
@@ -155,18 +173,9 @@ if __name__ == "__main__":
     if num_tubes < 0:
         logging.error('Invalid number of tubes')
         raise SystemExit
-    if kapitza and tube_radius == 0:
-        logging.error('Kapitza modeling requires tubes to have a nonzero radius')
-        raise SystemExit
     if timesteps <= 0:
         logging.error('Invalid timesteps')
         raise SystemExit
-    if kapitza:
-        logging.info('Kapitza modeling is ON')
-        logging.info('Using prob_m_cn value of %.4f' % prob_m_cn)
-    else:
-        logging.info('Kapitza modeling is OFF')
-        prob_m_cn = 0.0
     if run_to_convergence:
         logging.info('Simulation will run to convergence')
     else:
@@ -176,7 +185,7 @@ if __name__ == "__main__":
             num_walkers *= 3
     logging.info('Grid size of %d is being used' % (grid_size + 1))
     if disable_func:
-        logging.info('Functionalization has been disabled, treating ends as volume in rules')
+        logging.info('Functionalization has been disabled, treating ends as volume in rules.')
     ##### #####
 
     comm.Barrier()
@@ -188,7 +197,7 @@ if __name__ == "__main__":
         logging.info('Using last %d k values to check for convergence' % k_conv_error_buffer)
 
     #  all processes have control now
-    if rules_test:
+    if rules_test == 'True':
         logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
                      "Principle of Detailed Balance. To do this, we don't use Fourier's Law as our walkers are"
                      "all positive and no heat flux is generated. Differences include: Walkers can start from "
@@ -202,20 +211,18 @@ if __name__ == "__main__":
             test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
                                     plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,
                                     size, rules_test, restart)
-
-    elif not rules_test:
+    elif rules_test == 'False':
         logging.info("Starting %dD constant flux on-lattice random walk." % dim)
         if dim == 2:
-            """"""
-            # randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-            #                              timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-            #                              num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+            randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
+                                          quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                          num_walkers, printout_inc, k_conv_error_buffer, disable_func, rank, size,
+                                          rules_test, restart)
         elif dim == 3:
             randomwalk_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
-                                          quiet, plot_save_dir,
-                                          gen_plots, kapitza, prob_m_cn, num_walkers, printout_inc,
+                                          quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers,
+                                          printout_inc,
                                           k_conv_error_buffer, disable_func, rank, size, rules_test, restart)
     else:
-        logging.error('Check inputs')
+        logging.error('Check rules_test value')
         raise SystemExit
-

@@ -145,8 +145,9 @@ def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index):
     if d_b_choice == 'stay_enter':  # move to random volume/endpoint within same CNT
         #  remove current spot from choices
         new_choices = []
+        coord_del = [list(cur_pos)]
         for x in grid.tube_squares[cur_index - 1]:
-            if x not in [cur_pos]:
+            if x not in coord_del:
                 new_choices.append(x)
         # -1 because of above statement
         num_new_choices = len(new_choices)
@@ -212,8 +213,9 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     if kap_stay_enter:
         # move to random volume/endpoint within same CNT, remove current spot from choices
         new_choices = []
+        coord_del = [list(cur_pos)]
         for x in grid.tube_squares[cur_index - 1]:
-            if x not in [cur_pos]:
+            if x not in coord_del:
                 new_choices.append(x)
         num_new_choices = len(new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
