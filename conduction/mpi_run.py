@@ -87,7 +87,7 @@ if __name__ == "__main__":
                                                                     'restart simulation.')
     parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
-    parser.add_argument('--disable_func', type=str, default=False, help='Turn off functionalization of the tube ends.')
+    parser.add_argument('--disable_func', action='store_true', help='Turn off functionalization of the tube ends.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
                                                                      'somewhat large because histogramming has to be done every time.')
