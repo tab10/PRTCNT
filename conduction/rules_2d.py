@@ -186,6 +186,7 @@ def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, kapitza,
                                                                          return_pos=True)
             final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+            inside_cnt = False
         elif random_num < prob_m_cn:  # move to random volume/endpoint within CNT
             # get candidate CNT index
             candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1]]
