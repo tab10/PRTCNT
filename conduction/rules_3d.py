@@ -103,7 +103,7 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
         cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1], cur_pos[2]]  # index>0 of CNT (or 0 for not one)
         if cur_type == 1:  # CNT end
-            final_pos = kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index)
+            final_pos, inside_cnt = kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
             final_pos, inside_cnt = kapitza_matrix(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt)
@@ -153,6 +153,7 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
         # -1 because of above statement
         num_new_choices = len(new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
+        inside_cnt = True
     elif d_b_choice == 'leave_notenter':  # exit CNT, on EITHER side randomly
         # it will walk off either of the two ends, checking that current CNT volume is not a possibility
         # collect position of both ends on current CNT
@@ -167,9 +168,10 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
         possible_locs = list(possible_locs_end1) + list(possible_locs_end2)
         num_possible_locs = num_possible_locs_end1 + num_possible_locs_end2
         final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+        inside_cnt = False
     else:
         kill()
-    return final_pos
+    return final_pos, inside_cnt
 
 
 def kapitza_matrix(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
