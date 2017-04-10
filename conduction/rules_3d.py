@@ -152,7 +152,6 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
                 new_choices.append(x)
         # -1 because of above statement
         num_new_choices = len(new_choices)
-        logging.info(num_new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
     elif d_b_choice == 'leave_notenter':  # exit CNT, on EITHER side randomly
         # it will walk off either of the two ends, checking that current CNT volume is not a possibility
