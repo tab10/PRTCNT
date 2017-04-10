@@ -1168,3 +1168,79 @@ That doesn't actually make sense!"""
 #         walker.append(list(final_pos))
 #     return walker
 """"""
+
+
+# if rules_test:
+#             bd[0, i, j] = 20  # x = 0 is periodic
+#             bd[self.size, i, j] = 20  # x = grid.size is periodic
+#         else:
+#             bd[0, i, j] = 10  # x = 0 is reflective
+#             bd[self.size, i, j] = 10  # x = grid.size is reflective
+#         bd[i, 0, j] = 20  # y = 0 is periodic
+#         bd[i, self.size, j] = 20  # y = grid.size is periodic
+#         bd[i, j, 0] = 20  # z = 0 is periodic
+#         bd[i, j, self.size] = 20  # z = grid.size is periodic
+# # edges are special
+# for i in range(self.size + 1):
+#     bd[i, 0, 0] = 30
+#     bd[self.size, i, 0] = 30
+#     bd[0, i, 0] = 30
+#     bd[0, 0, i] = 30
+#     bd[i, self.size, 0] = 30
+#     bd[self.size, 0, i] = 30
+#     bd[self.size, self.size, i] = 30
+#     bd[0, self.size, i] = 30
+#     bd[0, i, self.size] = 30
+#     bd[i, 0, self.size] = 30
+#     bd[i, self.size, self.size] = 30
+#     bd[self.size, i, self.size] = 30
+
+
+def generate_bd_and_vol(self, tube_squares, angle):
+    """2D, This takes the bottom left squares from find_squares and creates volume and boundaries based
+    on the tube radius, for one tube
+    This function is not currently used for anything because boundaries are not implemented in this way
+    """
+    top = []
+    bot = []
+    left = []
+    right = []
+    l_end = tube_squares[0]
+    r_end = tube_squares[-1]
+    occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
+    for i in range(1, self.tube_radius + 1):
+        l_x_above = int(round(i * np.cos(np.deg2rad(angle + 90)) + l_end[0]))
+        l_y_above = int(round(i * np.sin(np.deg2rad(angle + 90)) + l_end[1]))
+        r_x_above = int(round(i * np.cos(np.deg2rad(angle + 90)) + r_end[0]))
+        r_y_above = int(round(i * np.sin(np.deg2rad(angle + 90)) + r_end[1]))
+        l_x_below = int(round(i * np.cos(np.deg2rad(angle - 90)) + l_end[0]))
+        l_y_below = int(round(i * np.sin(np.deg2rad(angle - 90)) + l_end[1]))
+        r_x_below = int(round(i * np.cos(np.deg2rad(angle - 90)) + r_end[0]))
+        r_y_below = int(round(i * np.sin(np.deg2rad(angle - 90)) + r_end[1]))
+        left.append([l_x_above, l_y_above])
+        left.append([l_x_below, l_y_below])
+        right.append([r_x_above, r_y_above])
+        right.append([r_x_below, r_y_below])
+    for i in range(len(tube_squares)):
+        t_x = int(round(self.tube_radius * np.cos(np.deg2rad(angle + 90)) + tube_squares[i][0]))
+        t_y = int(round(self.tube_radius * np.sin(np.deg2rad(angle + 90)) + tube_squares[i][1]))
+        b_x = int(round(self.tube_radius * np.cos(np.deg2rad(angle - 90)) + tube_squares[i][0]))
+        b_y = int(round(self.tube_radius * np.sin(np.deg2rad(angle - 90)) + tube_squares[i][1]))
+        top.append([t_x, t_y])
+        bot.append([b_x, b_y])
+    total = top + bot + left + right
+    return top, bot, left, right, total, occupied_cubes
+
+
+for i in range(self.size + 1):
+    bd[0, i] = 10  # x = 0 is reflective
+    bd[self.size, i] = 10  # x = grid.size is reflective
+    bd[i, 0] = 20  # y = 0 is periodic
+    bd[i, self.size] = 20  # y = grid.size is periodic
+# corners are special
+bd[0, 0] = 30
+bd[0, self.size] = 30
+bd[self.size, 0] = 30
+bd[self.size, self.size] = 30
+# np.set_printoptions(threshold=np.inf)
+# print tube_check_l

@@ -190,15 +190,14 @@ if __name__ == "__main__":
     #  all processes have control now
     if rules_test:
         logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
-                     "Principle of Detailed Balance.\nTo do this, we don't use Fourier's Law as our walkers are"
-                     "all positive and no heat flux is generated.\nDifferences include:\nWalkers can start from "
-                     "anywhere in the box\nALL boundaries are periodic\nWalkers are all positive\nALL visited"
+                     "Principle of Detailed Balance. To do this, we don't use Fourier's Law as our walkers are"
+                     "all positive and no heat flux is generated. Differences include: Walkers can start from "
+                     "anywhere in the box, ALL boundaries are periodic, Walkers are all positive, ALL visited"
                      "positions are histogrammed as opposed to keeping just 1")
         if dim == 2:
-            """"""
-            # test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
-            #                        timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-            #                        num_walkers, printout_inc, k_conv_error_buffer, disable_func)
+            test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
+                                    timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
+                                    num_walkers, disable_func, rank, size, rules_test, restart)
         elif dim == 3:
             test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
                                     plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,

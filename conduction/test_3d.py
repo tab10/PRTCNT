@@ -152,6 +152,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, disable_func, rank, size, rules_test, restart):
+
     comm = MPI.COMM_WORLD
 
     # serial tube generation
@@ -171,19 +172,15 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     comm.Barrier()
     grid = comm.bcast(grid, root=0)
 
-    grid_range = [[0, grid.size + 1], [0, grid.size + 1], [0, grid.size + 1]]
     bins = grid.size + 1
 
     start = MPI.Wtime()
 
     # these will hold the walker objects, need to access walker.pos for the positions
 
-    walker_master_pos = []
-    timestep_list = []  # x axis for plots
     x_edges = np.asarray(range(0, bins)) + 0.25
     y_edges = np.asarray(range(0, bins)) + 0.25
     z_edges = np.asarray(range(0, bins)) + 0.25
-    # start_k_err_check = tot_time / 2
 
     walkers_per_core_whole = int(np.floor(tot_walkers / size))
     walkers_per_core_remain = int(tot_walkers % size)  # run a last iteration on only this many cores
@@ -191,6 +188,11 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     comm.Barrier()
 
     H_local = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=float)
+    if walkers_per_core_remain == 0:
+        iterations = float(walkers_per_core_whole)
+    else:
+        iterations = float(walkers_per_core_whole + 1)
+
     for i in range(walkers_per_core_whole):
         cur_num_walkers = i * size
         H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1),
@@ -200,40 +202,40 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         # histogram ALL positions
         for j in range(len(walker_temp.pos)):
             H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1.0
+
         comm.Barrier()
         comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
+
         if rank == 0 and (i > 0):
-            per_complete = float(i) * 100.0 / float(walkers_per_core_whole + 1)
-            """DEBUG - if temp_profile_norm_sum is 1, the histogram reductions are working correctly"""
+            per_complete = float(i) * 100.0 / iterations
+            """DEBUG - if temp_profile_norm_sum approaches 1, the histogram reductions are working correctly"""
             # temp_profile_norm = np.divide(H_master, (float(cur_num_walkers) * float(tot_time)))
             # temp_profile_norm_sum = np.sum(temp_profile_norm)
             # print(temp_profile_norm_sum)
             """END DEBUG"""
             logging.info("Parallel iteration %d out of %d, %d walkers, %d percent complete"
-                         % (i, walkers_per_core_whole + 1, cur_num_walkers, per_complete))
+                         % (i, iterations, cur_num_walkers, per_complete))
         comm.Barrier()
 
     comm.Barrier()  # now remainder set
 
     if rank < walkers_per_core_remain:
         cur_num_walkers = walkers_per_core_whole * size + walkers_per_core_remain
-        H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1), dtype=int)  # should be reset every iteration
+        H_master = np.zeros((grid.size + 1, grid.size + 1, grid.size + 1),
+                            dtype=float)  # should be reset every iteration
         walker_temp = rules_3d.runrandomwalk_3d_onlat(grid, tot_time, 'hot', kapitza, prob_m_cn, grid.bound,
                                                       rules_test)  # 'hot' since +1
         # histogram ALL positions
         for j in range(len(walker_temp.pos)):
-            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1
+            H_local[walker_temp.pos[j][0], walker_temp.pos[j][1], walker_temp.pos[j][2]] += 1.0
 
     comm.Barrier()
     comm.Reduce(H_local, H_master, op=MPI.SUM, root=0)
 
     # analysis
     if rank == 0:
-        final_iter = walkers_per_core_whole
-        per_complete = final_iter * 100.0 / (walkers_per_core_whole)
-        logging.info("Parallel iteration %d out of %d, %d walkers, %.2f percent complete"
-                     % (final_iter, final_iter, cur_num_walkers, per_complete))
-    comm.Barrier()
+        logging.info("Parallel iteration %d out of %d, %d walkers, 100 percent complete"
+                     % (iterations, iterations, cur_num_walkers))
 
     comm.Barrier()  # make sure whole walks are done
 
@@ -273,15 +275,4 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
         walk_sec = tot_walkers / (end - start)
         logging.info("Crunched %.4f walkers/second" % walk_sec)
-        # temp_profile = plots.plot_colormap_2d(grid, tot_time, temp_profile_sum, xedges, yedges, quiet,
-        #                                      plot_save_dir, gen_plots)
-        # if gen_plots:
-        #     plots.plot_k_convergence(k_list, quiet, plot_save_dir, timestep_list)
-        #     plots.plot_k_convergence_err(k_list, quiet, plot_save_dir, start_k_err_check, timestep_list)
-        #     plots.plot_dt_dx(dt_dx_list, quiet, plot_save_dir, timestep_list)
-        #     plots.plot_heat_flux(heat_flux_list, quiet, plot_save_dir, timestep_list)
-        #     temp_gradient_x = plots.plot_temp_gradient_2d_onlat(grid, temp_profile, xedges, yedges, quiet,
-        #                                                         plot_save_dir, gradient_cutoff=0)
-        #     gradient_avg, gradient_std = plots.plot_linear_temp(temp_profile, grid_size, quiet, plot_save_dir,
-        #                                                         gen_plots)
         logging.info("Complete")

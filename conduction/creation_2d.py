@@ -20,8 +20,7 @@ from conduction import *
 
 class Grid2D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
-                 disable_func, rank=None,
-                 size=None):
+                 disable_func, rules_test, rank=None, size=None):
         """Grid in first quadrant only for convenience"""
         # serial implementation
         logging.info("Setting up grid and tubes serially")
@@ -36,6 +35,11 @@ class Grid2D_onlat(object):
         self.theta = []
         self.tube_radius = tube_radius
         self.setup_tube_vol_check_array_2d()
+        if rules_test:
+            bound = [20, 20]  # all periodic
+        else:
+            bound = [10, 20]  # X reflective, Y periodic
+        self.bound = bound
         counter = 0  # counts num of non-unique tubes replaced
         status_counter = 0
         if tube_radius == 0:
@@ -248,41 +252,6 @@ class Grid2D_onlat(object):
             logging.info('Tube radius will be implemented here later if needed.')
         return points
 
-    def generate_bd_and_vol(self, tube_squares, angle):
-        """2D, This takes the bottom left squares from find_squares and creates volume and boundaries based
-        on the tube radius, for one tube
-        This function is not currently used for anything because boundaries are not implemented in this way
-        """
-        top = []
-        bot = []
-        left = []
-        right = []
-        l_end = tube_squares[0]
-        r_end = tube_squares[-1]
-        occupied_cubes = tube_squares  # this will be checked to ensure volume is exclusive too
-        for i in range(1, self.tube_radius + 1):
-            l_x_above = int(round(i * np.cos(np.deg2rad(angle + 90)) + l_end[0]))
-            l_y_above = int(round(i * np.sin(np.deg2rad(angle + 90)) + l_end[1]))
-            r_x_above = int(round(i * np.cos(np.deg2rad(angle + 90)) + r_end[0]))
-            r_y_above = int(round(i * np.sin(np.deg2rad(angle + 90)) + r_end[1]))
-            l_x_below = int(round(i * np.cos(np.deg2rad(angle - 90)) + l_end[0]))
-            l_y_below = int(round(i * np.sin(np.deg2rad(angle - 90)) + l_end[1]))
-            r_x_below = int(round(i * np.cos(np.deg2rad(angle - 90)) + r_end[0]))
-            r_y_below = int(round(i * np.sin(np.deg2rad(angle - 90)) + r_end[1]))
-            left.append([l_x_above, l_y_above])
-            left.append([l_x_below, l_y_below])
-            right.append([r_x_above, r_y_above])
-            right.append([r_x_below, r_y_below])
-        for i in range(len(tube_squares)):
-            t_x = int(round(self.tube_radius * np.cos(np.deg2rad(angle + 90)) + tube_squares[i][0]))
-            t_y = int(round(self.tube_radius * np.sin(np.deg2rad(angle + 90)) + tube_squares[i][1]))
-            b_x = int(round(self.tube_radius * np.cos(np.deg2rad(angle - 90)) + tube_squares[i][0]))
-            b_y = int(round(self.tube_radius * np.sin(np.deg2rad(angle - 90)) + tube_squares[i][1]))
-            top.append([t_x, t_y])
-            bot.append([b_x, b_y])
-        total = top + bot + left + right
-        return top, bot, left, right, total, occupied_cubes
-
     def generate_tube_check_array_2d(self):
         """To be used with no tube volume
         Generates a left and right lookup array that holds the index of the opposite endpoint"""
@@ -297,18 +266,12 @@ class Grid2D_onlat(object):
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
         # add boundary tags
+        box_dims = [0, self.size]
         for i in range(self.size + 1):
-            bd[0, i] = 10  # x = 0 is reflective
-            bd[self.size, i] = 10  # x = grid.size is reflective
-            bd[i, 0] = 20  # y = 0 is periodic
-            bd[i, self.size] = 20  # y = grid.size is periodic
-        # corners are special
-        bd[0, 0] = 30
-        bd[0, self.size] = 30
-        bd[self.size, 0] = 30
-        bd[self.size, self.size] = 30
-        # np.set_printoptions(threshold=np.inf)
-        # print tube_check_l
+            for j in range(self.size + 1):
+                if (i in box_dims) or (j in box_dims):
+                    bd[i, j] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices generated,
+                    # running through bd function
         return tube_check_l, tube_check_r, bd
 
     def generate_vol_check_array_2d(self, disable_func):
@@ -329,35 +292,18 @@ class Grid2D_onlat(object):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
         # add boundary tags
+        box_dims = [0, self.size]
         for i in range(self.size + 1):
-            bd_vol[0, i] = 10  # x = 0 is reflective
-            bd_vol[self.size, i] = 10  # x = grid.size is reflective
-            bd_vol[i, 0] = 20  # y = 0 is periodic
-            bd_vol[i, self.size] = 20  # y = grid.size is periodic
-        # corners are special
-        bd_vol[0, 0] = 30
-        bd_vol[0, self.size] = 30
-        bd_vol[self.size, 0] = 30
-        bd_vol[self.size, self.size] = 30
-        # np.set_printoptions(threshold=np.inf)
-        # print bd_vol
+            for j in range(self.size + 1):
+                if (i in box_dims) or (j in box_dims):
+                    bd_vol[i, j] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices generated,
+                    # running through bd function
         return bd_vol, index
 
     def setup_tube_vol_check_array_2d(self):
         "Setup of tube check and index arrays, returns nothing"
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1), dtype=int)
-        # add boundary tags
-        for i in range(self.size + 1):
-            bd_vol[0, i] = 10  # x = 0 is reflective
-            bd_vol[self.size, i] = 10  # x = grid.size is reflective
-            bd_vol[i, 0] = 20  # y = 0 is periodic
-            bd_vol[i, self.size] = 20  # y = grid.size is periodic
-        # corners are special
-        bd_vol[0, 0] = 30
-        bd_vol[0, self.size] = 30
-        bd_vol[self.size, 0] = 30
-        bd_vol[self.size, self.size] = 30
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 

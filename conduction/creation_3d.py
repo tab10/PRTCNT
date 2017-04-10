@@ -247,8 +247,6 @@ class Grid3D_onlat(object):
             # holds index of tube_coords, if a walker on that position has a nonzero value in this array,
             # pull the right or left tube endpoint (array positions are at left and right endpoints respectively)
         # add boundary tags
-        # entire planes hold bd conditions, so start at a corner and fill every plane
-        # 4/7/17 - I think most of below is unneeded, but leaving it for now. It will be bypassed in main code
         box_dims = [0, self.size]
         for i in range(self.size + 1):
             for j in range(self.size + 1):
@@ -256,30 +254,6 @@ class Grid3D_onlat(object):
                     if (i in box_dims) or (j in box_dims) or (k in box_dims):
                         bd[i, j, k] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices
                         # generated, running through bd function
-        # if rules_test:
-        #             bd[0, i, j] = 20  # x = 0 is periodic
-        #             bd[self.size, i, j] = 20  # x = grid.size is periodic
-        #         else:
-        #             bd[0, i, j] = 10  # x = 0 is reflective
-        #             bd[self.size, i, j] = 10  # x = grid.size is reflective
-        #         bd[i, 0, j] = 20  # y = 0 is periodic
-        #         bd[i, self.size, j] = 20  # y = grid.size is periodic
-        #         bd[i, j, 0] = 20  # z = 0 is periodic
-        #         bd[i, j, self.size] = 20  # z = grid.size is periodic
-        # # edges are special
-        # for i in range(self.size + 1):
-        #     bd[i, 0, 0] = 30
-        #     bd[self.size, i, 0] = 30
-        #     bd[0, i, 0] = 30
-        #     bd[0, 0, i] = 30
-        #     bd[i, self.size, 0] = 30
-        #     bd[self.size, 0, i] = 30
-        #     bd[self.size, self.size, i] = 30
-        #     bd[0, self.size, i] = 30
-        #     bd[0, i, self.size] = 30
-        #     bd[i, 0, self.size] = 30
-        #     bd[i, self.size, self.size] = 30
-        #     bd[self.size, i, self.size] = 30
         return tube_check_l, tube_check_r, bd
 
     def generate_vol_check_array_3d(self, disable_func):
@@ -314,60 +288,12 @@ class Grid3D_onlat(object):
                     if (i in box_dims) or (j in box_dims) or (k in box_dims):
                         bd_vol[i, j, k] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices
                         # generated, running through bd function
-
-        # for i in range(self.size + 1):
-        #     for j in range(self.size + 1):
-        #         bd_vol[0, i, j] = 10  # x = 0 is reflective
-        #         bd_vol[self.size, i, j] = 10  # x = grid.size is reflective
-        #         bd_vol[i, 0, j] = 20  # y = 0 is periodic
-        #         bd_vol[i, self.size, j] = 20  # y = grid.size is periodic
-        #         bd_vol[i, j, 0] = 20  # z = 0 is periodic
-        #         bd_vol[i, j, self.size] = 20  # z = grid.size is periodic
-        # # edges are special
-        # for i in range(self.size + 1):
-        #     bd_vol[i, 0, 0] = 30
-        #     bd_vol[self.size, i, 0] = 30
-        #     bd_vol[0, i, 0] = 30
-        #     bd_vol[0, 0, i] = 30
-        #     bd_vol[i, self.size, 0] = 30
-        #     bd_vol[self.size, 0, i] = 30
-        #     bd_vol[self.size, self.size, i] = 30
-        #     bd_vol[0, self.size, i] = 30
-        #     bd_vol[0, i, self.size] = 30
-        #     bd_vol[i, 0, self.size] = 30
-        #     bd_vol[i, self.size, self.size] = 30
-        #     bd_vol[self.size, i, self.size] = 30
-        # np.set_printoptions(threshold=np.inf)
-        # print bd_vol
         return bd_vol, index
 
     def setup_tube_vol_check_array_3d(self):
         "Setup of tube check arrays, returns nothing"
         bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
-        # add boundary tags
-        # for i in range(self.size + 1):
-        #     for j in range(self.size + 1):
-        #         bd_vol[0, i, j] = 10  # x = 0 is reflective
-        #         bd_vol[self.size, i, j] = 10  # x = grid.size is reflective
-        #         bd_vol[i, 0, j] = 20  # y = 0 is periodic
-        #         bd_vol[i, self.size, j] = 20  # y = grid.size is periodic
-        #         bd_vol[i, j, 0] = 20  # z = 0 is periodic
-        #         bd_vol[i, j, self.size] = 20  # z = grid.size is periodic
-        # # edges are special
-        # for i in range(self.size + 1):
-        #     bd_vol[i, 0, 0] = 30
-        #     bd_vol[self.size, i, 0] = 30
-        #     bd_vol[0, i, 0] = 30
-        #     bd_vol[0, 0, i] = 30
-        #     bd_vol[i, self.size, 0] = 30
-        #     bd_vol[self.size, 0, i] = 30
-        #     bd_vol[self.size, self.size, i] = 30
-        #     bd_vol[0, self.size, i] = 30
-        #     bd_vol[0, i, self.size] = 30
-        #     bd_vol[i, 0, self.size] = 30
-        #     bd_vol[i, self.size, self.size] = 30
-        #     bd_vol[self.size, i, self.size] = 30
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
