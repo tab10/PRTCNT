@@ -889,3 +889,282 @@ def generate_bd_and_vol(self, tube_squares, theta, phi):
         bot.append([b_x, b_y, b_z])
     total = top + bot + left + right
     return top, bot, left, right, total, occupied_cubes
+
+
+## OLD BD COND 3D FUNCTION ##
+# def apply_bd_cond_3d(grid, moves_3d, cur_pos, bound):
+#     choices = generate_bd_choices_3d(grid, cur_pos, moves_3d, bound)
+#     # pick random choice
+#     new_pos = np.asarray(choices[np.random.randint(0, len(choices))])
+#     final_pos = new_pos
+# if rules_test:
+#     choices = generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d)
+#     # pick random choice
+#     new_pos = np.asarray(choices[np.random.randint(0, 6)])
+#     final_pos = new_pos
+# if cur_type == 10:  # reflective boundary
+#     choices = generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d)
+#     # pick random choice
+#     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
+#     candidate_pos = cur_pos + d_pos
+#     if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0):
+#         final_pos = cur_pos
+#     else:
+#         final_pos = candidate_pos
+# elif cur_type == 20:  # periodic boundary
+#     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
+#     candidate_pos = cur_pos + d_pos
+#     if candidate_pos[1] > grid.size:
+#         final_pos = [candidate_pos[0], 1, candidate_pos[2]]
+#     elif candidate_pos[1] < 0:
+#         final_pos = [candidate_pos[0], grid.size - 1, candidate_pos[2]]
+#     elif candidate_pos[2] > grid.size:
+#         final_pos = [candidate_pos[0], candidate_pos[1], 1]
+#     elif candidate_pos[2] < 0:
+#         final_pos = [candidate_pos[0], candidate_pos[1], grid.size - 1]
+#     else:
+#         final_pos = candidate_pos
+# elif cur_type == 30:  # corner
+#     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
+#     candidate_pos = cur_pos + d_pos
+#     if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0) or (candidate_pos[1] > grid.size) or (candidate_pos[1] < 0) \
+#             or (candidate_pos[2] > grid.size) or (candidate_pos[2] < 0):
+#         final_pos = cur_pos
+#     else:
+#         final_pos = candidate_pos
+# else:
+#     kill()
+# return final_pos
+
+
+"""These were very inefficient and were replaced. TB 4/9/2017"""
+# def generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d):
+#     """Returns a list of move choices for a walker on a periodic boundary"""
+#     choices = cur_pos + moves_3d
+#     # get edge locations
+#     min_val = 0
+#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
+#     # check choices for crossover
+#     for i in range(len(choices)):
+#         temp = choices[i]
+#         for j in range(len(temp)):
+#             if temp[j] < min_val:
+#                 temp[j] = max_val
+#             elif temp[j] > max_val:
+#                 temp[j] = min_val
+#         choices[i] = temp
+#     return choices
+
+
+# def generate_reflective_bc_choices_3d(grid, cur_pos, moves_3d):
+#     """Returns a list of move choices for a walker on a reflective boundary"""
+#     choices = cur_pos + moves_3d
+#     # get edge locations
+#     min_val = 0
+#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
+#     # we are guaranteed that that coordinate outside bd is reflective because we're told that :P
+#     for i in range(len(choices)):
+#         temp = choices[i]
+#         for j in range(len(temp)):
+#             if (temp[j] < min_val) or (temp[j] > max_val):
+#                 temp[j] = None
+#                 break
+#         if None in temp:
+#             del choices[i]
+#         else:
+#             choices[i] = temp
+#     return choices
+
+
+# def generate_corner_bc_choices_3d(grid, cur_pos, moves_3d):
+#     """Returns a list of move choices for a walker on a corner boundary"""
+#     choices = cur_pos + moves_3d
+#     # get edge locations
+#     min_val = 0
+#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
+#     # one will be at max and the other at min, that defines the type
+#     for i in range(len(choices)):
+#         temp = choices[i]
+#         # 3d here, X reflective Y,Z periodic
+#         if (temp[0] < min_val) or (temp[0] > max_val):  # X reflective, delete choice
+#             del choices[i]
+#             continue
+#         #
+#         if (temp[1] < min_val) and (temp[2] < min_val):
+#             temp[1] = max_val
+#             temp[2] = max_val
+#         elif (temp[1] > max_val) and (temp[2] > max_val):
+#             temp[1] = min_val
+#             temp[2] = min_val
+#         elif (temp[1] > max_val) and (temp[2] < min_val):
+#             temp[1] = min_val
+#             temp[2] = max_val
+#         elif (temp[1] < min_val) and (temp[2] > max_val):
+#             temp[1] = max_val
+#             temp[2] = min_val
+#         choices[i] = temp
+#     return choices
+""""""
+
+"""Old kapitza cntvol 3D function where I tried to have detailed balance and P_m-cn ind. probabilities.
+That doesn't actually make sense!"""
+
+# def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
+#     random_num = np.random.random()  # [0.0, 1.0)
+#     # check if the walker is inside or outside of a CNT
+#     if inside_cnt:
+#         # probs = [2.0 / 6.0, 4.0 / 6.0]  # detailed balance
+#         kap_stay_enter = (random_num > prob_m_cn)
+#         kap_leave_notenter = (random_num < prob_m_cn)
+#     else:
+#         #probs = [1.0 / 6.0, 5.0 / 6.0]  # detailed balance
+#         kap_stay_enter = (random_num < prob_m_cn)
+#         kap_leave_notenter = (random_num > prob_m_cn)
+#     # d_b = ['stay_enter', 'leave_notenter']  # two possibilities
+#     # d_b_choice = np.random.choice(d_b, p=probs)
+#     if kap_stay_enter:
+#         # (Detailed balance stay) AND (Kapitza stay)
+#         # OR
+#         # (Detailed balance leave) AND (Kapitza stay)
+#         # move to random volume/endpoint within same CNT, remove current spot from choices
+#         new_choices = []
+#         for x in grid.tube_squares[cur_index - 1]:
+#             if x not in [cur_pos]:
+#                 new_choices.append(x)
+#         num_new_choices = len(new_choices)
+#         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
+#     elif kap_leave_notenter:
+#         # (Detailed balance stay) AND (Kapitza leave)
+#         # OR
+#         # (Detailed balance leave) AND (Kapitza leave)
+#         # walk away, checking that current CNT volume is not a possibility
+#         possible_locs, num_possible_locs = generate_novol_choices_3d(grid, moves_3d, cur_pos, cur_index, kapitza,
+#                                                                      return_pos=True)
+#         final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+#     else:
+#         kill()
+#     #
+#     inside_cnt = not inside_cnt
+#     #
+#     return final_pos, inside_cnt
+""""""
+
+"""Old apply moves code. This shows why the rules didnt make sense before 4/1/17. """
+# def apply_moves_2d(walker, kapitza, grid, prob_m_cn, object):
+#     '''Maybe given walker object or coordinates directly, check object'''
+#     moves = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+#     # check where we are
+#     if object:
+#         cur_pos = np.asarray(walker.pos[-1])
+#     else:
+#         cur_pos = np.asarray(walker[-1])
+#     # DEBUG
+#     # Having tube radius doesn't matter if kapitza is off, apart from excluded volume
+#     if kapitza:
+#         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
+#         random_num = np.random.random()  # [0,1)
+#         if cur_type == 1:  # endpoint
+#             # step any direction
+#             d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#             final_pos = cur_pos + d_pos
+#             # walker.add_pos(final_pos)
+#         elif cur_type == 0:  # matrix cell
+#             # generate candidate position
+#             d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#             candidate_pos = cur_pos + d_pos
+#             candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+#             if candidate_type == -1:  # inside tube
+#                 if random_num > prob_m_cn:
+#                     final_pos = cur_pos
+#                     # walker.add_pos(final_pos)
+#                 else:
+#                     final_pos = candidate_pos
+#                     # walker.add_pos(final_pos)
+#             else:  # a normal step
+#                 final_pos = candidate_pos
+#                 # walker.add_pos(final_pos)
+#         elif cur_type == -1:  # CNT cell
+#             # find index of current tube walker is in
+#             cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]]
+#             cubes_in_tube = len(grid.tube_squares[cur_index - 1])
+#             # -1 ABOVE AND BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
+#             candidate_pos = grid.tube_squares[cur_index - 1][np.random.randint(0, cubes_in_tube)]
+#             # move to another random point in the tube
+#             d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#             candidate_pos = np.asarray(candidate_pos) + d_pos
+#             # see where the candidate pos is
+#             candidate_loc = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+#             # if candidate is in tube or on endpoint or random < kapitza move, else stay
+#             if (candidate_loc == -1) or (candidate_loc == 1) or (random_num < prob_m_cn):
+#                 final_pos = candidate_pos
+#                 # walker.add_pos(final_pos)
+#             else:
+#                 final_pos = candidate_pos
+#                 # walker.add_pos(final_pos)
+#     else:  # standard hopping through tubes
+#         cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1]]  # type of square we're on
+#         if cur_type == 0:  # matrix cell
+#             d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#             final_pos = cur_pos + d_pos
+#             # walker.add_pos(final_pos)
+#         elif cur_type == 1:  # endpoint
+#             jump_moves = [[0, 1], [1, 0], [0, -1], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]
+#             # 8 possible jump positions for now if at tube end, 4 at left (first 4) and 4 at right (second 4)
+#             choice = np.random.randint(0, 8)
+#             d_pos = np.asarray(jump_moves[choice])
+#             # coord on left tube end jumps to right end
+#             tube_check_val_l = grid.tube_check_l[cur_pos[0], cur_pos[1]]
+#             if tube_check_val_l > 0:
+#                 if choice <= 3:  # stay at left end
+#                     final_pos = cur_pos + d_pos
+#                     # walker.add_pos(final_pos)
+#                 else:  # jump across tube to right end
+#                     # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
+#                     final_pos = np.asarray(grid.tube_coords_r[tube_check_val_l - 1]) + np.asarray(d_pos)
+#                     # walker.add_pos(final_pos)
+#             # coord on right tube end jumps to left end
+#             tube_check_val_r = grid.tube_check_r[cur_pos[0], cur_pos[1]]
+#             if tube_check_val_r > 0:
+#                 if choice <= 3:  # stay at right end
+#                     final_pos = cur_pos + d_pos
+#                     # walker.add_pos(final_pos)
+#                 else:  # jump across tube to left end
+#                     # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
+#                     final_pos = np.asarray(grid.tube_coords_l[tube_check_val_r - 1]) + np.asarray(d_pos)
+#                     # walker.add_pos(final_pos)
+#     if cur_type == 10:  # reflective boundary
+#         d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#         candidate_pos = cur_pos + d_pos
+#         if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0):
+#             final_pos = cur_pos
+#             # walker.add_pos(final_pos)
+#         else:
+#             final_pos = candidate_pos
+#             # walker.add_pos(final_pos)
+#     elif cur_type == 20:  # periodic boundary
+#         d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#         candidate_pos = cur_pos + d_pos
+#         if candidate_pos[1] > grid.size:
+#             final_pos = [candidate_pos[0], 1]
+#             # walker.add_pos(final_pos)
+#         elif candidate_pos[1] < 0:
+#             final_pos = [candidate_pos[0], grid.size - 1]
+#             # walker.add_pos(final_pos)
+#         else:
+#             final_pos = candidate_pos
+#             # walker.add_pos(final_pos)
+#     elif cur_type == 30:  # corner
+#         d_pos = np.asarray(moves[np.random.randint(0, 4)])
+#         candidate_pos = cur_pos + d_pos
+#         if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0) or (candidate_pos[1] > grid.size) or (
+#             candidate_pos[1] < 0):
+#             final_pos = cur_pos
+#             # walker.add_pos(final_pos)
+#         else:
+#             final_pos = candidate_pos
+#     if object:
+#         walker.add_pos(final_pos)
+#     else:
+#         walker.append(list(final_pos))
+#     return walker
+""""""

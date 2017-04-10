@@ -66,43 +66,6 @@ def apply_bd_cond_3d(grid, moves_3d, cur_pos, bound):
     # pick random choice
     new_pos = np.asarray(choices[np.random.randint(0, len(choices))])
     final_pos = new_pos
-    # if rules_test:
-    #     choices = generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d)
-    #     # pick random choice
-    #     new_pos = np.asarray(choices[np.random.randint(0, 6)])
-    #     final_pos = new_pos
-    # if cur_type == 10:  # reflective boundary
-    #     choices = generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d)
-    #     # pick random choice
-    #     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
-    #     candidate_pos = cur_pos + d_pos
-    #     if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0):
-    #         final_pos = cur_pos
-    #     else:
-    #         final_pos = candidate_pos
-    # elif cur_type == 20:  # periodic boundary
-    #     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
-    #     candidate_pos = cur_pos + d_pos
-    #     if candidate_pos[1] > grid.size:
-    #         final_pos = [candidate_pos[0], 1, candidate_pos[2]]
-    #     elif candidate_pos[1] < 0:
-    #         final_pos = [candidate_pos[0], grid.size - 1, candidate_pos[2]]
-    #     elif candidate_pos[2] > grid.size:
-    #         final_pos = [candidate_pos[0], candidate_pos[1], 1]
-    #     elif candidate_pos[2] < 0:
-    #         final_pos = [candidate_pos[0], candidate_pos[1], grid.size - 1]
-    #     else:
-    #         final_pos = candidate_pos
-    # elif cur_type == 30:  # corner
-    #     d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
-    #     candidate_pos = cur_pos + d_pos
-    #     if (candidate_pos[0] > grid.size) or (candidate_pos[0] < 0) or (candidate_pos[1] > grid.size) or (candidate_pos[1] < 0) \
-    #             or (candidate_pos[2] > grid.size) or (candidate_pos[2] < 0):
-    #         final_pos = cur_pos
-    #     else:
-    #         final_pos = candidate_pos
-    # else:
-    #     kill()
     return final_pos
 
 
@@ -128,74 +91,6 @@ def generate_bd_choices_3d(grid, cur_pos, moves_3d, bound):
     for index in sorted(idx_remove, reverse=True):
         del choices[index]
     return choices
-
-
-# def generate_periodic_bc_choices_3d(grid, cur_pos, moves_3d):
-#     """Returns a list of move choices for a walker on a periodic boundary"""
-#     choices = cur_pos + moves_3d
-#     # get edge locations
-#     min_val = 0
-#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
-#     # check choices for crossover
-#     for i in range(len(choices)):
-#         temp = choices[i]
-#         for j in range(len(temp)):
-#             if temp[j] < min_val:
-#                 temp[j] = max_val
-#             elif temp[j] > max_val:
-#                 temp[j] = min_val
-#         choices[i] = temp
-#     return choices
-
-
-# def generate_reflective_bc_choices_3d(grid, cur_pos, moves_3d):
-#     """Returns a list of move choices for a walker on a reflective boundary"""
-#     choices = cur_pos + moves_3d
-#     # get edge locations
-#     min_val = 0
-#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
-#     # we are guaranteed that that coordinate outside bd is reflective because we're told that :P
-#     for i in range(len(choices)):
-#         temp = choices[i]
-#         for j in range(len(temp)):
-#             if (temp[j] < min_val) or (temp[j] > max_val):
-#                 temp[j] = None
-#                 break
-#         if None in temp:
-#             del choices[i]
-#         else:
-#             choices[i] = temp
-#     return choices
-
-
-# def generate_corner_bc_choices_3d(grid, cur_pos, moves_3d):
-#     """Returns a list of move choices for a walker on a corner boundary"""
-#     choices = cur_pos + moves_3d
-#     # get edge locations
-#     min_val = 0
-#     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
-#     # one will be at max and the other at min, that defines the type
-#     for i in range(len(choices)):
-#         temp = choices[i]
-#         # 3d here, X reflective Y,Z periodic
-#         if (temp[0] < min_val) or (temp[0] > max_val):  # X reflective, delete choice
-#             del choices[i]
-#             continue
-#         #
-#         if (temp[1] < min_val) and (temp[2] < min_val):
-#             temp[1] = max_val
-#             temp[2] = max_val
-#         elif (temp[1] > max_val) and (temp[2] > max_val):
-#             temp[1] = min_val
-#             temp[2] = min_val
-#         elif (temp[1] > max_val) and (temp[2] < min_val):
-#             temp[1] = min_val
-#             temp[2] = max_val
-#         elif (temp[1] < min_val) and (temp[2] > max_val):
-#             temp[1] = max_val
-#             temp[2] = min_val
-#         choices[i] = temp
-#     return choices
 
 
 def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
@@ -251,8 +146,9 @@ def kapitza_cntend(grid, moves_3d, kapitza, cur_pos, cur_index):
     if d_b_choice == 'stay_enter':  # move to random volume/endpoint within same CNT
         #  remove current spot from choices
         new_choices = []
+        coord_del = [list(cur_pos)]
         for x in grid.tube_squares[cur_index - 1]:
-            if x not in [cur_pos]:
+            if x not in coord_del:
                 new_choices.append(x)
         # -1 because of above statement
         num_new_choices = len(new_choices)
@@ -311,30 +207,21 @@ def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     random_num = np.random.random()  # [0.0, 1.0)
     # check if the walker is inside or outside of a CNT
     if inside_cnt:
-        # probs = [2.0 / 6.0, 4.0 / 6.0]  # detailed balance
         kap_stay_enter = (random_num > prob_m_cn)
         kap_leave_notenter = (random_num < prob_m_cn)
     else:
-        #probs = [1.0 / 6.0, 5.0 / 6.0]  # detailed balance
         kap_stay_enter = (random_num < prob_m_cn)
         kap_leave_notenter = (random_num > prob_m_cn)
-    # d_b = ['stay_enter', 'leave_notenter']  # two possibilities
-    # d_b_choice = np.random.choice(d_b, p=probs)
     if kap_stay_enter:
-        # (Detailed balance stay) AND (Kapitza stay)
-        # OR
-        # (Detailed balance leave) AND (Kapitza stay)
         # move to random volume/endpoint within same CNT, remove current spot from choices
+        coord_del = [list(cur_pos)]
         new_choices = []
         for x in grid.tube_squares[cur_index - 1]:
-            if x not in [cur_pos]:
+            if x not in coord_del:
                 new_choices.append(x)
         num_new_choices = len(new_choices)
         final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
     elif kap_leave_notenter:
-        # (Detailed balance stay) AND (Kapitza leave)
-        # OR
-        # (Detailed balance leave) AND (Kapitza leave)
         # walk away, checking that current CNT volume is not a possibility
         possible_locs, num_possible_locs = generate_novol_choices_3d(grid, moves_3d, cur_pos, cur_index, kapitza,
                                                                      return_pos=True)
