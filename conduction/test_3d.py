@@ -266,7 +266,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         #                        filename='B_rand', random_slice=True)
         plots.plot_colormap_2d(grid, H_master, quiet, plot_save_dir, gen_plots,
                                title='Number of times visited (random XY slice)',
-                               xlab='Y', ylab='Z', filename='H_rand', random_slice=True)
+                               xlab='X', ylab='Y', filename='H_rand', random_slice=3)
+        plots.plot_colormap_2d(grid, temp_profile_norm, quiet, plot_save_dir, gen_plots,
+                               title='Probability of walker landing on square (random XY slice)',
+                               xlab='X', ylab='Y', filename='H_rand_norm', random_slice=3)
         end = MPI.Wtime()
         logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))

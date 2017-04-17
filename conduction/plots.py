@@ -157,26 +157,30 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
 
 
 def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature density (dimensionless units)',
-                     xlab='X', ylab='Y', filename='temp', random_slice=False):
+                     xlab='X', ylab='Y', filename='temp', random_slice=None):
     """Plots temperature profile for all walkers
     Can be called anywhere a 2D colormap (of 2D data), basically a histogram, is needed"""
     logging.info("Plotting 2D temperature (histogram)")
     backend.check_for_folder(save_dir)
     # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
     temp_profile = H_tot
+    cushion = 5
+    rand = np.random.randint(cushion, grid.size - cushion)
     if gen_plots:
-        if random_slice:
-            cushion = 5
-            zax = np.random.randint(cushion, grid.size - cushion)
-            H_temp = H_tot[:][:][zax]  # XY
-            temp_profile = H_temp
+        if random_slice == 1:
+            H_temp = H_tot[rand][:][:]  # YZ
+        if random_slice == 2:
+            H_temp = H_tot[:][rand][:]  # YZ
+        if random_slice == 3:
+            H_temp = H_tot[:][:][rand]  # YZ
+        temp_profile = H_temp
         plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
         plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
         plt.xlabel(xlab)
         plt.ylabel(ylab)
-        plt.xlim(0, grid.size)
-        plt.ylim(0, grid.size)
+        plt.xlim(1, grid.size)
+        plt.ylim(1, grid.size)
         plt.colorbar()
         plt.savefig('%s/%s.pdf' % (save_dir, filename))
         if not quiet:
@@ -187,7 +191,7 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
 
 def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
                      title='Temperature density (dimensionless units)', xlab='X', ylab='Y', zlab='Z', filename='temp',
-                     random_slice=False):
+                     random_slice=None):
     """Plots histogram profile for all walkers
     Can be called anywhere a 3D bar-type histogram (of 2D data) is needed"""
     logging.info("Plotting 3D temperature (bar-type) histogram")
@@ -215,8 +219,8 @@ def plot_bargraph_3d(grid, H_tot, x_edges, y_edges, quiet, save_dir, gen_plots,
         ax.set_xlabel(xlab)
         ax.set_ylabel(ylab)
         ax.set_zlabel(zlab)
-        ax.set_xlim(0, grid.size)
-        ax.set_ylim(0, grid.size)
+        ax.set_xlim(1, grid.size)
+        ax.set_ylim(1, grid.size)
         plt.savefig('%s/%s.pdf' % (save_dir, filename))
         if not quiet:
             plt.show()
