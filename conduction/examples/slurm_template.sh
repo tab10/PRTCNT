@@ -14,4 +14,7 @@ mpirun python /home/tab10/code/conduction/conduction/mpi_run.py --dim 3 --orient
 done
 
 
-mpirun -np 2 python mpi_run.py --dim 3 --orientation horizontal --num_tubes 5000 --tube_length 15 --gen_plots True --rules_test True --timesteps 35000 --num_walkers 100
+mpirun -np 2 python mpi_run.py --dim 3 --orientation random --num_tubes 500 --tube_length 15 --gen_plots True --rules_test True --timesteps 35000 --num_walkers 210000 --model kapitza --prob_m_cn 0.5
+
+
+mpirun -np 2 python mpi_run.py --dim 3 --orientation random --num_tubes 1 --tube_length 10 --gen_plots True --rules_test True --timesteps 35000 --num_walkers 50 --model kapitza --prob_m_cn 0.5 --grid_size 30

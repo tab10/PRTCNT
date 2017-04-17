@@ -97,6 +97,9 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
     # having the moves as lists is OK since numpy arrays + list is the standard + we want
     moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0]]
     jump_moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]
+    moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+    jump_moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1],
+                          [0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
     cur_pos = np.asarray(walker.pos[-1])
     if kapitza:
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
@@ -139,6 +142,12 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
 
 
 def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index):
+    # generate candidate position
+    d_pos = np.asarray(moves_2d[np.random.randint(0, 4)])
+    candidate_pos = cur_pos + d_pos
+    candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+
+    choices = cur_pos + moves_2d
     probs = [2.0 / 8.0, 6.0 / 8.0]  # detailed balance
     d_b = ['stay_enter', 'leave_notenter']  # two possibilities
     d_b_choice = np.random.choice(d_b, p=probs)

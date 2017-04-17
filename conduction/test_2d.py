@@ -250,12 +250,9 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info('Histogram normalized: mean %.4E, std %.4E' % (mean_temp_norm, std_temp_norm))
         # plots
         temp_profile = H_master
-        plots.plot_colormap_2d(grid, temp_profile, quiet, plot_save_dir, gen_plots,
-                               title='Number of times visited',
+        plots.plot_colormap_2d(grid, temp_profile_norm, quiet, plot_save_dir, gen_plots,
+                               title='Probability of being visited',
                                xlab='X', ylab='Y', filename='H_xy')
-        plots.plot_bargraph_3d(grid, temp_profile_norm, x_edges, y_edges, quiet, plot_save_dir, gen_plots,
-                               title='Probability of being visited', xlab='X', ylab='Y', zlab='Z',
-                               filename='B_xy')
         end = MPI.Wtime()
         logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))

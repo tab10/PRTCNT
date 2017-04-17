@@ -246,30 +246,27 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info('Histogram: mean %.4E, std %.4E' % (mean_temp, std_temp))
         logging.info('Histogram normalized: mean %.4E, std %.4E' % (mean_temp_norm, std_temp_norm))
         # plot 2d cuts in each of the 3 planes, all directions periodic
-        temp_profile_yz = np.sum(H_master, axis=0)
-        temp_profile_xz = np.sum(H_master, axis=1)
-        temp_profile_xy = np.sum(H_master, axis=2)
-        temp_profile_yz_norm = np.sum(temp_profile_norm, axis=0)
-        temp_profile_xz_norm = np.sum(temp_profile_norm, axis=1)
-        temp_profile_xy_norm = np.sum(temp_profile_norm, axis=2)
+        temp_profile_yz = np.mean(H_master, axis=0)
+        temp_profile_xz = np.mean(H_master, axis=1)
+        temp_profile_xy = np.mean(H_master, axis=2)
+        # temp_profile_yz_norm = np.sum(temp_profile_norm, axis=0)
+        # temp_profile_xz_norm = np.sum(temp_profile_norm, axis=1)
+        # temp_profile_xy_norm = np.sum(temp_profile_norm, axis=2)
         plots.plot_colormap_2d(grid, temp_profile_xy, quiet, plot_save_dir, gen_plots,
-                               title='Number of times visited (sum along Z-axis)',
+                               title='Number of times visited (average along Z-axis)',
                                xlab='X', ylab='Y', filename='H_xy')
         plots.plot_colormap_2d(grid, temp_profile_xz, quiet, plot_save_dir, gen_plots,
-                               title='Number of times visited (sum along Y-axis)',
+                               title='Number of times visited (average along Y-axis)',
                                xlab='X', ylab='Z', filename='H_xz')
         plots.plot_colormap_2d(grid, temp_profile_yz, quiet, plot_save_dir, gen_plots,
-                               title='Number of times visited (sum along X-axis)',
+                               title='Number of times visited (average along X-axis)',
                                xlab='Y', ylab='Z', filename='H_yz')
-        plots.plot_bargraph_3d(grid, temp_profile_xy_norm, x_edges, y_edges, quiet, plot_save_dir, gen_plots,
-                               title='Probability of being visited (sum along Z-axis)', xlab='X', ylab='Y', zlab='Z',
-                               filename='B_xy')
-        plots.plot_bargraph_3d(grid, temp_profile_xz_norm, x_edges, z_edges, quiet, plot_save_dir, gen_plots,
-                               title='Probability of being visited (sum along Y-axis)', xlab='X', ylab='Z', zlab='Y',
-                               filename='B_xz')
-        plots.plot_bargraph_3d(grid, temp_profile_yz_norm, y_edges, z_edges, quiet, plot_save_dir, gen_plots,
-                               title='Probability of being visited (sum along X-axis)', xlab='Y', ylab='Z', zlab='X',
-                               filename='B_yz')
+        # plots.plot_bargraph_3d(grid, H_master, x_edges, y_edges, quiet, plot_save_dir, gen_plots,
+        #                        title='Number of times visited (random slice)', xlab='X', ylab='Y', zlab='Z',
+        #                        filename='B_rand', random_slice=True)
+        plots.plot_colormap_2d(grid, H_master, quiet, plot_save_dir, gen_plots,
+                               title='Number of times visited (random XY slice)',
+                               xlab='Y', ylab='Z', filename='H_rand', random_slice=True)
         end = MPI.Wtime()
         logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))
