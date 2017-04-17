@@ -163,17 +163,17 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
     logging.info("Plotting 2D temperature (histogram)")
     backend.check_for_folder(save_dir)
     # np.savetxt('%s/temp.txt' % save_dir, H_tot, fmt='%.1E')
-    temp_profile = H_tot
     cushion = 5
     rand = np.random.randint(cushion, grid.size - cushion)
     if gen_plots:
         if random_slice == 1:
-            H_temp = H_tot[rand][:][:]  # YZ
+            temp_profile = H_tot[rand][:][:]  # YZ
         if random_slice == 2:
-            H_temp = H_tot[:][rand][:]  # YZ
+            temp_profile = H_tot[:][rand][:]  # YZ
         if random_slice == 3:
-            H_temp = H_tot[:][:][rand]  # YZ
-        temp_profile = H_temp
+            temp_profile = H_tot[:][:][rand]  # YZ
+        else:
+            temp_profile = H_tot
         plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
         plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
