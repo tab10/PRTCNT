@@ -12,10 +12,12 @@
 # //////////////////////////////////////////////////////////////////////////////////// #
 
 
+from __future__ import absolute_import
 import logging
 import os
 import argparse
 from mpi4py import MPI
+import ast
 from conduction import *
 
 
@@ -71,23 +73,24 @@ if __name__ == "__main__":
                                                                             'in the std. dev. of k calculation. '
                                                                             'Reduced automatically depending on '
                                                                             '# of cores.')
-    parser.add_argument('--gen_plots', type=str, default=True, help='Gives the option to not generate any plots. '
+    parser.add_argument('--gen_plots', type=str, default='True', help='Gives the option to not generate any plots. '
                                                                       'Useful on the supercomputer.')
     parser.add_argument('--save_dir', type=str, default=os.getcwd(), help='Path for plots and data and config.ini.')
-    parser.add_argument('--save_loc_plots', type=str, default=False, help='Save location plots for all walkers.')
-    parser.add_argument('--save_loc_data', type=str, default=False, help='Save location data for all walkers.')
-    parser.add_argument('--quiet', type=str, default=True, help='Do not show various plots throughout simulation.')
+    parser.add_argument('--save_loc_plots', type=str, default='False', help='Save location plots for all walkers.')
+    parser.add_argument('--save_loc_data', type=str, default='False', help='Save location data for all walkers.')
+    parser.add_argument('--quiet', type=str, default='True', help='Do not show various plots throughout simulation.')
     parser.add_argument('--model', type=str, required=True, help='Simulation model type. kapitza, tunneling_w_vol, '
                                                                  'tunneling_wo_vol')
     parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the CNT. '
                                                                      'Only used in kapitza models.')
-    parser.add_argument('--run_to_convergence', type=str, default=False, help='True does this or False runs '
+    parser.add_argument('--run_to_convergence', type=str, default='False', help='True does this or False runs '
                                                                               'for number of walkers.')
-    parser.add_argument('--restart', type=str, default=False, help='Looks in previous directory for H to extend or '
+    parser.add_argument('--restart', type=str, default='False', help='Looks in previous directory for H to extend or '
                                                                     'restart simulation.')
     parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
                                                                       'Only used if convergence is false.')
-    parser.add_argument('--disable_func', action='store_true', help='Turn off functionalization of the tube ends.')
+    parser.add_argument('--disable_func', type=str, default='False',
+                        help='Turn off functionalization of the tube ends.')
     parser.add_argument('--printout_inc', type=int, default=50, help='deltaT increment for printing out conductivity '
                                                                      'info for constant flux simulations. Should be '
                                                                      'somewhat large because histogramming has to be done every time.')
@@ -100,6 +103,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     comm.Barrier()
+
+    for k in args.__dict__:  # convert string "BOOLEANS" to actual booleans
+        tester = args.__dict__[k]
+        if (tester == 'True' or tester == 'False') and isinstance(tester, str):
+            new_test = ast.literal_eval(tester)
+            args.__dict__[k] = new_test
 
     dim = args.dim
     grid_size = args.grid_size
@@ -197,7 +206,7 @@ if __name__ == "__main__":
         logging.info('Using last %d k values to check for convergence' % k_conv_error_buffer)
 
     #  all processes have control now
-    if rules_test == 'True':
+    if rules_test:
         logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
                      "Principle of Detailed Balance. To do this, we don't use Fourier's Law as our walkers are"
                      "all positive and no heat flux is generated. Differences include: Walkers can start from "
@@ -211,7 +220,7 @@ if __name__ == "__main__":
             test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
                                     plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,
                                     size, rules_test, restart)
-    elif rules_test == 'False':
+    else:
         logging.info("Starting %dD constant flux on-lattice random walk." % dim)
         if dim == 2:
             randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
@@ -223,6 +232,3 @@ if __name__ == "__main__":
                                           quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers,
                                           printout_inc,
                                           k_conv_error_buffer, disable_func, rank, size, rules_test, restart)
-    else:
-        logging.error('Check rules_test value')
-        raise SystemExit

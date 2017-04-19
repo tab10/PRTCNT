@@ -100,8 +100,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             if (i % d_add) == 0:
                 trigger = 1
                 # let's add the 2 new walkers
-                hot_walker_temp = creation.Walker3D_onlat(grid.size, 'hot')
-                cold_walker_temp = creation.Walker3D_onlat(grid.size, 'cold')
+                hot_walker_temp = creation_3d.Walker3D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation_3d.Walker3D_onlat(grid.size, 'cold')
                 hot_walker_master.append(hot_walker_temp)
                 cold_walker_master.append(cold_walker_temp)
             else:
@@ -110,8 +110,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             trigger = d_add  # trigger never 0 in this case
             # let's add the 2 new walkers, several times
             for k in range(d_add):
-                hot_walker_temp = creation.Walker3D_onlat(grid.size, 'hot')
-                cold_walker_temp = creation.Walker3D_onlat(grid.size, 'cold')
+                hot_walker_temp = creation_3d.Walker3D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation_3d.Walker3D_onlat(grid.size, 'cold')
                 hot_walker_master.append(hot_walker_temp)
                 cold_walker_master.append(cold_walker_temp)
         # let's update all the positions of the activated walkers
