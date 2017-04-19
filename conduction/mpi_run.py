@@ -152,6 +152,7 @@ if __name__ == "__main__":
     if model == 'kapitza':
         tube_radius = 0.5
         kapitza = True
+        inert_vol = False
         logging.info('Simulation model: kapitza. CNTs have volume, functionalized/non-functionalized ends, and '
                      'kapitza resistance')
         logging.info('Using prob_m_cn value of %.4f' % prob_m_cn)
