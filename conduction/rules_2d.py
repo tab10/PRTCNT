@@ -96,6 +96,7 @@ def generate_bd_choices_2d(grid, cur_pos, moves_2d, bound):
 
 def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
     # having the moves as lists is OK since numpy arrays + list is the standard + we want
+    inert_vol = grid.inert_vol
     moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0]]
     jump_moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]]
     moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
@@ -121,8 +122,6 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         else:
             exit()
     elif not kapitza:  # tunneling with/without inert volume models
-        # check if we have inert volume, boolean
-        inert_vol = ('grid.tube_check_bd_vol' in locals()) or ('grid.tube_check_bd_vol' in globals())
         if inert_vol:
             cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
             cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]] - 1  # index>0 of CNT (or 0 for not one)
@@ -130,10 +129,10 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
             cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1]]  # type of square we're on
             cur_index = None
         if cur_type == 0:  # matrix cell
-            final_pos = tunneling_matrix(grid, moves_2d, cur_pos, cur_index)
+            final_pos = tunneling_matrix(grid, moves_2d, cur_pos, cur_index, inert_vol)
             walker.add_pos(final_pos)
         elif cur_type == 1:  # endpoint
-            final_pos = tunneling_cntend(grid, jump_moves_2d, cur_pos)
+            final_pos = tunneling_cntend(grid, jump_moves_2d, cur_pos, inert_vol)
             walker.add_pos(final_pos)
         elif cur_type == -1000:  # boundary
             final_pos = apply_bd_cond_2d(grid, moves_2d, cur_pos, bound)
@@ -332,15 +331,17 @@ def kapitza_cntvol(grid, moves_2d_diag, kapitza, cur_pos, cur_index, prob_m_cn, 
     return final_pos, inside_cnt
 
 
-def tunneling_matrix(grid, moves_2d, cur_pos, cur_index):
-    # checking that no CNT volume is a possibility
-    possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, False,
+def tunneling_matrix(grid, moves_2d, cur_pos, cur_index, inert_vol):
+    if inert_vol:  # checking that no CNT volume is a possibility
+        possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, False,
                                                                  return_pos=True)  # turning off Kapitza for tunneling
-    final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+        final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+    else:
+        final_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
     return final_pos
 
 
-def tunneling_cntend(grid, jump_moves_2d, cur_pos):
+def tunneling_cntend(grid, jump_moves_2d, cur_pos, inert_vol):
     # no CNT volume, so this rule remains unchanged from the originals (3/30/17 TB)
     # walk off either end, 12 3D choices always
     choice = np.random.randint(0, 8)

@@ -21,11 +21,11 @@ from conduction import *
 
 class Grid3D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
-                 disable_func, rules_test, rank=None,
-                 size=None):
+                 disable_func, rules_test, inert_vol, rank=None, size=None):
         """Grid in first quadrant only for convenience"""
         self.size = grid_size
         self.tube_radius = tube_radius
+        self.inert_vol = inert_vol
         # serial implementation
         status_counter = 0
         counter = 0

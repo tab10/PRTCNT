@@ -159,12 +159,14 @@ if __name__ == "__main__":
         tube_radius = 0.5
         prob_m_cn = 0.0
         kapitza = False
+        inert_vol = True
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
                      'functionalized ends. CNTs cannot cross in space. Limit of infinite kapitza resistance.')
     elif model == 'tunneling_wo_vol':
         tube_radius = 0.0
         prob_m_cn = 0.0
         kapitza = False
+        inert_vol = False
         logging.info('Simulation model: tunneling without volume. CNTs only have '
                      'functionalized ends. CNTs can cross in space. Limit of infinite kapitza resistance.')
     else:
@@ -215,20 +217,20 @@ if __name__ == "__main__":
         if dim == 2:
             test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                     timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
-                                    num_walkers, disable_func, rank, size, rules_test, restart)
+                                    num_walkers, disable_func, rank, size, rules_test, restart, inert_vol)
         elif dim == 3:
             test_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps, quiet,
                                     plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers, disable_func, rank,
-                                    size, rules_test, restart)
+                                    size, rules_test, restart, inert_vol)
     else:
         logging.info("Starting %dD constant flux on-lattice random walk." % dim)
         if dim == 2:
             randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                           quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
                                           num_walkers, printout_inc, k_conv_error_buffer, disable_func, rank, size,
-                                          rules_test, restart)
+                                          rules_test, restart, inert_vol)
         elif dim == 3:
             randomwalk_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                           quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers,
                                           printout_inc,
-                                          k_conv_error_buffer, disable_func, rank, size, rules_test, restart)
+                                          k_conv_error_buffer, disable_func, rank, size, rules_test, restart, inert_vol)

@@ -20,11 +20,12 @@ from conduction import *
 
 class Grid2D_onlat(object):
     def __init__(self, grid_size, tube_length, num_tubes, orientation, tube_radius, parallel, plot_save_dir,
-                 disable_func, rules_test, rank=None, size=None):
+                 disable_func, rules_test, inert_vol, rank=None, size=None):
         """Grid in first quadrant only for convenience"""
         # serial implementation
         logging.info("Setting up grid and tubes serially")
         self.size = grid_size
+        self.inert_vol = inert_vol
         if tube_length > grid_size:
             logging.error('Nanotube is too large for grid')
             raise SystemExit

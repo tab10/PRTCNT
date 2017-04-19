@@ -121,6 +121,7 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
                           [1, -1, -1], [-1, -1, -1]]  # 42
 
     cur_pos = np.asarray(walker.pos[-1])
+    inert_vol = grid.inert_vol
     if kapitza:
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
         cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
@@ -140,8 +141,6 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         else:
             exit()
     elif not kapitza:  # tunneling with/without inert volume models
-        # check if we have inert volume, boolean
-        inert_vol = ('grid.tube_check_bd_vol' in locals()) or ('grid.tube_check_bd_vol' in globals())
         if inert_vol:
             cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
             cur_index = grid.tube_check_index[
