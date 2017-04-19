@@ -29,6 +29,7 @@ class Grid3D_onlat(object):
         # serial implementation
         status_counter = 0
         counter = 0
+        self.p_cn_m_weight = []  # area/volume times p_m_cn for each tube
         self.tube_coords = []
         self.tube_coords_l = []
         self.tube_coords_r = []
@@ -143,7 +144,11 @@ class Grid3D_onlat(object):
             # get number of squares filled
             cube_count = 0  # each cube has volume 1
             for i in range(len(self.tube_squares)):
-                cube_count += len(self.tube_squares[i])
+                cur_vol = len(self.tube_squares[i])
+                cube_count += cur_vol
+                cur_surf = self.calc_surface_area_3d(self.tube_squares[i], i)
+                self.p_cn_m_weight.append(cur_surf / float(cur_vol))
+            print(self.p_cn_m_weight)
             fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
@@ -326,6 +331,30 @@ class Grid3D_onlat(object):
         if (check_l != 0) or (check_r != 0):
             uni_flag = False
         return uni_flag
+
+    def calc_surface_area_3d(self, tube_squares, cur_index):
+        """To be given one tube at a time, returns surface area"""
+        surf_area = 0.0
+        diag = True
+        moves_3d = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0]]
+        moves_3d_diag = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
+                         [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
+                         [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0],
+                         [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
+                         [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, 1], [-1, 1, -1],
+                         [1, -1, -1], [-1, -1, -1]]  # 26 possible directions
+        for i in range(len(tube_squares)):
+            if diag:
+                choices = np.asarray(tube_squares[i]) + moves_3d_diag
+            else:
+                choices = np.asarray(tube_squares[i]) + moves_3d
+            for j in range(len(choices)):
+                new_type = self.tube_check_bd_vol[choices[j][0], choices[j][1], choices[j][2]]
+                new_index = self.tube_check_index[choices[j][0], choices[j][1], choices[j][2]] - 1
+                if (new_type != -1) and (new_index != cur_index):
+                    surf_area += 1.0
+        return surf_area
+
 
     def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):
         "Volume"
