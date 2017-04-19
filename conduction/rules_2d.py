@@ -39,7 +39,7 @@ def generate_novol_choices_2d(grid, moves_2d, cur_pos, tube_index, kapitza, retu
     possible_locs = []
     for i in range(len(moves_2d)):
         candidate_temp = cur_pos + np.asarray(moves_2d[i])
-        candidate_temp_index = grid.tube_check_index[candidate_temp[0], candidate_temp[1]]
+        candidate_temp_index = grid.tube_check_index[candidate_temp[0], candidate_temp[1]] - 1
         candidate_temp_type = grid.tube_check_bd_vol[candidate_temp[0], candidate_temp[1]]  # type of square we're on
         if kapitza:
             if not ((candidate_temp_type == -1) and (tube_index == candidate_temp_index)):
@@ -104,7 +104,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
     cur_pos = np.asarray(walker.pos[-1])
     if kapitza:
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
-        cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]]  # index>0 of CNT (or 0 for not one)
+        cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]] - 1  # index>0 of CNT (or 0 for not one)
         if cur_type == 1:  # CNT end
             final_pos, inside_cnt = kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index)
             walker.add_pos(final_pos)
@@ -125,7 +125,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         inert_vol = ('grid.tube_check_bd_vol' in locals()) or ('grid.tube_check_bd_vol' in globals())
         if inert_vol:
             cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
-            cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]]  # index>0 of CNT (or 0 for not one)
+            cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]] - 1  # index>0 of CNT (or 0 for not one)
         else:
             cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1]]  # type of square we're on
             cur_index = None
@@ -242,7 +242,7 @@ def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             inside_cnt = False
         elif random_num < prob_m_cn:  # move to random volume/endpoint within CNT
             # get candidate CNT index
-            candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1]]
+            candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
             #  DON'T remove candidate_pos from choices (since outside CNT here)
             new_choices = grid.tube_squares[candidate_index - 1]
             num_new_choices = len(new_choices)

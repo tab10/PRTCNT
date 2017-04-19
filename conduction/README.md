@@ -22,6 +22,8 @@ On OU's Schooner, add this line to your .profile:
 `module load OpenMPI mpi4py numpy matplotlib`. `#SBATCH -p 2650` gives a 10 core node, `#SBATCH -p 2670`
 gives a 12 core node
 
+Remember you must load conduction before running it, i.e. do not run it in the package directory.
+
 
 ##### References
 
