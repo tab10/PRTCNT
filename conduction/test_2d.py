@@ -44,7 +44,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
                                  disable_func)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
-        plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
+        # plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
 
     grid_range = [[0, grid.size + 1], [0, grid.size + 1]]
     bins = grid.size + 1
@@ -171,7 +171,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     if rank == 0:
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
-            plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
+            #plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
     else:
         grid = None
 
@@ -250,9 +250,12 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
         logging.info('Histogram normalized: mean %.4E, std %.4E' % (mean_temp_norm, std_temp_norm))
         # plots
         temp_profile = H_master
+        plots.plot_colormap_2d(grid, temp_profile, quiet, plot_save_dir, gen_plots,
+                               title='Number of times visited',
+                               xlab='X', ylab='Y', filename='H_xy')
         plots.plot_colormap_2d(grid, temp_profile_norm, quiet, plot_save_dir, gen_plots,
                                title='Probability of being visited',
-                               xlab='X', ylab='Y', filename='H_xy')
+                               xlab='X', ylab='Y', filename='H_xy_norm')
         end = MPI.Wtime()
         logging.info("Rules test has completed. Please see results to verify if rules obey P.D.B.")
         logging.info("Using %d cores, parallel simulation time was %.4f min" % (size, (end - start) / 60.0))

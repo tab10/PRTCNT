@@ -148,8 +148,8 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
         plt.colorbar()
         plt.xlabel('X')
         plt.ylabel('Y')
-        plt.xlim(0, grid.size)
-        plt.ylim(0, grid.size)
+        plt.xlim(1, grid.size)
+        plt.ylim(1, grid.size)
         plt.savefig('%s/setup_array.pdf' % save_dir)
         if not quiet:
             plt.show()

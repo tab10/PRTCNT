@@ -18,7 +18,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
     grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
-        plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
+        # plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
 
     grid_range = [[0, grid.size + 1], [0, grid.size + 1]]
     bins = grid.size + 1
@@ -112,7 +112,7 @@ def sim_2d_onlat_MPI(grid_size, tube_length, tube_radius, num_tubes, orientation
         grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius)
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
-            plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
+            #plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
     else:
         grid = None
 
