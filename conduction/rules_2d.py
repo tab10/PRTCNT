@@ -110,7 +110,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
             final_pos, inside_cnt = kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
-            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d_diag, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == -1:  # CNT volume
@@ -118,7 +118,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == -1000:  # boundary
-            final_pos = apply_bd_cond_2d(grid, moves_2d_diag, cur_pos, bound)
+            final_pos = apply_bd_cond_2d(grid, moves_2d, cur_pos, bound)
             walker.add_pos(final_pos)
         else:
             exit()

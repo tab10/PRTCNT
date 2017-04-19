@@ -18,6 +18,7 @@ import numpy as np
 import time
 from mpi4py import MPI
 from conduction import *
+from . import *
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
