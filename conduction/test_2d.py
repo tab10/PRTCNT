@@ -172,6 +172,12 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
     if rank == 0:
         if gen_plots:
             plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
+            # plots.plot_colormap_2d(grid, grid.p_cn_m, quiet, plot_save_dir, gen_plots,
+            #                       title='P_CN_M at each pixel',
+            #                       xlab='X', ylab='Y', filename='P_cn_m')
+            plots.plot_colormap_2d(grid, grid.tube_bds_lkup, quiet, plot_save_dir, gen_plots,
+                                   title='CNT Boundaries',
+                                   xlab='X', ylab='Y', filename='tube_bds', bds=True)
             #plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
     else:
         grid = None

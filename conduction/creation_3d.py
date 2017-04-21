@@ -29,7 +29,7 @@ class Grid3D_onlat(object):
         # serial implementation
         status_counter = 0
         counter = 0
-        self.p_cn_m_weight = []  # area/volume times p_m_cn for each tube
+        self.p_cn_m = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=float)
         self.tube_coords = []
         self.tube_coords_l = []
         self.tube_coords_r = []
@@ -146,15 +146,13 @@ class Grid3D_onlat(object):
             for i in range(len(self.tube_squares)):
                 cur_vol = len(self.tube_squares[i])
                 cube_count += cur_vol
-                cur_surf = self.calc_surface_area_3d(self.tube_squares[i], i)
-                self.p_cn_m_weight.append(cur_surf / float(cur_vol))
-            print(self.p_cn_m_weight)
             fill_fract = float(cube_count) * 2.0 * tube_radius / grid_size ** 3
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
+        self.calc_p_cn_m_3d()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
@@ -332,10 +330,11 @@ class Grid3D_onlat(object):
             uni_flag = False
         return uni_flag
 
-    def calc_surface_area_3d(self, tube_squares, cur_index):
-        """To be given one tube at a time, returns surface area"""
-        surf_area = 0.0
+    def calc_p_cn_m_3d(self):
+        p_m_cn = 0.5
+        sigma = np.sqrt(2.0)
         diag = True
+        tube_squares = self.tube_squares
         moves_3d = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0]]
         moves_3d_diag = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
                          [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
@@ -343,17 +342,23 @@ class Grid3D_onlat(object):
                          [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
                          [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, 1], [-1, 1, -1],
                          [1, -1, -1], [-1, -1, -1]]  # 26 possible directions
-        for i in range(len(tube_squares)):
-            if diag:
-                choices = np.asarray(tube_squares[i]) + moves_3d_diag
-            else:
-                choices = np.asarray(tube_squares[i]) + moves_3d
-            for j in range(len(choices)):
-                new_type = self.tube_check_bd_vol[choices[j][0], choices[j][1], choices[j][2]]
-                new_index = self.tube_check_index[choices[j][0], choices[j][1], choices[j][2]] - 1
-                if (new_type != -1) and (new_index != cur_index):
-                    surf_area += 1.0
-        return surf_area
+        for f in range(len(tube_squares)):  # over a tube
+            indiv_tube = tube_squares[f]
+            indiv_vol = len(indiv_tube)
+            for i in range(len(indiv_tube)):  # over pixels in tube
+                if diag:
+                    choices = np.asarray(indiv_tube[i]) + moves_3d_diag
+                else:
+                    choices = np.asarray(indiv_tube[i]) + moves_3d
+                surf_area_tmp = 0.0
+                for j in range(len(choices)):  # over all choices for a pixel
+                    new_type = self.tube_check_bd_vol[choices[j][0], choices[j][1], choices[j][2]]
+                    new_index = self.tube_check_index[choices[j][0], choices[j][1], choices[j][2]] - 1
+                    if (new_type != -1) and (new_index != f):
+                        surf_area_tmp += 1.0
+                # apply constants
+                p_cn_m = sigma * p_m_cn * (surf_area_tmp / indiv_vol)
+                self.p_cn_m[tube_squares[i][0], tube_squares[i][1], tube_squares[i][2]] = p_cn_m
 
 
     def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):

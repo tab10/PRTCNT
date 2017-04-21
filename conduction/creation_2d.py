@@ -29,6 +29,7 @@ class Grid2D_onlat(object):
         if tube_length > grid_size:
             logging.error('Nanotube is too large for grid')
             raise SystemExit
+        self.p_cn_m = np.zeros((self.size + 1, self.size + 1), dtype=float)
         self.tube_coords = []
         self.tube_coords_l = []
         self.tube_coords_r = []
@@ -144,6 +145,8 @@ class Grid2D_onlat(object):
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+        self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
+        # self.calc_p_cn_m_2d()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
@@ -300,6 +303,64 @@ class Grid2D_onlat(object):
                     bd_vol[i, j] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices generated,
                     # running through bd function
         return bd_vol, index
+
+    def generate_tube_boundary_array_2d(self):  # list of all pixels around each tube
+        tube_squares = self.tube_squares
+        diag = True
+        moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+        moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+        tube_bds = []
+        for f in range(len(tube_squares)):  # over a tube
+            tube_bds_tempa = []
+            indiv_tube = tube_squares[f]
+            for i in range(len(indiv_tube)):  # over pixels in tube
+                if not diag:
+                    choices = np.asarray(indiv_tube[i]) + moves_2d
+                else:
+                    choices = np.asarray(indiv_tube[i]) + moves_2d_diag
+                for j in range(len(choices)):  # over all choices for a pixel
+                    new_index = self.tube_check_index[choices[j][0], choices[j][1]] - 1
+                    if new_index != f:
+                        tube_bds_tempa.append(list(choices[j]))
+            # print(tube_bds_tempa)
+            b_set = set(map(tuple, tube_bds_tempa))
+            tube_bds_uni = list(map(list, b_set))
+            # print(tube_bds_uni)
+            tube_bds.append(tube_bds_uni)
+        tube_bds_lkup = np.zeros((self.size + 1, self.size + 1), dtype=int)  # lookup array of them
+        for i in range(len(tube_bds)):
+            for j in range(len(tube_bds[i])):
+                tube_bds_lkup[tube_bds[i][j][0], tube_bds[i][j][1]] = 2
+        return tube_bds, tube_bds_lkup
+
+    #
+    # def calc_p_cn_m_2d(self):
+    #     p_m_cn = 0.5
+    #     sigma = np.sqrt(2.0)
+    #     diag = False
+    #     tube_squares = self.tube_squares
+    #     moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0]]
+    #     moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
+    #     for f in range(len(tube_squares)):  # over a tube
+    #         indiv_tube = tube_squares[f]
+    #         indiv_vol = len(indiv_tube)
+    #         for i in range(len(indiv_tube)):  # over pixels in tube
+    #             if diag:
+    #                 choices = np.asarray(indiv_tube[i]) + moves_2d_diag
+    #             else:
+    #                 choices = np.asarray(indiv_tube[i]) + moves_2d
+    #             surf_area_tmp = 0.0
+    #             for j in range(len(choices)):   # over all choices for a pixel
+    #                 new_type = self.tube_check_bd_vol[choices[j][0], choices[j][1]]
+    #                 new_index = self.tube_check_index[choices[j][0], choices[j][1]] - 1
+    #                 if (new_type != -1) and (new_index != f):
+    #                     surf_area_tmp += 1.0
+    #             # apply constants
+    #             #surf_area_tmp = len(self.tube_bds[f])
+    #             #p_cn_m = 0.1
+    #             p_cn_m = sigma * p_m_cn * (surf_area_tmp / indiv_vol)
+    #             self.p_cn_m[indiv_tube[i][0], indiv_tube[i][1]] = p_cn_m
+
 
     def setup_tube_vol_check_array_2d(self):
         "Setup of tube check and index arrays, returns nothing"
