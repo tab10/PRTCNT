@@ -112,7 +112,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
         cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]] - 1  # index>0 of CNT (or 0 for not one)
         if cur_type == 1:  # CNT end
-            final_pos, inside_cnt = kapitza_cntend(grid, jump_moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
