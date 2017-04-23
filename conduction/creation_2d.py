@@ -251,6 +251,14 @@ class Grid2D_onlat(object):
         if swapped:
             points.reverse()
 
+        # add ends
+        p1 = np.asarray(start, dtype=float)
+        p2 = np.asarray(end, dtype=float)
+        if list(p1) not in points:
+            points.insert(0, list(p1.astype(int)))
+        if list(p2) not in points:
+            points.insert(-1, list(p2.astype(int)))
+
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
