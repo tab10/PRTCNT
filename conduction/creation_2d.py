@@ -254,6 +254,7 @@ class Grid2D_onlat(object):
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
+            raise SystemExit
         return points
 
     def generate_tube_check_array_2d(self):
