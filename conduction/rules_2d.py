@@ -169,10 +169,11 @@ def kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index, prob_m
     if c_end == 'l':
         choice = np.random.randint(0, len(l_moves))
         d_pos = np.asarray(l_moves[choice])
+        candidate_pos = p0 + d_pos
     elif c_end == 'r':
         choice = np.random.randint(0, len(r_moves))
         d_pos = np.asarray(r_moves[choice])
-    candidate_pos = cur_pos + d_pos
+        candidate_pos = p3 + d_pos
     # d_pos = np.asarray(jump_moves_2d_diag[choice])
     # # coord on left tube end jumps to right end
     # tube_check_val_l = grid.tube_check_l[cur_pos[0], cur_pos[1]]
