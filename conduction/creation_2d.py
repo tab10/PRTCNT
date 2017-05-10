@@ -145,8 +145,9 @@ class Grid2D_onlat(object):
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
-        self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
+        # self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
+        #self.generate_tube_squares_no_ends()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
@@ -251,6 +252,8 @@ class Grid2D_onlat(object):
         if swapped:
             points.reverse()
 
+        points_noends = points
+
         # add ends
         p1 = np.asarray(start, dtype=float)
         p2 = np.asarray(end, dtype=float)
@@ -264,6 +267,13 @@ class Grid2D_onlat(object):
             logging.info('Tube radius will be implemented here later if needed.')
             raise SystemExit
         return points
+
+    def generate_tube_squares_no_ends(self):
+        tube_squares_no_ends = self.tube_squares
+        for i in range(len(tube_squares_no_ends)):
+            self.tube_squares_no_ends[i].pop(0)
+            self.tube_squares_no_ends[i].pop(-1)
+        return tube_squares_no_ends
 
     def generate_tube_check_array_2d(self):
         """To be used with no tube volume
