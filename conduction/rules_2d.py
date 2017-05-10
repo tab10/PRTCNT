@@ -205,7 +205,7 @@ def kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index, prob_m
         if candidate_index == cur_index:  # Same tube, send it back in
             # move to random volume/endpoint within same CNT
             final_pos = np.asarray(
-                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+                grid.tube_squares[cur_index][np.random.randint(1, len(grid.tube_squares[cur_index]) - 1)])
             inside_cnt = True
         else:  # NOT same tube, check Kapitza
             random_num = np.random.random()  # [0.0, 1.0)
@@ -468,24 +468,27 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 final_pos = np.asarray(
                     grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
                 inside_cnt = True
-    elif candidate_type == 1:  # CNT end
-        if candidate_idx == cur_index:  # want to go to CNT end in same tube, go to random Vol or End in same tube
-            final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, candidate_pos, candidate_idx, prob_m_cn,
-                                                   inside_cnt)
-            # final_pos = np.asarray(
-            #    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
-            # inside_cnt = True
-        else:  # wants to enter a new tube
-            random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num > prob_m_cn)
-            leave = (random_num < prob_m_cn)
-            if stay:  # move to random volume/endpoint within same CNT
-                final_pos = np.asarray(
-                    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
-                inside_cnt = True
-            else:  # exit, moving to new CNT end
-                final_pos = candidate_pos
-                inside_cnt = False
+    elif candidate_type == 1:  # CNT end, go there
+        final_pos = candidate_pos
+        inside_cnt = False
+        ##########
+        # if candidate_idx == cur_index:  # want to go to CNT end in same tube, go to random Vol or End in same tube
+        #     final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, candidate_pos, candidate_idx, prob_m_cn,
+        #                                            inside_cnt)
+        #     # final_pos = np.asarray(
+        #     #    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+        #     # inside_cnt = True
+        # else:  # wants to enter a new tube
+        #     random_num = np.random.random()  # [0.0, 1.0)
+        #     stay = (random_num > prob_m_cn)
+        #     leave = (random_num < prob_m_cn)
+        #     if stay:  # move to random volume/endpoint within same CNT
+        #         final_pos = np.asarray(
+        #             grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+        #         inside_cnt = True
+        #     else:  # exit, moving to new CNT end
+        #         final_pos = candidate_pos
+        #         inside_cnt = False
     else:
         exit()
     return final_pos, inside_cnt
