@@ -17,6 +17,6 @@ done
 mpirun -np 2 python /Users/timothyburt/PycharmProjects/conduction/conduction/mpi_run.py --dim 2 --orientation random --num_tubes 1 --tube_length 10 --gen_plots True --rules_test True --timesteps 15000 --num_walkers 50000 --model kapitza --grid_size 30 --prob_m_cn 0.5
 
 # for windows
-mpiexec -n 2 python C:\Users\Tim\Documents\PycharmProjects\conduction\conduction\mpi_run.py --dim 2 --orientation horizontal --num_tubes 1 --tube_length 10 --gen_plots True --rules_test True --timesteps 15000 --num_walkers 500 --model kapitza --grid_size 20 --prob_m_cn 0.5
+mpiexec -n 2 python C:\Users\Tim\Documents\PycharmProjects\conduction\conduction\mpi_run.py --dim 2 --orientation horizontal --num_tubes 1 --tube_length 5 --gen_plots True --rules_test True --timesteps 5000 --num_walkers 2500 --model kapitza --grid_size 10 --prob_m_cn 0.5
 
 mpirun -np 2 python mpi_run.py --dim 3 --orientation random --num_tubes 1 --tube_length 10 --gen_plots True --rules_test True --timesteps 35000 --num_walkers 50 --model kapitza --prob_m_cn 0.5 --grid_size 30
