@@ -116,8 +116,7 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
-            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
-                                                   inside_cnt)
+            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn)
             walker.add_pos(final_pos)
         elif cur_type == -1:  # CNT volume
             final_pos, inside_cnt = kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
@@ -349,7 +348,7 @@ def kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index, prob_m
     # return final_pos, inside_cnt
 
 
-def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
+def kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn):
     # generate candidate position
     d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
     candidate_pos = cur_pos + d_pos
@@ -372,14 +371,16 @@ def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
             inside_cnt = True
         else:
+            # repeat until move succeeds
+            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn)
             ### SIT
-            final_pos = cur_pos
+            # final_pos = cur_pos
             # walk away, checking that current CNT volume is not a possibility
             # possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d_diag, cur_pos, cur_index,
             # kapitza,
             # return_pos=True)
             # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-            inside_cnt = False
+            #inside_cnt = False
             # random_num = np.random.random()  # [0.0, 1.0)
             # if random_num > prob_m_cn:
             #     # walk away, checking that current CNT volume is not a possibility
@@ -401,7 +402,12 @@ def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     # elif candidate_type == 1:  # CNT end
     #     final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, candidate_pos, candidate_idx, prob_m_cn,
     #                                            inside_cnt)
-    else:  # CNT boundary or matrix or CNT end
+    elif candidate_type == 1:  # CNT end
+        # move to random point within tube
+        final_pos = np.asarray(
+            grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+        inside_cnt = True
+    else:  # CNT boundary or matrix
         # move there
         final_pos = candidate_pos
         inside_cnt = False
