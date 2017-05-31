@@ -419,7 +419,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
         if inside_cnt:  # wants to leave
             random_num = np.random.random()  # [0.0, 1.0)
             # stay = (random_num > prob_m_cn)
-            stay = (random_num < prob_cn_m)
+            stay = (random_num > prob_cn_m)
             # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT
                 final_pos = np.asarray(
@@ -460,7 +460,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             inside_cnt = True
         else:  # wants to enter a new tube
             random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num < prob_cn_m)
+            stay = (random_num > prob_cn_m)
             # stay = (random_num > prob_m_cn)
             # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT

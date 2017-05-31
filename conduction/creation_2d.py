@@ -369,7 +369,7 @@ class Grid2D_onlat(object):
         #     points.insert(-1, list(p2.astype(int)))
 
         points.insert(0, list(p1.astype(int)))
-        points.insert(-1, list(p2.astype(int)))
+        # points.insert(-1, list(p2.astype(int)))
 
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
