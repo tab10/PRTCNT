@@ -112,19 +112,19 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1]]  # type of square we're on
         cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1]] - 1  # index>0 of CNT (or 0 for not one)
         if cur_type == 1:  # CNT end
-            final_pos, inside_cnt = kapitza_cntend(grid, moves_2d_diag, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
-            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d_diag, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == -1:  # CNT volume
-            final_pos, inside_cnt = kapitza_cntvol(grid, moves_2d_diag, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == -1000:  # boundary
-            final_pos = apply_bd_cond_2d(grid, moves_2d_diag, cur_pos, bound)
+            final_pos = apply_bd_cond_2d(grid, moves_2d, cur_pos, bound)
             walker.add_pos(final_pos)
         else:
             exit()
@@ -409,6 +409,7 @@ def kapitza_matrix(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
 
 
 def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
+    prob_cn_m = (1.0 / 3.0) * prob_m_cn
     d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
@@ -417,8 +418,9 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
         # check if the walker is inside or outside of a CNT
         if inside_cnt:  # wants to leave
             random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num > prob_m_cn)
-            leave = (random_num < prob_m_cn)
+            # stay = (random_num > prob_m_cn)
+            stay = (random_num < prob_cn_m)
+            # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT
                 final_pos = np.asarray(
                     grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
@@ -458,8 +460,9 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             inside_cnt = True
         else:  # wants to enter a new tube
             random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num > prob_m_cn)
-            leave = (random_num < prob_m_cn)
+            stay = (random_num < prob_cn_m)
+            # stay = (random_num > prob_m_cn)
+            # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT
                 final_pos = np.asarray(
                     grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
@@ -469,8 +472,12 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                     grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
                 inside_cnt = True
     elif candidate_type == 1:  # CNT end, go there
+        random_num = np.random.random()  # [0.0, 1.0)
+        stay = (random_num > prob_m_cn)
+        leave = (random_num < prob_m_cn)
+
         final_pos = candidate_pos
-        inside_cnt = False
+        inside_cnt = True
         ##########
         # if candidate_idx == cur_index:  # want to go to CNT end in same tube, go to random Vol or End in same tube
         #     final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, candidate_pos, candidate_idx, prob_m_cn,

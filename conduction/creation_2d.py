@@ -101,7 +101,7 @@ class Grid2D_onlat(object):
                         logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                 tube_radius)
-                    tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                    tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
                     self.tube_centers.append([x_c, y_c])
                     self.tube_coords.append([x_l, y_l, x_r, y_r])
                     self.tube_coords_l.append([x_l, y_l])
@@ -123,7 +123,7 @@ class Grid2D_onlat(object):
                             self.theta.pop()
                             x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                         tube_radius)
-                            tube_squares = self.find_squares([x_l, y_l], [x_r, y_r], tube_radius)
+                            tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
                             self.theta.append(theta)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
@@ -145,7 +145,7 @@ class Grid2D_onlat(object):
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
-        # self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
+        self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
         #self.generate_tube_squares_no_ends()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
@@ -255,12 +255,121 @@ class Grid2D_onlat(object):
         points_noends = points
 
         # add ends
+        # ensure CNT ends and volume are not diagonal WRT each other
         p1 = np.asarray(start, dtype=float)
         p2 = np.asarray(end, dtype=float)
-        if list(p1) not in points:
-            points.insert(0, list(p1.astype(int)))
-        if list(p2) not in points:
-            points.insert(-1, list(p2.astype(int)))
+        # p1_vol = points[0]
+        # p2_vol = points[-1]
+        #
+        # # get distances, if > 1 then they are diagonal
+        #
+        # p1_dist = self.euc_dist(p1[0], p1[1], p1_vol[0], p1_vol[1])
+        # p2_dist = self.euc_dist(p2[0], p2[1], p2_vol[0], p2_vol[1])
+        #
+        # if p1_dist > 1.0:
+        #     new_p1 = np.asarray(p1_vol) - np.asarray([1,0])
+        #     points.insert(0, list(new_p1.astype(int)))
+        # else:
+        #     points.insert(0, list(p1.astype(int)))
+        #
+        # if p2_dist > 1.0:
+        #     new_p2 = np.asarray(p2_vol) + np.asarray([1, 0])
+        #     points.insert(-1, list(new_p2.astype(int)))
+        # else:
+        #     points.insert(-1, list(p2.astype(int)))
+
+        points.insert(0, list(p1.astype(int)))
+        points.insert(-1, list(p2.astype(int)))
+
+        # now check if tube radius > 1, if so add more volume points
+        if tube_radius > 0.5:
+            logging.info('Tube radius will be implemented here later if needed.')
+            raise SystemExit
+        return points
+
+    def find_squares_nodiags(self, start, end, tube_radius):
+        """Bresenham's Line Algorithm
+        Produces a list of tuples (bottom left corners of grid)
+        All squares a tube passes through
+        Also returns original start and end points in first and last positions respectively
+        """
+        # Setup initial conditions
+        x1, y1 = start
+        x2, y2 = end
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Determine how steep the line is
+        is_steep = abs(dy) > abs(dx)
+
+        # Rotate line
+        if is_steep:
+            x1, y1 = y1, x1
+            x2, y2 = y2, x2
+
+        # Swap start and end points if necessary and store swap state
+        swapped = False
+        if x1 > x2:
+            x1, x2 = x2, x1
+            y1, y2 = y2, y1
+            swapped = True
+
+        # Recalculate differentials
+        dx = x2 - x1
+        dy = y2 - y1
+
+        # Calculate error
+        xdist = np.abs(dx)
+        ydist = -np.abs(dy)
+        xstep = 1 if x1 < x2 else -1
+        ystep = 1 if y1 < y2 else -1
+        error = xdist + ydist
+
+        # Iterate over bounding box generating points between start and end
+        y = y1
+        points = []
+        while ((x1 != x2) or (y1 != y2)):
+            if (2 * error - ydist) > (xdist - 2 * error):  # horizontal step
+                error += ydist
+                x1 += xstep
+            else:  # vertical step
+                error += xdist
+                y1 += ystep
+            coord = [y1, x1] if is_steep else [x1, y1]
+            points.append(coord)
+
+        # Reverse the list if the coordinates were swapped
+        if swapped:
+            points.reverse()
+
+        points_noends = points
+
+        # add ends
+        # ensure CNT ends and volume are not diagonal WRT each other
+        p1 = np.asarray(start, dtype=float)
+        p2 = np.asarray(end, dtype=float)
+        # p1_vol = points[0]
+        # p2_vol = points[-1]
+        #
+        # # get distances, if > 1 then they are diagonal
+        #
+        # p1_dist = self.euc_dist(p1[0], p1[1], p1_vol[0], p1_vol[1])
+        # p2_dist = self.euc_dist(p2[0], p2[1], p2_vol[0], p2_vol[1])
+        #
+        # if p1_dist > 1.0:
+        #     new_p1 = np.asarray(p1_vol) - np.asarray([1,0])
+        #     points.insert(0, list(new_p1.astype(int)))
+        # else:
+        #     points.insert(0, list(p1.astype(int)))
+        #
+        # if p2_dist > 1.0:
+        #     new_p2 = np.asarray(p2_vol) + np.asarray([1, 0])
+        #     points.insert(-1, list(new_p2.astype(int)))
+        # else:
+        #     points.insert(-1, list(p2.astype(int)))
+
+        points.insert(0, list(p1.astype(int)))
+        points.insert(-1, list(p2.astype(int)))
 
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
@@ -352,6 +461,9 @@ class Grid2D_onlat(object):
                 tube_bds_lkup[tube_bds[i][j][0], tube_bds[i][j][1]] = 2
         return tube_bds, tube_bds_lkup
 
+    def calc_p_cn_m_2d(self):
+        p_m_cn = self.p_m_cn
+        # get number of border cubes of CNT volume
     #
     # def calc_p_cn_m_2d(self):
     #     p_m_cn = 0.5
