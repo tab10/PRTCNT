@@ -434,10 +434,12 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 final_pos = np.asarray(candidate_pos)
                 inside_cnt = False
         else:  # on CNT volume NOT in tube, can happen if walker is spawned on a CNT
-            # use current pos. instead of candidate in this case
-            final_pos = np.asarray(
-                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
-            inside_cnt = True
+            # move to a safe area
+            # final_pos = np.asarray(
+            #    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            # inside_cnt = True
+            final_pos = np.asarray(candidate_pos)
+            inside_cnt = False
             # random_num = np.random.random()  # [0.0, 1.0)
             # enter = (random_num < prob_m_cn)
             # not_enter = (random_num > prob_m_cn)
