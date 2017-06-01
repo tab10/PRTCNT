@@ -173,6 +173,10 @@ if __name__ == "__main__":
     else:
         logging.error('Incorrect simulation model specified.')
         raise SystemExit
+    if disable_func:
+        logging.info('Functionalization of ends DISABLED')
+    else:
+        logging.info('Functionalization of ends ENABLED')
     if dim not in possible_dim:
         logging.error('Invalid dimension')
         raise SystemExit

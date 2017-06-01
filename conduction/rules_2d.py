@@ -372,15 +372,14 @@ def kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn):
             inside_cnt = True
         else:
             # repeat until move succeeds
-            final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn)
+            # final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn)
             ### SIT
             # final_pos = cur_pos
             # walk away, checking that current CNT volume is not a possibility
-            # possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d_diag, cur_pos, cur_index,
-            # kapitza,
-            # return_pos=True)
-            # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-            #inside_cnt = False
+            possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, True,
+                                                                         return_pos=True)
+            final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+            inside_cnt = False
             # random_num = np.random.random()  # [0.0, 1.0)
             # if random_num > prob_m_cn:
             #     # walk away, checking that current CNT volume is not a possibility
@@ -415,7 +414,7 @@ def kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn):
 
 
 def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
-    prob_cn_m = (1.0 / 3.0) * prob_m_cn
+    prob_cn_m = (3.0 / 3.0) * prob_m_cn
     d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
@@ -425,7 +424,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
         if inside_cnt:  # wants to leave
             random_num = np.random.random()  # [0.0, 1.0)
             # stay = (random_num > prob_m_cn)
-            stay = (random_num < prob_cn_m)
+            stay = (random_num > prob_cn_m)
             # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT
                 final_pos = np.asarray(
@@ -466,7 +465,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             inside_cnt = True
         else:  # wants to enter a new tube
             random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num < prob_cn_m)
+            stay = (random_num > prob_cn_m)
             # stay = (random_num > prob_m_cn)
             # leave = (random_num < prob_m_cn)
             if stay:  # move to random volume/endpoint within same CNT
