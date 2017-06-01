@@ -365,7 +365,7 @@ class Grid2D_onlat(object):
 
     def generate_vol_check_array_2d(self, disable_func):
         """To be used with tube volume
-        Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
+        Generates a boundary/volume lookup array"""
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1), dtype=int)
         if disable_func:
@@ -377,7 +377,7 @@ class Grid2D_onlat(object):
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
-            for j in range(1, len(self.tube_squares[i])):
+            for j in range(1, len(self.tube_squares[i]) - 1):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
         # add boundary tags
@@ -469,7 +469,7 @@ class Grid2D_onlat(object):
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1]] = index_val
         self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
         if new_tube_squares is not None:  # None used for tunneling only
-            for j in range(1, len(new_tube_squares)):
+            for j in range(1, len(new_tube_squares) - 1):
                 self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
                 self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
 
