@@ -204,7 +204,7 @@ def kapitza_cntend(grid, jump_moves_2d_diag, kapitza, cur_pos, cur_index, prob_m
         if candidate_index == cur_index:  # Same tube, send it back in
             # move to random volume/endpoint within same CNT
             final_pos = np.asarray(
-                grid.tube_squares[cur_index][np.random.randint(1, len(grid.tube_squares[cur_index]) - 1)])
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
             inside_cnt = True
         else:  # NOT same tube, check Kapitza
             random_num = np.random.random()  # [0.0, 1.0)
