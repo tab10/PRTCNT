@@ -460,7 +460,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             # else:
             #     final_pos = np.asarray(candidate_pos)
             #     inside_cnt = False
-    elif candidate_type == -1:  # CNT volume
+    elif (candidate_type == -1) or (candidate_type == 1):  # CNT volume or end
         if candidate_idx == cur_index:  # want to go to CNT volume in same tube
             final_pos = np.asarray(
                 grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
@@ -478,13 +478,13 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 final_pos = np.asarray(
                     grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
                 inside_cnt = True
-    elif candidate_type == 1:  # CNT end
-        random_num = np.random.random()  # [0.0, 1.0)
-        stay = (random_num > prob_m_cn)
-        leave = (random_num < prob_m_cn)
-        final_pos = np.asarray(
-            grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
-        inside_cnt = True
+                # elif candidate_type == 1:  # CNT end
+                #     random_num = np.random.random()  # [0.0, 1.0)
+                #     stay = (random_num > prob_m_cn)
+                #     leave = (random_num < prob_m_cn)
+                #     final_pos = np.asarray(
+                #         grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
+                #     inside_cnt = True
         # final_pos = candidate_pos
         # inside_cnt = True
         ##########
