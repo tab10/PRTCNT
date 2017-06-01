@@ -374,11 +374,11 @@ def kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn):
             # repeat until move succeeds
             # final_pos, inside_cnt = kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn)
             ### SIT
-            # final_pos = cur_pos
+            final_pos = cur_pos
             # walk away, checking that current CNT volume is not a possibility
-            possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, True,
-                                                                         return_pos=True)
-            final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+            # possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, True,
+            #                                                             return_pos=True)
+            # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
             inside_cnt = False
             # random_num = np.random.random()  # [0.0, 1.0)
             # if random_num > prob_m_cn:
