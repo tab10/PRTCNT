@@ -101,7 +101,7 @@ class Grid2D_onlat(object):
                         logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                 tube_radius)
-                    tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
+                    tube_squares, x_l, x_r, y_l, y_r = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
                     self.tube_centers.append([x_c, y_c])
                     self.tube_coords.append([x_l, y_l, x_r, y_r])
                     self.tube_coords_l.append([x_l, y_l])
@@ -123,7 +123,9 @@ class Grid2D_onlat(object):
                             self.theta.pop()
                             x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                         tube_radius)
-                            tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
+                            tube_squares, x_l, x_r, y_l, y_r = self.find_squares_nodiags([x_l, y_l], [x_r, y_r],
+                                                                                         tube_radius)
+                            # UPDATES THE ENDPOINT LOCATIONS
                             self.theta.append(theta)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
@@ -278,7 +280,7 @@ class Grid2D_onlat(object):
         # else:
         #     points.insert(-1, list(p2.astype(int)))
 
-        points.insert(0, list(p1.astype(int)))
+        points.insert(0, start.astype(int))
         points.insert(-1, list(p2.astype(int)))
 
         # now check if tube radius > 1, if so add more volume points
@@ -299,25 +301,6 @@ class Grid2D_onlat(object):
         dx = x2 - x1
         dy = y2 - y1
 
-        # Determine how steep the line is
-        is_steep = abs(dy) > abs(dx)
-
-        # Rotate line
-        if is_steep:
-            x1, y1 = y1, x1
-            x2, y2 = y2, x2
-
-        # Swap start and end points if necessary and store swap state
-        swapped = False
-        if x1 > x2:
-            x1, x2 = x2, x1
-            y1, y2 = y2, y1
-            swapped = True
-
-        # Recalculate differentials
-        dx = x2 - x1
-        dy = y2 - y1
-
         # Calculate error
         xdist = np.abs(dx)
         ydist = -np.abs(dy)
@@ -326,8 +309,8 @@ class Grid2D_onlat(object):
         error = xdist + ydist
 
         # Iterate over bounding box generating points between start and end
-        y = y1
         points = []
+        points.append([x1, y1])  # INITIAL PT
         while ((x1 != x2) or (y1 != y2)):
             if (2 * error - ydist) > (xdist - 2 * error):  # horizontal step
                 error += ydist
@@ -335,47 +318,21 @@ class Grid2D_onlat(object):
             else:  # vertical step
                 error += xdist
                 y1 += ystep
-            coord = [y1, x1] if is_steep else [x1, y1]
+            # coord = [y1, x1] if is_steep else [x1, y1]
+            coord = [x1, y1]
             points.append(coord)
+        # FINAL PT
+        points.append([x2, y2])
 
-        # Reverse the list if the coordinates were swapped
-        if swapped:
-            points.reverse()
-
-        points_noends = points
-
-        # add ends
-        # ensure CNT ends and volume are not diagonal WRT each other
-        p1 = np.asarray(start, dtype=float)
-        p2 = np.asarray(end, dtype=float)
-        # p1_vol = points[0]
-        # p2_vol = points[-1]
-        #
-        # # get distances, if > 1 then they are diagonal
-        #
-        # p1_dist = self.euc_dist(p1[0], p1[1], p1_vol[0], p1_vol[1])
-        # p2_dist = self.euc_dist(p2[0], p2[1], p2_vol[0], p2_vol[1])
-        #
-        # if p1_dist > 1.0:
-        #     new_p1 = np.asarray(p1_vol) - np.asarray([1,0])
-        #     points.insert(0, list(new_p1.astype(int)))
-        # else:
-        #     points.insert(0, list(p1.astype(int)))
-        #
-        # if p2_dist > 1.0:
-        #     new_p2 = np.asarray(p2_vol) + np.asarray([1, 0])
-        #     points.insert(-1, list(new_p2.astype(int)))
-        # else:
-        #     points.insert(-1, list(p2.astype(int)))
-
-        points.insert(0, list(p1.astype(int)))
-        # points.insert(-1, list(p2.astype(int)))
-
+        x_l = points[0][0]
+        y_l = points[0][1]
+        x_r = points[-1][0]
+        y_r = points[-1][1]
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
             raise SystemExit
-        return points
+        return points, x_l, x_r, y_l, y_r
 
     def generate_tube_squares_no_ends(self):
         tube_squares_no_ends = self.tube_squares
@@ -420,7 +377,7 @@ class Grid2D_onlat(object):
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
-            for j in range(1, len(self.tube_squares[i]) - 1):
+            for j in range(1, len(self.tube_squares[i])):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
         # add boundary tags
@@ -512,7 +469,7 @@ class Grid2D_onlat(object):
         self.tube_check_index[new_tube_coords[0], new_tube_coords[1]] = index_val
         self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
         if new_tube_squares is not None:  # None used for tunneling only
-            for j in range(1, len(new_tube_squares) - 1):
+            for j in range(1, len(new_tube_squares)):
                 self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
                 self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
 

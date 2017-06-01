@@ -78,7 +78,7 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir):
         for i in range(len(grid.tube_squares)):
             int_x, int_y = list(zip(*grid.tube_squares[i]))
             color = next(colors)
-            plt.scatter(int_x[1:-1], int_y[1:-1], c=color)
+            plt.scatter(int_x[1:-2], int_y[1:-2], c=color)
             plt.scatter(tube_x[i], tube_y[i], c=color, marker=(5, 1))
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
