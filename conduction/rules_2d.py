@@ -478,13 +478,15 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 final_pos = np.asarray(
                     grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
                 inside_cnt = True
-    elif candidate_type == 1:  # CNT end, go there
+    elif candidate_type == 1:  # CNT end
         random_num = np.random.random()  # [0.0, 1.0)
         stay = (random_num > prob_m_cn)
         leave = (random_num < prob_m_cn)
-
-        final_pos = candidate_pos
+        final_pos = np.asarray(
+            grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
         inside_cnt = True
+        # final_pos = candidate_pos
+        # inside_cnt = True
         ##########
         # if candidate_idx == cur_index:  # want to go to CNT end in same tube, go to random Vol or End in same tube
         #     final_pos, inside_cnt = kapitza_cntend(grid, moves_2d, kapitza, candidate_pos, candidate_idx, prob_m_cn,
