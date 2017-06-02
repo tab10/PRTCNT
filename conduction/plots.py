@@ -157,7 +157,7 @@ def plot_check_array_2d(grid, quiet, save_dir, gen_plots):
 
 
 def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature density (dimensionless units)',
-                     xlab='X', ylab='Y', filename='temp', random_slice=None, bds=False):
+                     xlab='X', ylab='Y', filename='temp', random_slice=None, bds=False, vmin=None, vmax=None):
     """Plots temperature profile for all walkers
     Can be called anywhere a 2D colormap (of 2D data), basically a histogram, is needed"""
     logging.info("Plotting 2D temperature (histogram)")
@@ -175,7 +175,11 @@ def plot_colormap_2d(grid, H_tot, quiet, save_dir, gen_plots, title='Temperature
             temp_profile = H_tot[:][:][rand]  # YZ
         plt.title(title)
         # X, Y = np.meshgrid(xedges, yedges)
-        plt.pcolor(temp_profile.T)  # transpose since pcolormesh reverses axes
+        if vmin is None:
+            vmin = np.min(H_tot)
+        if vmax is None:
+            vmax = np.max(H_tot)
+        plt.pcolor(temp_profile.T, vmin=vmin, vmax=vmax)  # transpose since pcolormesh reverses axes
         plt.xlabel(xlab)
         plt.ylabel(ylab)
         if not bds:

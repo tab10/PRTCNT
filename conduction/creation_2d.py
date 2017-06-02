@@ -310,7 +310,7 @@ class Grid2D_onlat(object):
 
         # Iterate over bounding box generating points between start and end
         points = []
-        points.append([x1, y1])  # INITIAL PT
+        # points.append([x1, y1])  # INITIAL PT
         while ((x1 != x2) or (y1 != y2)):
             if (2 * error - ydist) > (xdist - 2 * error):  # horizontal step
                 error += ydist
@@ -322,8 +322,17 @@ class Grid2D_onlat(object):
             coord = [x1, y1]
             points.append(coord)
         # FINAL PT
-        points.append([x2, y2])
-
+        # s_x, s,y = points[0]
+        # e_x, e,y = points[-1]
+        # x_truth = bool(int(abs(s_x-x1)) == 1)
+        # y_truth = bool(int(abs(s_y-y1)) == 1)
+        # if (start not in points) and (x_truth != y_truth):  # NEW PT NOT DIAGONAL
+        points.insert(0, start)
+        # x_truth = bool(int(abs(e_x - x2)) == 1)
+        # y_truth = bool(int(abs(e_y - y2)) == 1)
+        # if (end not in points)  and (x_truth != y_truth):
+        #     points.insert(-1, end)
+        logging.info(points)
         x_l = points[0][0]
         y_l = points[0][1]
         x_r = points[-1][0]
@@ -377,7 +386,7 @@ class Grid2D_onlat(object):
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
-            for j in range(1, len(self.tube_squares[i]) - 1):
+            for j in range(1, len(self.tube_squares[i]) - 2):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
         # add boundary tags
@@ -459,7 +468,7 @@ class Grid2D_onlat(object):
 
     def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func):
         "Adds tube to the current check arrays"
-        index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
+        index_val = len(self.tube_coords)  # THESE ARE NOT OFFSET BY ONE SINCE WE ADD POINT THEN CHECK
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:
@@ -484,7 +493,7 @@ class Grid2D_onlat(object):
 
     def check_tube_and_vol_unique_2d_arraymethod(self, new_tube_squares):
         "Volume"
-        index_val = len(self.tube_coords) + 1  # current tube index
+        index_val = len(self.tube_coords)  # current tube index
         uni_flag = True
         for l in range(len(new_tube_squares)):
             test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1]]
