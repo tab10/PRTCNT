@@ -172,8 +172,8 @@ def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             #             inside_cnt = True
             #         else:  # stay put
             #             final_pos = cur_pos
-            # elif candidate_type == 1:  # CNT end
-        if candidate_index == cur_index:  # shouldn't be able to happen but covering my bases
+    elif candidate_type == 1:  # CNT end
+        if candidate_index == cur_index:
             final_pos = np.asarray(
                 grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
             inside_cnt = True
@@ -223,21 +223,18 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
     candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
     if (candidate_type == 0) or (candidate_type == -1000):  # matrix or boundary
-        # check if the walker is inside or outside of a CNT
-        if inside_cnt:  # wants to leave
-            random_num = np.random.random()  # [0.0, 1.0)
-            stay = (random_num > prob_m_cn)
-            if stay:  # move to random volume/endpoint within same CNT
-                final_pos = np.asarray(
-                    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
-                inside_cnt = True
-            else:  # walk outside tube
-                final_pos = np.asarray(candidate_pos)
-                inside_cnt = False
-        else:  # on CNT volume NOT in tube, can happen if walker is spawned on a CNT
-            # move to a safe area
+        # Most be inside CNT, don't need to check 
+        random_num = np.random.random()  # [0.0, 1.0)
+        stay = (random_num > prob_m_cn)
+        if stay:  # move to random volume/endpoint within same CNT
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            inside_cnt = True
+        else:  # walk outside tube
             final_pos = np.asarray(candidate_pos)
             inside_cnt = False
+            # final_pos = np.asarray(candidate_pos)
+            # inside_cnt = False
     elif (candidate_type == -1) or (candidate_type == 1):  # CNT volume or end
         if candidate_idx == cur_index:  # want to go to CNT volume in same tube
             final_pos = np.asarray(

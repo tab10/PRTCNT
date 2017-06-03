@@ -144,7 +144,6 @@ class Grid2D_onlat(object):
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
-            logging.info(self.tube_squares)
             logging.info(self.tube_coords)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             # self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
