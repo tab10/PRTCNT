@@ -64,7 +64,7 @@ class Grid2D_onlat(object):
                     self.tube_coords_r.append([x_r, y_r])
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, i)
                     if i >= 1:
                         uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                         # uni_flag = self.check_tube_unique(self.tube_coords, False)
@@ -85,7 +85,7 @@ class Grid2D_onlat(object):
                             self.theta.append(theta)
                             uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                             # uni_flag = self.check_tube_unique(self.tube_coords, False)
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, i)
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
         else:
@@ -109,7 +109,7 @@ class Grid2D_onlat(object):
                     self.tube_squares.append(tube_squares)
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, i)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -125,7 +125,6 @@ class Grid2D_onlat(object):
                                                                                         tube_radius)
                             tube_squares, x_l, x_r, y_l, y_r = self.find_squares_nodiags([x_l, y_l], [x_r, y_r],
                                                                                          tube_radius)
-                            # UPDATES THE ENDPOINT LOCATIONS
                             self.theta.append(theta)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
@@ -135,7 +134,7 @@ class Grid2D_onlat(object):
                             # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                             uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag must have been true to get here, so write it to the array
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, i)
                 logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
             # get number of squares filled
             cube_count = 0  # each cube has area 1
@@ -145,8 +144,11 @@ class Grid2D_onlat(object):
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
+            logging.info(self.tube_squares)
+            logging.info(self.tube_coords)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+            # self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+            self.tube_check_bd_vol = self.add_boundaries_2d(self.tube_check_bd_vol)
         self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
         #self.generate_tube_squares_no_ends()
@@ -328,11 +330,16 @@ class Grid2D_onlat(object):
         # y_truth = bool(int(abs(s_y-y1)) == 1)
         # if (start not in points) and (x_truth != y_truth):  # NEW PT NOT DIAGONAL
         points.insert(0, start)
+        # choice = list(np.abs(np.subtract(start, points[1])))
+        # logging.info(add_filler)
+        # idx = np.argmax(points[0][0], points[1][0])
+        # new_val = list(np.subtract(points[-1], [1, 0]))  # subtract X_val for new pt (why not?)
+        # points.insert(-2, new_val)
         # x_truth = bool(int(abs(e_x - x2)) == 1)
         # y_truth = bool(int(abs(e_y - y2)) == 1)
         # if (end not in points)  and (x_truth != y_truth):
-        #     points.insert(-1, end)
-        logging.info(points)
+        # points.insert(-1, end)
+        #logging.info(points)
         x_l = points[0][0]
         y_l = points[0][1]
         x_r = points[-1][0]
@@ -386,9 +393,12 @@ class Grid2D_onlat(object):
             bd_vol[self.tube_coords[i][2], self.tube_coords[i][3]] = endpoint_val  # right endpoints
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
-            for j in range(1, len(self.tube_squares[i]) - 2):
+            for j in range(1, len(self.tube_squares[i]) - 1):
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
+        return bd_vol, index
+
+    def add_boundaries_2d(self, bd_vol):
         # add boundary tags
         box_dims = [0, self.size]
         for i in range(self.size + 1):
@@ -396,7 +406,7 @@ class Grid2D_onlat(object):
                 if (i in box_dims) or (j in box_dims):
                     bd_vol[i, j] = -1000  # a boundary. no cnt volume or ends can be here. all 6 choices generated,
                     # running through bd function
-        return bd_vol, index
+        return bd_vol
 
     def generate_tube_boundary_array_2d(self):  # list of all pixels around each tube
         tube_squares = self.tube_squares
@@ -466,9 +476,9 @@ class Grid2D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func):
+    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func, i):
         "Adds tube to the current check arrays"
-        index_val = len(self.tube_coords)  # THESE ARE NOT OFFSET BY ONE SINCE WE ADD POINT THEN CHECK
+        index_val = i + 1  # current index
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:

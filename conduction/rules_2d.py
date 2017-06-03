@@ -161,14 +161,26 @@ def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
                 grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
             inside_cnt = True
         else:  # NOT same tube, check Kapitza
-            random_num = np.random.random()  # [0.0, 1.0)
-            enter = (random_num < prob_m_cn)
-            if enter:  # move to random volume/endpoint within new CNT
-                final_pos = np.asarray(
-                    grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
-                inside_cnt = True
-            else:  # stay put
-                final_pos = cur_pos
+            final_pos = np.asarray(
+                grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            inside_cnt = True
+            #         random_num = np.random.random()  # [0.0, 1.0)
+            #         enter = (random_num < prob_m_cn)
+            #         if enter:  # move to random volume/endpoint within new CNT
+            #             final_pos = np.asarray(
+            #                 grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            #             inside_cnt = True
+            #         else:  # stay put
+            #             final_pos = cur_pos
+            # elif candidate_type == 1:  # CNT end
+        if candidate_index == cur_index:  # shouldn't be able to happen but covering my bases
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            inside_cnt = True
+        else:  # hop into DIFFERENT CNT
+            final_pos = np.asarray(
+                grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            inside_cnt = True
     else:  # matrix, CNT end, or boundary (walk off) NO MORE TUNNELING AS OF 5_9_17 TAB
         final_pos = candidate_pos
         inside_cnt = False
