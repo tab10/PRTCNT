@@ -147,7 +147,7 @@ class Grid2D_onlat(object):
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
             self.tube_check_bd_vol = self.add_boundaries_2d(self.tube_check_bd_vol)
-        self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
+        # self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
         #self.generate_tube_squares_no_ends()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
