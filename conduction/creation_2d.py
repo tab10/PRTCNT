@@ -144,9 +144,8 @@ class Grid2D_onlat(object):
             # each cube has area 1, times the tube radius (important if not 1)
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
-            logging.info(self.tube_coords)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-            # self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
             self.tube_check_bd_vol = self.add_boundaries_2d(self.tube_check_bd_vol)
         self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
@@ -477,7 +476,8 @@ class Grid2D_onlat(object):
 
     def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func, i):
         "Adds tube to the current check arrays"
-        index_val = i + 1  # current index
+        # index_val = i + 1  # current index
+        index_val = len(self.tube_coords)
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:

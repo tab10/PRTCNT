@@ -143,6 +143,9 @@ def apply_moves_2d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         elif cur_type == -1000:  # boundary
             final_pos = apply_bd_cond_2d(grid, moves_2d, cur_pos, bound)
             walker.add_pos(final_pos)
+        elif cur_type == -1:  # CNT INERT volume
+            final_pos = tunneling_vol(grid, moves_2d, cur_pos, cur_index, inert_vol)
+            walker.add_pos(final_pos)
         else:
             exit()
     return walker, inside_cnt
@@ -160,18 +163,20 @@ def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             final_pos = np.asarray(
                 grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
             inside_cnt = True
-        else:  # NOT same tube, check Kapitza
-            final_pos = np.asarray(
-                grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
-            inside_cnt = True
-            #         random_num = np.random.random()  # [0.0, 1.0)
-            #         enter = (random_num < prob_m_cn)
-            #         if enter:  # move to random volume/endpoint within new CNT
-            #             final_pos = np.asarray(
-            #                 grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
-            #             inside_cnt = True
-            #         else:  # stay put
-            #             final_pos = cur_pos
+        else:  # NOT same tube
+            # final_pos = np.asarray(
+            #     grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            # inside_cnt = True
+            random_num = np.random.random()  # [0.0, 1.0)
+            enter = (random_num < prob_m_cn)
+            if enter:  # move to random volume/endpoint within new CNT
+                final_pos = np.asarray(
+                    grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+                inside_cnt = True
+            else:  # randomize in current CNT
+                final_pos = np.asarray(
+                    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+                inside_cnt = True
     elif candidate_type == 1:  # CNT end
         if candidate_index == cur_index:
             final_pos = np.asarray(
@@ -181,7 +186,7 @@ def kapitza_cntend(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
             final_pos = np.asarray(
                 grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
             inside_cnt = True
-    else:  # matrix, CNT end, or boundary (walk off) NO MORE TUNNELING AS OF 5_9_17 TAB
+    else:  # matrix or boundary (walk off) NO MORE TUNNELING AS OF 5_9_17 TAB
         final_pos = candidate_pos
         inside_cnt = False
     return final_pos, inside_cnt
@@ -208,7 +213,7 @@ def kapitza_matrix(grid, moves_2d, cur_pos, cur_index, prob_m_cn):
     elif candidate_type == 1:  # CNT end
         # move to random point within tube
         final_pos = np.asarray(
-            grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
         inside_cnt = True
     else:  # CNT boundary or matrix
         # move there
@@ -223,7 +228,7 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
     candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
     if (candidate_type == 0) or (candidate_type == -1000):  # matrix or boundary
-        # Most be inside CNT, don't need to check 
+        # Most be inside CNT, don't need to check
         random_num = np.random.random()  # [0.0, 1.0)
         stay = (random_num > prob_m_cn)
         if stay:  # move to random volume/endpoint within same CNT
@@ -256,14 +261,48 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
     return final_pos, inside_cnt
 
 
-def tunneling_matrix(grid, moves_2d, cur_pos, cur_index, inert_vol):
-    if inert_vol:  # checking that no CNT volume is a possibility
-        possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, False,
-                                                                 return_pos=True)  # turning off Kapitza for tunneling
-        final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-    else:
-        final_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
+def tunneling_vol(grid, moves_2d, cur_pos, cur_idx, inert_vol):
+    # generate random position after removing CNT volume as a choice
+    possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_idx, False)
+    final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+    # must have spawned on a CNT. Kick it out!
+    # succeed = False
+    # while not succeed:
+    #     for i in range(len(moves_2d)):
+    #         d_pos = np.asarray(moves_2d[i])
+    #         candidate_pos = cur_pos + d_pos
+    #         candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+    #         if candidate_type != -1:  # NOT CNT volume, go there
+    #             final_pos = candidate_pos
+    #             succeed = True
+    #             break
+    #     # surrounded by volume, respawn walker randomly
+    #     cur_pos_x = np.random.randint(1, grid.size)
+    #     cur_pos_y = np.random.randint(1, grid.size)
+    #     cur_pos = [cur_pos_x, cur_pos_y]
     return final_pos
+
+
+def tunneling_matrix(grid, moves_2d, cur_pos, cur_idx, inert_vol):
+    # generate candidate position
+    d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
+    candidate_pos = cur_pos + d_pos
+    candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
+    if candidate_type == -1:  # CNT volume
+        '''SIT'''
+        final_pos = cur_pos
+    else:  # CNT boundary, matrix, end
+        # move there
+        final_pos = candidate_pos
+    return final_pos
+    # if inert_vol:  # checking that no CNT volume is a possibility
+    #     possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_index, False,
+    #                                                              return_pos=True)  # turning off Kapitza for tunneling
+    #     final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+    # else:
+    #     final_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
+    # return final_pos
 
 
 def tunneling_cntend(grid, jump_moves_2d, cur_pos, inert_vol):
