@@ -263,34 +263,48 @@ def kapitza_cntvol(grid, moves_2d, kapitza, cur_pos, cur_index, prob_m_cn, insid
 
 def tunneling_vol(grid, moves_2d, cur_pos, cur_idx, inert_vol):
     # generate random position after removing CNT volume as a choice
-    possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_idx, False)
-    final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+    # possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_idx, False)
+    # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
     # must have spawned on a CNT. Kick it out!
-    # succeed = False
-    # while not succeed:
-    #     for i in range(len(moves_2d)):
-    #         d_pos = np.asarray(moves_2d[i])
-    #         candidate_pos = cur_pos + d_pos
-    #         candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
-    #         if candidate_type != -1:  # NOT CNT volume, go there
-    #             final_pos = candidate_pos
-    #             succeed = True
-    #             break
-    #     # surrounded by volume, respawn walker randomly
-    #     cur_pos_x = np.random.randint(1, grid.size)
-    #     cur_pos_y = np.random.randint(1, grid.size)
-    #     cur_pos = [cur_pos_x, cur_pos_y]
+    succeed = False
+    while not succeed:
+        cur_pos_x = np.random.randint(1, grid.size)
+        cur_pos_y = np.random.randint(1, grid.size)
+        cur_pos = [cur_pos_x, cur_pos_y]
+        d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
+        candidate_pos = cur_pos + d_pos
+        candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
+        if candidate_type != -1:  # NOT CNT volume, go there
+            final_pos = candidate_pos
+            succeed = True
     return final_pos
 
 
 def tunneling_matrix(grid, moves_2d, cur_pos, cur_idx, inert_vol):
     # generate candidate position
+    # checking that no CNT volume is a possibility
+    # succeed = False
+    # while not succeed:
+    #     possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_idx, False,
+    #                                                              return_pos=True)  # turning off Kapitza for tunneling
+    #     if num_possible_locs == 0:
+    #         # surrounded by volume, respawn walker randomly
+    #         cur_pos_x = np.random.randint(1, grid.size)
+    #         cur_pos_y = np.random.randint(1, grid.size)
+    #         cur_pos = [cur_pos_x, cur_pos_y]
+    #     else:
+    #         succeed = True
+    #         final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
+    # return final_pos
     d_pos = np.asarray(moves_2d[np.random.randint(0, len(moves_2d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1]]
     candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
     if candidate_type == -1:  # CNT volume
         '''SIT'''
+        cur_pos_x = np.random.randint(1, grid.size)
+        cur_pos_y = np.random.randint(1, grid.size)
+        cur_pos = [cur_pos_x, cur_pos_y]
         final_pos = cur_pos
     else:  # CNT boundary, matrix, end
         # move there
