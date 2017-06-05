@@ -302,9 +302,6 @@ def tunneling_matrix(grid, moves_2d, cur_pos, cur_idx, inert_vol):
     candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1]] - 1
     if candidate_type == -1:  # CNT volume
         '''SIT'''
-        cur_pos_x = np.random.randint(1, grid.size)
-        cur_pos_y = np.random.randint(1, grid.size)
-        cur_pos = [cur_pos_x, cur_pos_y]
         final_pos = cur_pos
     else:  # CNT boundary, matrix, end
         # move there
