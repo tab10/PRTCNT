@@ -23,6 +23,7 @@ def final_conductivity_onlat(cur_dir, prob_m_cn, dt_dx_list, k_list, k_conv_erro
     # heat_flux - [# walkers]/([time][length]**2)
     # dT(x)/dx - [# walkers]/[length]
     # k - 1/([time][length])
+    k_conv_error_buffer = int(k_conv_error_buffer)
     k_mean = np.mean(k_list[-k_conv_error_buffer:])
     k_std = np.std(k_list[-k_conv_error_buffer:], ddof=1)
     dt_dx_mean = np.mean(dt_dx_list[-k_conv_error_buffer:])

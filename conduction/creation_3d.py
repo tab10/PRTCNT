@@ -288,7 +288,6 @@ class Grid3D_onlat(object):
 
                 if (y < 1) or (z < 1) or (y > grid_size) or (z > grid_size):
                     break
-
                 points.append([x, y, z])
                 idx += 1
 
@@ -316,7 +315,6 @@ class Grid3D_onlat(object):
 
                 if (x < 1) or (z < 1) or (x > grid_size) or (z > grid_size):
                     break
-
                 points.append([x, y, z])
                 idx += 1
 
@@ -344,7 +342,6 @@ class Grid3D_onlat(object):
 
                 if (x < 1) or (y < 1) or (x > grid_size) or (y > grid_size):
                     break
-
                 points.append([x, y, z])
                 idx += 1
 
