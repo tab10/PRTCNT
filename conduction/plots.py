@@ -26,7 +26,8 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np
 from scipy import stats
 import scipy as sp
-from conduction import *
+from conduction import backend
+
 
 # mpl.rcParams['text.usetex'] = True
 # option causes problems on Schooner

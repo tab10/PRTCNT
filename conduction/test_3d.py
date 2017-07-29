@@ -23,7 +23,11 @@ import logging
 import numpy as np
 import time
 from mpi4py import MPI
-from conduction import *
+
+from conduction import creation_3d
+from conduction import plots
+from conduction import rules_3d
+from conduction import analysis
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,

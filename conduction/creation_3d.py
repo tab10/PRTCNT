@@ -15,9 +15,7 @@
 from __future__ import division
 import numpy as np
 import logging
-import matplotlib.pyplot as plt
-from conduction import *
-import cv2
+from conduction import backend
 
 
 class Grid3D_onlat(object):
@@ -379,7 +377,7 @@ class Grid3D_onlat(object):
             raise SystemExit
 
         ## DEBUG
-        print(points)
+        # print(points)
 
         return points, x_l, x_r, y_l, y_r, z_l, z_r
 

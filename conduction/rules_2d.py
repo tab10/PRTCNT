@@ -13,9 +13,9 @@
 
 
 import logging
-from conduction import *
 import numpy as np
 
+from conduction import creation_2d
 
 def kill(message="Invalid random walk rule. Check rules."):
     """Stop the program"""

@@ -15,7 +15,7 @@
 from __future__ import division
 import numpy as np
 import logging
-from conduction import *
+from conduction import backend
 
 
 class Grid2D_onlat(object):

@@ -17,8 +17,11 @@ import logging
 import numpy as np
 import time
 from mpi4py import MPI
-from conduction import *
-from . import *
+
+from conduction import creation_2d
+from conduction import plots
+from conduction import rules_2d
+from conduction import analysis
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
@@ -35,8 +38,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                 disable_func)
+    grid = creation_2d.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                    disable_func)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
         # plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)
@@ -96,8 +99,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             if (i % d_add) == 0:
                 trigger = 1
                 # let's add the 2 new walkers
-                hot_walker_temp = creation.Walker2D_onlat(grid.size, 'hot')
-                cold_walker_temp = creation.Walker2D_onlat(grid.size, 'cold')
+                hot_walker_temp = creation_2d.Walker2D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation_2d.Walker2D_onlat(grid.size, 'cold')
                 hot_walker_master.append(hot_walker_temp)
                 cold_walker_master.append(cold_walker_temp)
             else:
@@ -106,8 +109,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
             trigger = d_add  # trigger never 0 in this case
             # let's add the 2 new walkers, several times
             for k in range(d_add):
-                hot_walker_temp = creation.Walker2D_onlat(grid.size, 'hot')
-                cold_walker_temp = creation.Walker2D_onlat(grid.size, 'cold')
+                hot_walker_temp = creation_2d.Walker2D_onlat(grid.size, 'hot')
+                cold_walker_temp = creation_2d.Walker2D_onlat(grid.size, 'cold')
                 hot_walker_master.append(hot_walker_temp)
                 cold_walker_master.append(cold_walker_temp)
         # let's update all the positions of the activated walkers

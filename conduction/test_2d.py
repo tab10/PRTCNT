@@ -23,7 +23,11 @@ import logging
 import numpy as np
 import time
 from mpi4py import MPI
-from conduction import *
+
+from conduction import creation_2d
+from conduction import plots
+from conduction import analysis
+from conduction import rules_2d
 
 
 def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
@@ -40,8 +44,8 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
         # print np.sum(H), np.max(H), np.min(H)
         return H
 
-    grid = creation.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
-                                 disable_func)
+    grid = creation_2d.Grid2D_onlat(grid_size, tube_length, num_tubes, orientation, tube_radius, False, plot_save_dir,
+                                    disable_func)
     if gen_plots:
         plots.plot_two_d_random_walk_setup(grid, quiet, plot_save_dir)
         # plots.plot_check_array_2d(grid, quiet, plot_save_dir, gen_plots)

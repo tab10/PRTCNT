@@ -12,14 +12,18 @@
 # //////////////////////////////////////////////////////////////////////////////////// #
 
 
-from __future__ import absolute_import
+# from __future__ import absolute_import
 import logging
 import os
 import argparse
 from mpi4py import MPI
 import ast
-from conduction import *
 
+from conduction import backend
+from conduction import test_3d
+from conduction import test_2d
+from conduction import randomwalk_3d
+from conduction import randomwalk_2d
 
 def logging_setup(save_dir):
     backend.check_for_folder(save_dir)

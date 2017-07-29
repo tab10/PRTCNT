@@ -17,7 +17,12 @@ import logging
 import sys
 import importlib
 import os
-from conduction import *
+
+from conduction import backend
+from conduction import test_2d
+from conduction import test_3d
+from conduction import randomwalk_2d
+from conduction import randomwalk_3d
 
 
 #standard_library.install_aliases()
