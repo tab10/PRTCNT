@@ -72,13 +72,14 @@ def apply_bd_cond_3d(grid, moves_3d, cur_pos, bound):
 
 
 def generate_bd_choices_3d(grid, cur_pos, moves_3d, bound):
-    choices = cur_pos + moves_3d
+    choices = list(cur_pos + np.asarray(moves_3d))
+    # print(choices)
     # get edge locations
     idx_remove = []
     min_val = 0
     max_val = grid.size  # not + 1 as in setup as we can walk on 0 or 100
     for i in range(len(choices)):
-        temp = choices[i]
+        temp = list(choices[i])
         for j in range(len(temp)):
             type_bound = bound[j]
             coord_temp = temp[j]
@@ -88,7 +89,8 @@ def generate_bd_choices_3d(grid, cur_pos, moves_3d, bound):
                     idx_remove.append(i)
             elif type_bound == 20:  # periodic
                 coord_temp = (coord_temp % max_val)
-            temp[j] = coord_temp
+            if coord_temp is not None:
+                temp[j] = coord_temp
         choices[i] = temp
     for index in sorted(idx_remove, reverse=True):
         del choices[index]
