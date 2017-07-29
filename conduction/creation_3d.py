@@ -15,8 +15,9 @@
 from __future__ import division
 import numpy as np
 import logging
-import math
+import matplotlib.pyplot as plt
 from conduction import *
+import cv2
 
 
 class Grid3D_onlat(object):
@@ -104,7 +105,8 @@ class Grid3D_onlat(object):
                     x_l, y_l, z_l, x_r, y_r, z_r, x_c, y_c, z_c, theta, phi = self.generate_3d_tube(tube_length,
                                                                                                     orientation,
                                                                                                     tube_radius)
-                    tube_squares = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
+                    tube_squares, x_l, x_r, y_l, y_r, z_l, z_r = self.find_cubes_nodiags([x_l, y_l, z_l],
+                                                                                         [x_r, y_r, z_r], tube_radius)
                     self.tube_centers.append([x_c, y_c, z_c])
                     self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
                     self.tube_coords_l.append([x_l, y_l, z_l])
@@ -115,7 +117,7 @@ class Grid3D_onlat(object):
                     if i == 0:
                         self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
                     if i >= 1:
-                        uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
+                        uni_flag = self.check_tube_and_vol_unique_3d_nodiags(tube_squares)
                         while not uni_flag:
                             counter += 1
                             self.tube_centers.pop()
@@ -129,7 +131,9 @@ class Grid3D_onlat(object):
                                 tube_length,
                                 orientation,
                                 tube_radius)
-                            tube_squares = self.find_cubes([x_l, y_l, z_l], [x_r, y_r, z_r])
+                            tube_squares, x_l, x_r, y_l, y_r, z_l, z_r = self.find_cubes_nodiags([x_l, y_l, z_l],
+                                                                                                 [x_r, y_r, z_r],
+                                                                                                 tube_radius)
                             self.tube_centers.append([x_c, y_c, z_c])
                             self.tube_coords.append([x_l, y_l, z_l, x_r, y_r, z_r])
                             self.tube_coords_l.append([x_l, y_l, z_l])
@@ -137,7 +141,7 @@ class Grid3D_onlat(object):
                             self.theta.append(theta)
                             self.phi.append(phi)
                             self.tube_squares.append(tube_squares)
-                            uni_flag = self.check_tube_and_vol_unique_3d_arraymethod(tube_squares)
+                            uni_flag = self.check_tube_and_vol_unique_3d_nodiags(tube_squares)
                         self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
             logging.info("Tube generation complete")
             logging.info("Corrected %d overlapping tube endpoints" % counter)
@@ -152,7 +156,7 @@ class Grid3D_onlat(object):
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
             self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
-        self.calc_p_cn_m_3d()
+        # self.calc_p_cn_m_3d()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
 
@@ -212,8 +216,8 @@ class Grid3D_onlat(object):
         All cubes a tube passes through
         Also returns original start and end points in first and last positions respectively
         """
-        p1 = np.asarray(start, dtype=float)
-        p2 = np.asarray(end, dtype=float)
+        p1 = np.asarray(start, dtype=int)
+        p2 = np.asarray(end, dtype=int)
         p = p1.astype(float)
         d = p2 - p1
         N = int(max(abs(d)))
@@ -222,10 +226,11 @@ class Grid3D_onlat(object):
         for i in range(N):
             p += s
             points.append(list(np.round(p).astype(int)))
-        if list(p1) not in points:
-            points.insert(0, list(p1.astype(int)))
-        if list(p2) not in points:
-            points.insert(-1, list(p2.astype(int)))
+        # if list(p1) not in points:
+        points.insert(0, list(p1.astype(int)))
+        logging.info(points)
+        # if list(p2) not in points:
+        #    points.insert(-1, list(p2.astype(int)))
         # fig = plt.figure()
         # ax = fig.add_subplot(111, projection='3d')
         # for i in range(len(points)):
@@ -236,6 +241,136 @@ class Grid3D_onlat(object):
         # plt.grid()
         # plt.show()
         return points
+
+    def find_cubes_nodiags(self, start, end, tube_radius):
+        """Modified Bresenham's Line Algorithm
+        Produces a list of lists of pixels tube covers
+        All squares a tube passes through
+        No diagonals allowed!! (4-connected (but 3D))
+        Bug test OK TAB 7/28/17
+        """
+
+        # Setup initial conditions
+        points = []
+        start = np.asarray(start)
+        end = np.asarray(end)
+        d = np.abs(np.linalg.norm(end - start))
+
+        x1 = start[0]
+        y1 = start[1]
+        z1 = start[2]
+
+        x2 = end[0]
+        y2 = end[1]
+        z2 = end[2]
+
+        dx = x2 - x1
+        dy = y2 - y1
+        dz = z2 - z1
+
+        ax = abs(dx) * 2
+        ay = abs(dy) * 2
+        az = abs(dz) * 2
+
+        sx = np.sign(dx)
+        sy = np.sign(dy)
+        sz = np.sign(dz)
+
+        x = x1
+        y = y1
+        z = z1
+        idx = 1
+
+        e = 0  # current error
+
+        if ax >= max(ay, az):  # x dominant
+            yd = ay - ax / 2
+            zd = az - ax / 2
+
+            while (ax >= max(ay, az)):
+                points.append([x, y, z])
+                idx = idx + 1
+
+                if (x == x2):  # end
+                    break
+
+                e1 = e + dy
+                e2 = e + dz
+
+                # if (yd >= 0): # move along y
+                if abs(e1) < abs(e2):
+                    y = y + sy
+                    yd = yd - ax
+                else:
+                    # if (zd >= 0): # move along z
+                    z = z + sz
+                    zd = zd - ax
+
+                x = x + sx  # move along x
+                yd = yd + ay
+                zd = zd + az
+
+        elif ay >= max(ax, az):  # y dominant
+            xd = ax - ay / 2
+            zd = az - ay / 2
+
+            while ay >= max(ax, az):
+                points.append([x, y, z])
+                idx = idx + 1
+
+                if (y == y2):  # end
+                    break
+
+                if (xd >= 0):  # move along x
+                    x = x + sx
+                    xd = xd - ay
+
+                if (zd >= 0):  # move along z
+                    z = z + sz
+                    zd = zd - ay
+
+                y = y + sy  # move along y
+                xd = xd + ax
+                zd = zd + az
+
+        elif az >= max(ax, ay):  # z dominant
+            xd = ax - az / 2
+            yd = ay - az / 2
+
+            while az >= max(ax, ay):
+                points.append([x, y, z])
+                idx = idx + 1
+
+                if (z == z2):  # end
+                    break
+
+                if (xd >= 0):  # move along x
+                    x = x + sx
+                    xd = xd - az
+
+                if (yd >= 0):  # move along y
+                    y = y + sy
+                    yd = yd - az
+
+                z = z + sz  # move along z
+                xd = xd + ax
+                yd = yd + ay
+
+        x_l = points[0][0]
+        y_l = points[0][1]
+        z_l = points[0][2]
+        x_r = points[-1][0]
+        y_r = points[-1][1]
+        z_r = points[-1][2]
+
+        # now check if tube radius > 1, if so add more volume points
+
+        if tube_radius > 0.5:
+            logging.info('Tube radius will be implemented here later if needed.')
+            raise SystemExit
+
+        return points, x_l, x_r, y_l, y_r, z_l, z_r
+
 
     def generate_tube_check_array_3d(self, rules_test):
         tube_check_l = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
@@ -303,7 +438,7 @@ class Grid3D_onlat(object):
 
     def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares, disable_func):
         "Adds tube to the current check arrays"
-        index_val = len(self.tube_coords) + 1  # THESE ARE OFFSET BY ONE
+        index_val = len(self.tube_coords)  # NO OFFSET, ALREADY +1
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:
@@ -360,11 +495,18 @@ class Grid3D_onlat(object):
                 p_cn_m = sigma * p_m_cn * (surf_area_tmp / indiv_vol)
                 self.p_cn_m[tube_squares[i][0], tube_squares[i][1], tube_squares[i][2]] = p_cn_m
 
+    def check_tube_and_vol_unique_3d_nodiags(self, new_tube_squares):
+        "Volume, WORKS FOR NO DIAGONAL CNTs 6-5-17"
+        uni_flag = True
+        for l in range(len(new_tube_squares)):
+            test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2]]
+            if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint
+                uni_flag = False
+        return uni_flag
 
     def check_tube_and_vol_unique_3d_arraymethod(self, new_tube_squares):
-        "Volume"
+        "Volume, WORKS FOR DIAGONAL CNTs 6-5-17"
         uni_flag = True
-        index_val = len(self.tube_coords) + 1
         for l in range(len(new_tube_squares)):
             test_vol = self.tube_check_bd_vol[new_tube_squares[l][0], new_tube_squares[l][1], new_tube_squares[l][2]]
             if (test_vol == 1) or (test_vol == -1):  # new tube overlaps old volume or endpoint

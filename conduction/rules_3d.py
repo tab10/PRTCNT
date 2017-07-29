@@ -15,7 +15,6 @@
 import logging
 from conduction import *
 import numpy as np
-import itertools
 
 
 def kill(message="Invalid random walk rule. Check rules."):
@@ -101,38 +100,19 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
     moves_3d = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0]]
     jump_moves_3d = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
                      [0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0]]
-    moves_3d_diag = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
-                     [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
-                     [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0],
-                     [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
-                     [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, 1], [-1, 1, -1],
-                     [1, -1, -1], [-1, -1, -1]]  # 26 possible directions
-    jump_moves_3d_diag = [[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
-                          [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
-                          [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0],
-                          [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
-                          [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, 1], [-1, 1, -1],
-                          [1, -1, -1], [-1, -1, -1],
-                          [0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0],
-                          [0, 1, 1], [0, 1, -1], [0, -1, 1], [0, -1, -1],
-                          [1, 1, 0], [1, -1, 0], [-1, 1, 0], [-1, -1, 0],
-                          [1, 0, 1], [1, 0, -1], [-1, 0, 1], [-1, 0, -1],
-                          [1, 1, 1], [1, 1, -1], [1, -1, 1], [-1, 1, 1], [-1, -1, 1], [-1, 1, -1],
-                          [1, -1, -1], [-1, -1, -1]]  # 42
-
     cur_pos = np.asarray(walker.pos[-1])
     inert_vol = grid.inert_vol
     if kapitza:
         cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
         cur_index = grid.tube_check_index[cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
         if cur_type == 1:  # CNT end
-            final_pos, inside_cnt = kapitza_cntend(grid, jump_moves_3d_diag, cur_pos, cur_index)
+            final_pos, inside_cnt = kapitza_cntend(grid, moves_3d, cur_pos, cur_index)
             walker.add_pos(final_pos)
         elif cur_type == 0:  # matrix cell
-            final_pos, inside_cnt = kapitza_matrix(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt)
+            final_pos, inside_cnt = kapitza_matrix(grid, moves_3d, cur_pos, prob_m_cn)
             walker.add_pos(final_pos)
         elif cur_type == -1:  # CNT volume
-            final_pos, inside_cnt = kapitza_cntvol(grid, moves_3d_diag, kapitza, cur_pos, cur_index, prob_m_cn,
+            final_pos, inside_cnt = kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn,
                                                    inside_cnt)
             walker.add_pos(final_pos)
         elif cur_type == -1000:  # boundary
@@ -162,160 +142,114 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
     return walker, inside_cnt
 
 
-def kapitza_cntend(grid, jump_moves_3d_diag, cur_pos, cur_index):
+def kapitza_cntend(grid, moves_3d, cur_pos, cur_index):
     # generate candidate position
-    tot_moves = len(jump_moves_3d_diag)
-    choice = np.random.randint(0, tot_moves)
-    d_pos = np.asarray(jump_moves_3d_diag[choice])
+    choice = np.random.randint(0, len(moves_3d))
+    d_pos = np.asarray(moves_3d[choice])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
     candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
-    if (candidate_type == -1) and (candidate_index == cur_index):  # move to random volume/endpoint within same CNT
-        #  remove current spot from choices
-        new_choices = []
-        coord_del = [list(cur_pos)]
-        for x in grid.tube_squares[cur_index]:
-            if x not in coord_del:
-                new_choices.append(x)
-        # -1 because of above statement
-        num_new_choices = len(new_choices)
-        final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
-        inside_cnt = True
-    else:  # exit CNT (just go there easy!)
-        # coord on left tube end jumps to right end
-        tube_check_val_l = grid.tube_check_l[cur_pos[0], cur_pos[1], cur_pos[2]]
-        # coord on right tube end jumps to left end
-        tube_check_val_r = grid.tube_check_r[cur_pos[0], cur_pos[1], cur_pos[2]]
-        if (tube_check_val_l > 0) and (tube_check_val_r == 0):
-            # check that pixel cannot be a left and right endpoint
-            if choice <= 26:  # stay at left end
-                final_pos = cur_pos + d_pos
-            else:  # jump across tube to right end
-                # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
-                final_pos = np.asarray(grid.tube_coords_r[tube_check_val_l - 1]) + np.asarray(d_pos)
-        elif (tube_check_val_r > 0) and (tube_check_val_l == 0):
-            # check that pixel cannot be a left and right endpoint
-            if choice <= 26:  # stay at right end
-                final_pos = cur_pos + d_pos
-            else:  # jump across tube to left end
-                # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
-                final_pos = np.asarray(grid.tube_coords_l[tube_check_val_r - 1]) + np.asarray(d_pos)
-        else:
-            kill()
+    if candidate_type == -1:  # CNT volume
+        if candidate_index == cur_index:  # Same tube, send it back in
+            # move to random volume/endpoint within same CNT
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            inside_cnt = True
+        else:  # NOT same tube
+            # final_pos = np.asarray(
+            #     grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            # inside_cnt = True
+            random_num = np.random.random()  # [0.0, 1.0)
+            enter = (random_num < prob_m_cn)
+            if enter:  # move to random volume/endpoint within new CNT
+                final_pos = np.asarray(
+                    grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+                inside_cnt = True
+            else:  # randomize in current CNT
+                final_pos = np.asarray(
+                    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+                inside_cnt = True
+    elif candidate_type == 1:  # CNT end
+        if candidate_index == cur_index:
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            inside_cnt = True
+        else:  # hop into DIFFERENT CNT
+            final_pos = np.asarray(
+                grid.tube_squares[candidate_index][np.random.randint(0, len(grid.tube_squares[candidate_index]))])
+            inside_cnt = True
+    else:  # matrix or boundary (walk off) NO MORE TUNNELING AS OF 5_9_17 TAB
+        final_pos = candidate_pos
         inside_cnt = False
     return final_pos, inside_cnt
 
 
-
-
-    # candidate_pos = cur_pos + d_pos
-    # candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
-    # candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
-    # probs = [2.0 / 12.0, 10.0 / 12.0]  # detailed balance
-    # #d_b = ['stay_enter', 'leave_notenter']  # two possibilities
-    # if (candidate_type == -1) and (candidate_index == cur_index):  # move to random volume/endpoint within same CNT
-    #     #  remove current spot from choices
-    #     new_choices = []
-    #     coord_del = [list(cur_pos)]
-    #     for x in grid.tube_squares[cur_index]:
-    #         if x not in coord_del:
-    #             new_choices.append(x)
-    #     # -1 because of above statement
-    #     num_new_choices = len(new_choices)
-    #     final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
-    #     inside_cnt = True
-    # else:  # exit CNT (just go there easy!)
-    #     end_1 = grid.tube_squares[cur_index][0]
-    #     end_2 = grid.tube_squares[cur_index][-1]
-    #     possible_locs_end1, num_possible_locs_end1 = generate_novol_choices_3d(grid, jump_moves_3d_diag, end_1, cur_index,
-    #                                                                            kapitza,
-    #                                                                            return_pos=True)
-    #     possible_locs_end2, num_possible_locs_end2 = generate_novol_choices_3d(grid, jump_moves_3d_diag, end_2, cur_index,
-    #                                                                            kapitza,
-    #                                                                            return_pos=True)
-    #     possible_locs = list(possible_locs_end1) + list(possible_locs_end2)
-    #     num_possible_locs = num_possible_locs_end1 + num_possible_locs_end2
-    #     final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-    #     inside_cnt = False
-    # else:
-    #     kill()
-    # return final_pos, inside_cnt
-
-
-def kapitza_matrix(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
+def kapitza_matrix(grid, moves_3d, cur_pos, prob_m_cn):
     # generate candidate position
-    d_pos = np.asarray(moves_3d[np.random.randint(0, 6)])
+    d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
     if candidate_type == -1:  # CNT volume
         random_num = np.random.random()  # [0.0, 1.0)
-        if random_num > prob_m_cn:
-            # walk away, checking that current CNT volume is not a possibility
-            # inside_cnt SHOULD be false here always
-            possible_locs, num_possible_locs = generate_novol_choices_3d(grid, moves_3d, cur_pos, cur_index, kapitza,
-                                                                         return_pos=True)
-            final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-            inside_cnt = False
-        elif random_num < prob_m_cn:  # move to random volume/endpoint within CNT
-            # get candidate CNT index
-            candidate_index = grid.tube_check_index[
-                                  candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
-            #  DON'T remove candidate_pos from choices (since outside CNT here)
-            new_choices = grid.tube_squares[candidate_index]
-            num_new_choices = len(new_choices)
-            final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
+        kap_enter = (random_num < prob_m_cn)
+        if kap_enter:
+            # move to random volume/endpoint within same CNT
+            final_pos = np.asarray(
+                grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
             inside_cnt = True
         else:
-            kill()
-    else:  # CNT end or boundary
+            ### SIT
+            final_pos = cur_pos
+            inside_cnt = False
+    elif candidate_type == 1:  # CNT end
+        # move to random point within tube
+        final_pos = np.asarray(
+            grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
+        inside_cnt = True
+    else:  # CNT boundary or matrix
         # move there
         final_pos = candidate_pos
+        inside_cnt = False
     return final_pos, inside_cnt
 
 
-def kapitza_cntvol(grid, moves_3d_diag, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
-    # generate candidate position
-    d_pos = np.asarray(moves_3d_diag[np.random.randint(0, len(moves_3d_diag))])
+def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, inside_cnt):
+    d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
-    candidate_index = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
-    if (candidate_type == -1) and (candidate_index == cur_index):
-        # move to random volume/endpoint within same CNT, remove current spot from choices
-        coord_del = [list(cur_pos)]
-        new_choices = []
-        for x in grid.tube_squares[cur_index]:
-            if x not in coord_del:
-                new_choices.append(x)
-        num_new_choices = len(new_choices)
-        final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
-        inside_cnt = True
-    else:  # on a CNT volume DIFFERENT from current position
-        # check if the walker is inside or outside of a CNT
+    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
+    if (candidate_type == 0) or (candidate_type == -1000):  # matrix or boundary
+        # Most be inside CNT, don't need to check
         random_num = np.random.random()  # [0.0, 1.0)
-        if inside_cnt:
-            kap_stay_enter = (random_num > prob_m_cn)
-            kap_leave_notenter = (random_num < prob_m_cn)
-        else:
-            kap_stay_enter = (random_num < prob_m_cn)
-            kap_leave_notenter = (random_num > prob_m_cn)
-        if kap_stay_enter:
-            # move to random volume/endpoint within same CNT, remove current spot from choices
-            coord_del = [list(cur_pos)]
-            new_choices = []
-            for x in grid.tube_squares[cur_index]:
-                if x not in coord_del:
-                    new_choices.append(x)
-            num_new_choices = len(new_choices)
-            final_pos = np.asarray(new_choices[np.random.randint(0, num_new_choices)])
+        stay = (random_num > prob_m_cn)
+        if stay:  # move to random volume/endpoint within same CNT
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
             inside_cnt = True
-        elif kap_leave_notenter:
-            # walk away, checking that current CNT volume is not a possibility
-            possible_locs, num_possible_locs = generate_novol_choices_3d(grid, moves_3d_diag, cur_pos, cur_index,
-                                                                         kapitza,
-                                                                         return_pos=True)
-            final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-        else:
-            kill()
+        else:  # walk outside tube
+            final_pos = np.asarray(candidate_pos)
+            inside_cnt = False
+            # final_pos = np.asarray(candidate_pos)
+            # inside_cnt = False
+    elif (candidate_type == -1) or (candidate_type == 1):  # CNT volume or end
+        if candidate_idx == cur_index:  # want to go to CNT volume in same tube
+            final_pos = np.asarray(
+                grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+            inside_cnt = True
+        else:  # wants to enter a new tube
+            random_num = np.random.random()  # [0.0, 1.0)
+            stay = (random_num > prob_m_cn)
+            if stay:  # move to random volume/endpoint within same CNT
+                final_pos = np.asarray(
+                    grid.tube_squares[cur_index][np.random.randint(0, len(grid.tube_squares[cur_index]))])
+                inside_cnt = True
+            else:  # exit to new
+                final_pos = np.asarray(
+                    grid.tube_squares[candidate_idx][np.random.randint(0, len(grid.tube_squares[candidate_idx]))])
+                inside_cnt = True
+    else:
+        exit()
     return final_pos, inside_cnt
 
 

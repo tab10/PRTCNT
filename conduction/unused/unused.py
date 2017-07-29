@@ -1244,3 +1244,89 @@ bd[self.size, 0] = 30
 bd[self.size, self.size] = 30
 # np.set_printoptions(threshold=np.inf)
 # print tube_check_l
+
+
+def find_squares(self, start, end, tube_radius):
+    """Bresenham's Line Algorithm
+    Produces a list of tuples (bottom left corners of grid)
+    All squares a tube passes through
+    Also returns original start and end points in first and last positions respectively
+    """
+    # Setup initial conditions
+    x1, y1 = start
+    x2, y2 = end
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # Determine how steep the line is
+    is_steep = abs(dy) > abs(dx)
+
+    # Rotate line
+    if is_steep:
+        x1, y1 = y1, x1
+        x2, y2 = y2, x2
+
+    # Swap start and end points if necessary and store swap state
+    swapped = False
+    if x1 > x2:
+        x1, x2 = x2, x1
+        y1, y2 = y2, y1
+        swapped = True
+
+    # Recalculate differentials
+    dx = x2 - x1
+    dy = y2 - y1
+
+    # Calculate error
+    error = int(dx / 2.0)
+    ystep = 1 if y1 < y2 else -1
+
+    # Iterate over bounding box generating points between start and end
+    y = y1
+    points = []
+    for x in range(x1, x2 + 1):
+        coord = [y, x] if is_steep else [x, y]
+        points.append(coord)
+        error -= abs(dy)
+        if error < 0:
+            y += ystep
+            error += dx
+
+    # Reverse the list if the coordinates were swapped
+    if swapped:
+        points.reverse()
+
+    points_noends = points
+
+    # add ends
+    # ensure CNT ends and volume are not diagonal WRT each other
+    p1 = np.asarray(start, dtype=float)
+    p2 = np.asarray(end, dtype=float)
+    # p1_vol = points[0]
+    # p2_vol = points[-1]
+    #
+    # # get distances, if > 1 then they are diagonal
+    #
+    # p1_dist = self.euc_dist(p1[0], p1[1], p1_vol[0], p1_vol[1])
+    # p2_dist = self.euc_dist(p2[0], p2[1], p2_vol[0], p2_vol[1])
+    #
+    # if p1_dist > 1.0:
+    #     new_p1 = np.asarray(p1_vol) - np.asarray([1,0])
+    #     points.insert(0, list(new_p1.astype(int)))
+    # else:
+    #     points.insert(0, list(p1.astype(int)))
+    #
+    # if p2_dist > 1.0:
+    #     new_p2 = np.asarray(p2_vol) + np.asarray([1, 0])
+    #     points.insert(-1, list(new_p2.astype(int)))
+    # else:
+    #     points.insert(-1, list(p2.astype(int)))
+
+    points.insert(0, start.astype(int))
+    points.insert(-1, list(p2.astype(int)))
+
+    # now check if tube radius > 1, if so add more volume points
+    if tube_radius > 0.5:
+        logging.info('Tube radius will be implemented here later if needed.')
+        raise SystemExit
+    return points

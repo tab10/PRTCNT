@@ -64,7 +64,7 @@ class Grid2D_onlat(object):
                     self.tube_coords_r.append([x_r, y_r])
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, i)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                     if i >= 1:
                         uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                         # uni_flag = self.check_tube_unique(self.tube_coords, False)
@@ -85,7 +85,7 @@ class Grid2D_onlat(object):
                             self.theta.append(theta)
                             uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                             # uni_flag = self.check_tube_unique(self.tube_coords, False)
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, i)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
         else:
@@ -101,7 +101,7 @@ class Grid2D_onlat(object):
                         logging.info('Generating tube %d...' % (status_counter - 50))
                     x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                 tube_radius)
-                    tube_squares, x_l, x_r, y_l, y_r = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
+                    tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
                     self.tube_centers.append([x_c, y_c])
                     self.tube_coords.append([x_l, y_l, x_r, y_r])
                     self.tube_coords_l.append([x_l, y_l])
@@ -109,7 +109,7 @@ class Grid2D_onlat(object):
                     self.tube_squares.append(tube_squares)
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, i)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -123,8 +123,7 @@ class Grid2D_onlat(object):
                             self.theta.pop()
                             x_l, y_l, x_r, y_r, x_c, y_c, theta = self.generate_2d_tube(tube_length, orientation,
                                                                                         tube_radius)
-                            tube_squares, x_l, x_r, y_l, y_r = self.find_squares_nodiags([x_l, y_l], [x_r, y_r],
-                                                                                         tube_radius)
+                            tube_squares = self.find_squares_nodiags([x_l, y_l], [x_r, y_r], tube_radius)
                             self.theta.append(theta)
                             self.tube_centers.append([x_c, y_c])
                             self.tube_coords.append([x_l, y_l, x_r, y_r])
@@ -134,7 +133,7 @@ class Grid2D_onlat(object):
                             # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                             uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag must have been true to get here, so write it to the array
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, i)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
                 logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
             # get number of squares filled
             cube_count = 0  # each cube has area 1
@@ -204,96 +203,12 @@ class Grid2D_onlat(object):
         # print self.euc_dist(x_l, y_l, x_r, y_r)
         return x_l, y_l, x_r, y_r, x_c, y_c, angle
 
-    def find_squares(self, start, end, tube_radius):
-        """Bresenham's Line Algorithm
-        Produces a list of tuples (bottom left corners of grid)
-        All squares a tube passes through
-        Also returns original start and end points in first and last positions respectively
-        """
-        # Setup initial conditions
-        x1, y1 = start
-        x2, y2 = end
-        dx = x2 - x1
-        dy = y2 - y1
-
-        # Determine how steep the line is
-        is_steep = abs(dy) > abs(dx)
-
-        # Rotate line
-        if is_steep:
-            x1, y1 = y1, x1
-            x2, y2 = y2, x2
-
-        # Swap start and end points if necessary and store swap state
-        swapped = False
-        if x1 > x2:
-            x1, x2 = x2, x1
-            y1, y2 = y2, y1
-            swapped = True
-
-        # Recalculate differentials
-        dx = x2 - x1
-        dy = y2 - y1
-
-        # Calculate error
-        error = int(dx / 2.0)
-        ystep = 1 if y1 < y2 else -1
-
-        # Iterate over bounding box generating points between start and end
-        y = y1
-        points = []
-        for x in range(x1, x2 + 1):
-            coord = [y, x] if is_steep else [x, y]
-            points.append(coord)
-            error -= abs(dy)
-            if error < 0:
-                y += ystep
-                error += dx
-
-        # Reverse the list if the coordinates were swapped
-        if swapped:
-            points.reverse()
-
-        points_noends = points
-
-        # add ends
-        # ensure CNT ends and volume are not diagonal WRT each other
-        p1 = np.asarray(start, dtype=float)
-        p2 = np.asarray(end, dtype=float)
-        # p1_vol = points[0]
-        # p2_vol = points[-1]
-        #
-        # # get distances, if > 1 then they are diagonal
-        #
-        # p1_dist = self.euc_dist(p1[0], p1[1], p1_vol[0], p1_vol[1])
-        # p2_dist = self.euc_dist(p2[0], p2[1], p2_vol[0], p2_vol[1])
-        #
-        # if p1_dist > 1.0:
-        #     new_p1 = np.asarray(p1_vol) - np.asarray([1,0])
-        #     points.insert(0, list(new_p1.astype(int)))
-        # else:
-        #     points.insert(0, list(p1.astype(int)))
-        #
-        # if p2_dist > 1.0:
-        #     new_p2 = np.asarray(p2_vol) + np.asarray([1, 0])
-        #     points.insert(-1, list(new_p2.astype(int)))
-        # else:
-        #     points.insert(-1, list(p2.astype(int)))
-
-        points.insert(0, start.astype(int))
-        points.insert(-1, list(p2.astype(int)))
-
-        # now check if tube radius > 1, if so add more volume points
-        if tube_radius > 0.5:
-            logging.info('Tube radius will be implemented here later if needed.')
-            raise SystemExit
-        return points
 
     def find_squares_nodiags(self, start, end, tube_radius):
-        """Bresenham's Line Algorithm
+        """Modified Bresenham's Line Algorithm
         Produces a list of tuples (bottom left corners of grid)
         All squares a tube passes through
-        Also returns original start and end points in first and last positions respectively
+        No diagonals allowed
         """
         # Setup initial conditions
         x1, y1 = start
@@ -321,39 +236,19 @@ class Grid2D_onlat(object):
             # coord = [y1, x1] if is_steep else [x1, y1]
             coord = [x1, y1]
             points.append(coord)
-        # FINAL PT
-        # s_x, s,y = points[0]
-        # e_x, e,y = points[-1]
-        # x_truth = bool(int(abs(s_x-x1)) == 1)
-        # y_truth = bool(int(abs(s_y-y1)) == 1)
-        # if (start not in points) and (x_truth != y_truth):  # NEW PT NOT DIAGONAL
+
         points.insert(0, start)
-        # choice = list(np.abs(np.subtract(start, points[1])))
-        # logging.info(add_filler)
-        # idx = np.argmax(points[0][0], points[1][0])
-        # new_val = list(np.subtract(points[-1], [1, 0]))  # subtract X_val for new pt (why not?)
-        # points.insert(-2, new_val)
-        # x_truth = bool(int(abs(e_x - x2)) == 1)
-        # y_truth = bool(int(abs(e_y - y2)) == 1)
-        # if (end not in points)  and (x_truth != y_truth):
-        # points.insert(-1, end)
-        #logging.info(points)
-        x_l = points[0][0]
-        y_l = points[0][1]
-        x_r = points[-1][0]
-        y_r = points[-1][1]
+
+        # x_l = points[0][0]
+        # y_l = points[0][1]
+        # x_r = points[-1][0]
+        # y_r = points[-1][1]
         # now check if tube radius > 1, if so add more volume points
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
             raise SystemExit
-        return points, x_l, x_r, y_l, y_r
+        return points  #, x_l, x_r, y_l, y_r
 
-    def generate_tube_squares_no_ends(self):
-        tube_squares_no_ends = self.tube_squares
-        for i in range(len(tube_squares_no_ends)):
-            self.tube_squares_no_ends[i].pop(0)
-            self.tube_squares_no_ends[i].pop(-1)
-        return tube_squares_no_ends
 
     def generate_tube_check_array_2d(self):
         """To be used with no tube volume
@@ -435,37 +330,6 @@ class Grid2D_onlat(object):
                 tube_bds_lkup[tube_bds[i][j][0], tube_bds[i][j][1]] = 2
         return tube_bds, tube_bds_lkup
 
-    def calc_p_cn_m_2d(self):
-        p_m_cn = self.p_m_cn
-        # get number of border cubes of CNT volume
-    #
-    # def calc_p_cn_m_2d(self):
-    #     p_m_cn = 0.5
-    #     sigma = np.sqrt(2.0)
-    #     diag = False
-    #     tube_squares = self.tube_squares
-    #     moves_2d = [[0, 1], [1, 0], [0, -1], [-1, 0]]
-    #     moves_2d_diag = [[0, 1], [1, 0], [0, -1], [-1, 0], [1, 1], [1, -1], [-1, 1], [-1, -1]]
-    #     for f in range(len(tube_squares)):  # over a tube
-    #         indiv_tube = tube_squares[f]
-    #         indiv_vol = len(indiv_tube)
-    #         for i in range(len(indiv_tube)):  # over pixels in tube
-    #             if diag:
-    #                 choices = np.asarray(indiv_tube[i]) + moves_2d_diag
-    #             else:
-    #                 choices = np.asarray(indiv_tube[i]) + moves_2d
-    #             surf_area_tmp = 0.0
-    #             for j in range(len(choices)):   # over all choices for a pixel
-    #                 new_type = self.tube_check_bd_vol[choices[j][0], choices[j][1]]
-    #                 new_index = self.tube_check_index[choices[j][0], choices[j][1]] - 1
-    #                 if (new_type != -1) and (new_index != f):
-    #                     surf_area_tmp += 1.0
-    #             # apply constants
-    #             #surf_area_tmp = len(self.tube_bds[f])
-    #             #p_cn_m = 0.1
-    #             p_cn_m = sigma * p_m_cn * (surf_area_tmp / indiv_vol)
-    #             self.p_cn_m[indiv_tube[i][0], indiv_tube[i][1]] = p_cn_m
-
 
     def setup_tube_vol_check_array_2d(self):
         "Setup of tube check and index arrays, returns nothing"
@@ -474,9 +338,8 @@ class Grid2D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func, i):
+    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func):
         "Adds tube to the current check arrays"
-        # index_val = i + 1  # current index
         index_val = len(self.tube_coords)
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk

@@ -163,6 +163,8 @@ if __name__ == "__main__":
         inert_vol = True
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
                      'functionalized ends. CNTs cannot cross in space. Limit of infinite kapitza resistance.')
+        logging.error('Method has difficulties. Use Kapitza with P_m-cn=0 instead.')
+        raise SystemExit
     elif model == 'tunneling_wo_vol':
         tube_radius = 0.0
         prob_m_cn = 0.0
@@ -214,11 +216,11 @@ if __name__ == "__main__":
 
     #  all processes have control now
     if rules_test:
-        logging.info("Starting rules test only random walk. Rules will be checked to ensure they uphold the"
-                     "Principle of Detailed Balance. To do this, we don't use Fourier's Law as our walkers are"
-                     "all positive and no heat flux is generated. Differences include: Walkers can start from "
-                     "anywhere in the box, ALL boundaries are periodic, Walkers are all positive, ALL visited"
-                     "positions are histogrammed as opposed to keeping just 1")
+        logging.info("Starting rules test only random walk.\nRules will be checked to ensure they uphold the"
+                     "Principle of Detailed Balance.\nTo do this, we don't use Fourier's Law as our walkers are"
+                     " all positive and no heat flux is generated.\nDifferences include: Walkers can start from "
+                     "anywhere in the box,\nALL boundaries are periodic, Walkers are all positive,\nALL visited"
+                     " positions are histogrammed as opposed to keeping just 1")
         if dim == 2:
             test_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                     timesteps, quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,

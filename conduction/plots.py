@@ -118,7 +118,7 @@ def plot_three_d_random_walk_setup(grid, quiet, save_dir):
         for i in range(len(grid.tube_squares)):
             int_x, int_y, int_z = list(zip(*grid.tube_squares[i]))
             color = next(colors)
-            ax.scatter(int_x[1:-1], int_y[1:-1], int_z[1:-1], c=color)
+            ax.scatter(int_x[1:-1], int_y[1:-1], int_z[1:-1], c=color, marker="s")
             ax.scatter(tube_x[i], tube_y[i], tube_z[i], c=color, marker=(5, 1))
     ax.set_xlim(0, grid_size)
     ax.set_ylim(0, grid_size)
