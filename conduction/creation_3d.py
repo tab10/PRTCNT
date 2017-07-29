@@ -252,9 +252,7 @@ class Grid3D_onlat(object):
 
         # Setup initial conditions
         points = []
-        start = np.asarray(start)
-        end = np.asarray(end)
-        d = np.abs(np.linalg.norm(end - start))
+        grid_size = self.size
 
         x1 = start[0]
         y1 = start[1]
@@ -279,7 +277,7 @@ class Grid3D_onlat(object):
         x = x1
         y = y1
         z = z1
-        idx = 1
+        idx = 0
 
         e = 0  # current error
 
@@ -287,74 +285,85 @@ class Grid3D_onlat(object):
             yd = ay - ax / 2
             zd = az - ax / 2
 
-            while (ax >= max(ay, az)):
+            while (x != x2):
+
+                if (y < 1) or (z < 1) or (y > grid_size) or (z > grid_size):
+                    break
+
                 points.append([x, y, z])
-                idx = idx + 1
+                idx += 1
 
                 if (x == x2):  # end
                     break
 
-                e1 = e + dy
-                e2 = e + dz
-
                 # if (yd >= 0): # move along y
-                if abs(e1) < abs(e2):
-                    y = y + sy
-                    yd = yd - ax
+                if abs(yd) < abs(zd):
+                    y += sy
+                    yd -= ax
                 else:
                     # if (zd >= 0): # move along z
-                    z = z + sz
-                    zd = zd - ax
+                    z += sz
+                    zd -= ax
 
-                x = x + sx  # move along x
-                yd = yd + ay
-                zd = zd + az
+                x += sx  # move along x
+                yd += ay
+                zd += az
 
         elif ay >= max(ax, az):  # y dominant
             xd = ax - ay / 2
             zd = az - ay / 2
 
-            while ay >= max(ax, az):
+            while (y != y2):
+
+                if (x < 1) or (z < 1) or (x > grid_size) or (z > grid_size):
+                    break
+
                 points.append([x, y, z])
-                idx = idx + 1
+                idx += 1
 
                 if (y == y2):  # end.
                     break
 
-                if (xd >= 0):  # move along x
-                    x = x + sx
-                    xd = xd - ay
+                # if (xd >= 0):  # move along x
+                if abs(xd) < abs(zd):
+                    x += sx
+                    xd -= ay
+                else:
+                    # if (zd >= 0):  # move along z
+                    z += sz
+                    zd - + ay
 
-                if (zd >= 0):  # move along z
-                    z = z + sz
-                    zd = zd - ay
-
-                y = y + sy  # move along y
-                xd = xd + ax
-                zd = zd + az
+                y += sy  # move along y
+                xd += ax
+                zd += az
 
         elif az >= max(ax, ay):  # z dominant
             xd = ax - az / 2
             yd = ay - az / 2
 
-            while az >= max(ax, ay):
-                points.append([x, y, z])
-                idx = idx + 1
+            while (z != z2):
 
-                if (z == z2):  # end
+                if (x < 1) or (y < 1) or (x > grid_size) or (y > grid_size):
                     break
 
-                if (xd >= 0):  # move along x
-                    x = x + sx
-                    xd = xd - az
+                points.append([x, y, z])
+                idx += 1
 
-                if (yd >= 0):  # move along y
-                    y = y + sy
-                    yd = yd - az
+                if (z == x2):  # end
+                    break
 
-                z = z + sz  # move along z
-                xd = xd + ax
-                yd = yd + ay
+                # if (xd >= 0):  # move along x
+                if abs(xd) < abs(yd):
+                    x += sx
+                    xd -= az
+                else:
+                    # if (yd >= 0):  # move along y
+                    y += sy
+                    yd - + az
+
+                z += sz  # move along z
+                xd += ax
+                yd += ay
 
         x_l = points[0][0]
         y_l = points[0][1]
@@ -368,6 +377,9 @@ class Grid3D_onlat(object):
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
             raise SystemExit
+
+        ## DEBUG
+        print(points)
 
         return points, x_l, x_r, y_l, y_r, z_l, z_r
 
