@@ -318,7 +318,7 @@ class Grid3D_onlat(object):
                 points.append([x, y, z])
                 idx = idx + 1
 
-                if (y == y2):  # end
+                if (y == y2):  # end.
                     break
 
                 if (xd >= 0):  # move along x
