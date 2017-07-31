@@ -66,6 +66,10 @@ def save_walker_loc(walker, save_dir, walker_index, temp):
 
 
 if __name__ == "__main__":
+
+    print("Serial code is currently buggy! Please use parallel code with mpirun -np 2 on at least dual cores.")
+    raise SystemExit
+
     print(sys.version_info[0])
     if sys.version_info[0] < 3:
         importlib.import_module('ConfigParser')

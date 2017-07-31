@@ -15,6 +15,7 @@
 from __future__ import division
 import numpy as np
 import logging
+import math
 
 from conduction import backend
 
@@ -242,124 +243,46 @@ class Grid3D_onlat(object):
         return points
 
     def find_cubes_nodiags(self, start, end, tube_radius):
-        """Modified Bresenham's Line Algorithm
+        """Modified DDT Line Algorithm
         Produces a list of lists of pixels tube covers
         All squares a tube passes through
-        No diagonals allowed!! (4-connected (but 3D))
+        No diagonals allowed!! (6-connected)
         Bug test OK TAB 7/28/17
         """
 
         # Setup initial conditions
         points = []
         grid_size = self.size
+        # print(start)
+        # print(end)
 
-        x1 = start[0]
-        y1 = start[1]
-        z1 = start[2]
+        xc = start[0]
+        yc = start[1]
+        zc = start[2]
 
         x2 = end[0]
         y2 = end[1]
         z2 = end[2]
 
-        dx = x2 - x1
-        dy = y2 - y1
-        dz = z2 - z1
+        moves_3d = np.asarray([[0, 0, 1], [0, 1, 0], [1, 0, 0], [0, 0, -1], [0, -1, 0], [-1, 0, 0]])
 
-        ax = abs(dx) * 2
-        ay = abs(dy) * 2
-        az = abs(dz) * 2
+        points.append([xc, yc, zc])
 
-        sx = np.sign(dx)
-        sy = np.sign(dy)
-        sz = np.sign(dz)
+        while ((xc != x2) or (yc != y2) or (zc != z2)):
+            pts = np.asarray([xc, yc, zc]) + moves_3d
+            d_list = []
+            for i in range(len(pts)):
+                d_temp = np.linalg.norm(pts[i] - end)
+                d_list.append(d_temp)
+            min_idx = np.argmin(d_list)  # closest next pt in space given constraints
+            new_pt = list(pts[min_idx])
+            points.append(new_pt)
+            # update current coordinates
+            xc = new_pt[0]
+            yc = new_pt[1]
+            zc = new_pt[2]
 
-        x = x1
-        y = y1
-        z = z1
-        idx = 0
-
-        e = 0  # current error
-
-        if ax >= max(ay, az):  # x dominant
-            yd = ay - ax / 2
-            zd = az - ax / 2
-
-            while (x != x2):
-
-                if (y < 1) or (z < 1) or (y > grid_size) or (z > grid_size):
-                    break
-                points.append([x, y, z])
-                idx += 1
-
-                if (x == x2):  # end
-                    break
-
-                # if (yd >= 0): # move along y
-                if abs(yd) < abs(zd):
-                    y += sy
-                    yd -= ax
-                else:
-                    # if (zd >= 0): # move along z
-                    z += sz
-                    zd -= ax
-
-                x += sx  # move along x
-                yd += ay
-                zd += az
-
-        elif ay >= max(ax, az):  # y dominant
-            xd = ax - ay / 2
-            zd = az - ay / 2
-
-            while (y != y2):
-
-                if (x < 1) or (z < 1) or (x > grid_size) or (z > grid_size):
-                    break
-                points.append([x, y, z])
-                idx += 1
-
-                if (y == y2):  # end.
-                    break
-
-                # if (xd >= 0):  # move along x
-                if abs(xd) < abs(zd):
-                    x += sx
-                    xd -= ay
-                else:
-                    # if (zd >= 0):  # move along z
-                    z += sz
-                    zd - + ay
-
-                y += sy  # move along y
-                xd += ax
-                zd += az
-
-        elif az >= max(ax, ay):  # z dominant
-            xd = ax - az / 2
-            yd = ay - az / 2
-
-            while (z != z2):
-
-                if (x < 1) or (y < 1) or (x > grid_size) or (y > grid_size):
-                    break
-                points.append([x, y, z])
-                idx += 1
-
-                if (z == x2):  # end
-                    break
-
-                # if (xd >= 0):  # move along x
-                if abs(xd) < abs(yd):
-                    x += sx
-                    xd -= az
-                else:
-                    # if (yd >= 0):  # move along y
-                    y += sy
-                    yd - + az
-
-                z += sz  # move along z
-                xd += ax
-                yd += ay
+        #print(points)
 
         x_l = points[0][0]
         y_l = points[0][1]
@@ -373,9 +296,6 @@ class Grid3D_onlat(object):
         if tube_radius > 0.5:
             logging.info('Tube radius will be implemented here later if needed.')
             raise SystemExit
-
-        ## DEBUG
-        # print(points)
 
         return points, x_l, x_r, y_l, y_r, z_l, z_r
 
