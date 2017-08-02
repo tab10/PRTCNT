@@ -45,7 +45,7 @@ def check_convergence_2d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
-    heat_flux = float(cur_num_walkers) / (float(grid_size) * float(timesteps))
+    heat_flux = float(cur_num_walkers) / (float(grid_size + 2) * float(timesteps))
     gradient_err = np.mean(test_std)
     x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
@@ -63,7 +63,7 @@ def check_convergence_3d_onlat(H_tot, cur_num_walkers, grid_size, timesteps):
     cutoff_dist = int(0.05 * grid_size)  # k is very sensitive to this, give it the most possible data to fit
     test_mean = np.mean(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1)
     test_std = np.std(temp_profile_sum[cutoff_dist:grid_size - cutoff_dist], axis=1, ddof=1)
-    heat_flux = float(cur_num_walkers) / (float(grid_size) ** 2 * float(timesteps))
+    heat_flux = float(cur_num_walkers) / (float(grid_size + 2) ** 2 * float(timesteps))
     gradient_err = np.mean(test_std)
     x = np.arange(cutoff_dist, grid_size - cutoff_dist)
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, test_mean)  # slope is dT(x)/dx
