@@ -514,7 +514,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
     folds = []  # list of all folder name strings
     zero_folds = []
     orientations = []  # list of all orientations (not unique yet)
-    dim = int(dim[0])
+    dim = int(dim)
     tube_length = int(tube_length)
     old_plot = 'k_num_tubes_%d_%dD.pdf' % (tube_length, dim)  # let's get rid of the old one!
     if os.path.isfile(old_plot):
