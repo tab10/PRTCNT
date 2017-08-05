@@ -541,7 +541,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
     y_ints = []
     r_twos = []
     for i in range(len(uni_orientations)):
-        uni_tubes = len(sep_folds[i]) / num_configs
+        uni_tubes = int(len(sep_folds[i]) / num_configs)
         uni_num_tubes = []
         for k in range(uni_tubes):
             uni_num_tubes.append(sep_folds[i][k * num_configs].split('_')[0])
