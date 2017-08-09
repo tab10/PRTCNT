@@ -28,7 +28,7 @@ hv_vals=( 15
 175
 189
 204 )
-echo "SCRIPT DESIGNED FOR TUBE LENGTH 20 2D"
+echo "SCRIPT DESIGNED FOR TUBE LENGTH 10 2D"
 if [ "$1" = "random" ]
 then
         for i in ${rand_vals[@]}; do
