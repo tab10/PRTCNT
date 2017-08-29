@@ -154,7 +154,7 @@ def serial_method(grid_size, tube_length, tube_radius, num_tubes, orientation, t
 
 def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, tot_time, quiet, plot_save_dir,
                     gen_plots, kapitza, prob_m_cn, tot_walkers, printout_inc, k_conv_error_buffer, disable_func, rank,
-                    size, rules_test, restart, inert_vol):
+                    size, rules_test, restart, inert_vol, save_loc_plots):
     comm = MPI.COMM_WORLD
 
     # serial tube generation
@@ -246,6 +246,10 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
                                                        rules_test)
             cold_temp = rules_2d.runrandomwalk_2d_onlat(grid, core_time, 'cold', kapitza, prob_m_cn, grid.bound,
                                                         rules_test)
+            # plot walker path if desired
+            if save_loc_plots:
+                plots.plot_walker_path_2d_onlat(hot_temp, grid_size, 'hot', quiet, i, plot_save_dir)
+                plots.plot_walker_path_2d_onlat(cold_temp, grid_size, 'cold', quiet, i, plot_save_dir)
             # get last position of walker
             hot_temp_pos = hot_temp.pos[-1]
             cold_temp_pos = cold_temp.pos[-1]

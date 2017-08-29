@@ -81,7 +81,6 @@ if __name__ == "__main__":
                                                                       'Useful on the supercomputer.')
     parser.add_argument('--save_dir', type=str, default=os.getcwd(), help='Path for plots and data and config.ini.')
     parser.add_argument('--save_loc_plots', type=str, default='False', help='Save location plots for all walkers.')
-    parser.add_argument('--save_loc_data', type=str, default='False', help='Save location data for all walkers.')
     parser.add_argument('--quiet', type=str, default='True', help='Do not show various plots throughout simulation.')
     parser.add_argument('--model', type=str, required=True, help='Simulation model type. kapitza, tunneling_w_vol, '
                                                                  'tunneling_wo_vol')
@@ -127,7 +126,6 @@ if __name__ == "__main__":
     begin_cov_check = args.begin_cov_check
     k_conv_error_buffer = args.k_conv_error_buffer
     save_loc_plots = args.save_loc_plots
-    save_loc_data = args.save_loc_data
     gen_plots = args.gen_plots
     prob_m_cn = args.prob_m_cn
     run_to_convergence = args.run_to_convergence
@@ -234,9 +232,10 @@ if __name__ == "__main__":
             randomwalk_2d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                           quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn,
                                           num_walkers, printout_inc, k_conv_error_buffer, disable_func, rank, size,
-                                          rules_test, restart, inert_vol)
+                                          rules_test, restart, inert_vol, save_loc_plots)
         elif dim == 3:
             randomwalk_3d.parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation, timesteps,
                                           quiet, plot_save_dir, gen_plots, kapitza, prob_m_cn, num_walkers,
                                           printout_inc,
-                                          k_conv_error_buffer, disable_func, rank, size, rules_test, restart, inert_vol)
+                                          k_conv_error_buffer, disable_func, rank, size, rules_test, restart, inert_vol,
+                                          save_loc_plots)
