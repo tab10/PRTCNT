@@ -148,9 +148,6 @@ if __name__ == "__main__":
 
     plot_save_dir = comm.bcast(plot_save_dir, root=0)
 
-    if rank == 0:
-        logging.info('Using convergence value of %.4E' % k_convergence_tolerance)
-
     ##### VALUE & COMMON SENSE CHECKS#####
     possible_dim = [2, 3]
     if model == 'kapitza':
@@ -167,8 +164,6 @@ if __name__ == "__main__":
         inert_vol = True
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
                      'functionalized ends. CNTs cannot cross in space. Limit of infinite kapitza resistance.')
-        logging.error('Method has difficulties. Use Kapitza with P_m-cn=0 instead.')
-        raise SystemExit
     elif model == 'tunneling_wo_vol':
         tube_radius = 0.0
         prob_m_cn = 0.0
