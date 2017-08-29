@@ -500,7 +500,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         tunnel = 2.0 * float(x) * 100.0 / grid_size ** dim
         if grid_size != 100:
             print("Assuming the default formula to get values, NOT for random")
-            fill_fract = round((float(tube_length) * float(x)) / (grid_size ** dim))
+            fill_fract = int(round((float(tube_length) * float(x) * 100) / (grid_size ** dim)))
         else:
             if not tunneling:
                 if orientation == 'random':
