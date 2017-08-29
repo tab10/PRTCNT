@@ -496,7 +496,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         ######
         h_v_3d_20 = {'0': 0, '950': 2.06, '1904': 4.12, '2854': 6.18, '3808': 8.24, '4758': 10.3, '5712': 12.36,
                      '6662': 14.42, '7616': 16.48, '8575': 18.56, '9529': 20.62}
-        ######
+        #####
         tunnel = 2.0 * float(x) * 100.0 / grid_size ** dim
         if grid_size != 100:
             print("Assuming the default formula to get values, NOT for random")
