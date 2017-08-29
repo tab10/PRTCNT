@@ -315,7 +315,7 @@ def tunneling_matrix(grid, moves_2d, cur_pos, cur_idx, inert_vol):
 
 def tunneling_cntend(grid, jump_moves_2d, cur_pos, inert_vol):
     # no CNT volume, so this rule remains unchanged from the originals (3/30/17 TB)
-    # walk off either end, 12 3D choices always
+    # walk off either end, 8 2D choices always
     choice = np.random.randint(0, 8)
     d_pos = np.asarray(jump_moves_2d[choice])
     # coord on left tube end jumps to right end
