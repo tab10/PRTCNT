@@ -501,15 +501,16 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         if grid_size != 100:
             print("Assuming the default formula to get values, NOT for random")
             fill_fract = round((float(tube_length) * float(x)) / (grid_size ** dim))
-        if not tunneling:
-            if orientation == 'random':
-                search_str = 'random_%dd_%d[str(int(x))]' % (dim, tube_length)
-                fill_fract = eval(search_str)
-            elif (orientation == 'horizontal') or (orientation == 'vertical'):
-                search_str = 'h_v_%dd_%d[str(int(x))]' % (dim, tube_length)
-                fill_fract = eval(search_str)
         else:
-            fill_fract = tunnel
+            if not tunneling:
+                if orientation == 'random':
+                    search_str = 'random_%dd_%d[str(int(x))]' % (dim, tube_length)
+                    fill_fract = eval(search_str)
+                elif (orientation == 'horizontal') or (orientation == 'vertical'):
+                    search_str = 'h_v_%dd_%d[str(int(x))]' % (dim, tube_length)
+                    fill_fract = eval(search_str)
+            else:
+                fill_fract = tunnel
         return fill_fract
 
     def lin_fit(x, y, dim):
