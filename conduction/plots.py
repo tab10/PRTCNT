@@ -518,7 +518,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
     def lin_fit(x, y, dim):
         '''Fits a linear fit of the form mx+b to the data'''
         dim_dict = {2: 0.5, 3: 1.0 / 3.0}
-        k_0 = {2: 0.5, 3: 1.0 / 300.0}
         fitfunc = lambda params, x: params[0] * x  # create fitting function of form mx+no_tubes_const
         errfunc = lambda p, x, y: fitfunc(p, x) - y  # create error function for least squares fit
 
@@ -577,9 +576,10 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         k_vals = []
         k_err = []
         for l in range(len(uni_num_tubes)):
-            k_vals.append(np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs]))
-            k_err.append(
-                np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs))
+            k_vals_temp = np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs])
+            k_vals.append((k_vals_temp - k_0[dim]) / k_0[dim])
+            k_err_temp = np.std(all_k_vals[l * num_configs:(l + 1) * num_configs], ddof=1) / np.sqrt(num_configs)
+            k_err.append(k_0[dim] * k_err_temp)
         fill_fract = []
         for a in range(len(uni_num_tubes)):
             temp_ff = fill_fraction_tubes(uni_num_tubes[a], uni_orientations[i], tunneling, grid_size, dim)
