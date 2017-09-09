@@ -652,7 +652,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         plt.xlabel('Volume fraction')
     else:
         plt.xlabel('Volume fraction %')
-        plt.ylabel('Reduced thermal conductivity (k-k_0)/k_0')
+    plt.ylabel('Reduced thermal conductivity (k-k_0)/k_0')
     if legend:
         plt.legend(loc=2)
     plt.tight_layout()
