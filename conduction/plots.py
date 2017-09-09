@@ -656,10 +656,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
     if legend:
         plt.legend(loc=2)
     plt.tight_layout()
-    if y_max:
-        plt.ylim((0, y_max))
-    else:
-        plt.ylim(ymin=0)
     plt.savefig('k_num_tubes_%d_%dD.pdf' % (tube_length, dim))
     f = open("fit.txt", 'w')
     f.write('orientation slope d_slope y_int r_twos\n')
