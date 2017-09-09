@@ -575,6 +575,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
             os.chdir('..')
         k_vals = []
         k_err = []
+        k_0 = {2: 0.5, 3: 1.0 / 300.0}
         for l in range(len(uni_num_tubes)):
             k_vals_temp = np.mean(all_k_vals[l * num_configs:(l + 1) * num_configs])
             k_vals.append((k_vals_temp - k_0[dim]) / k_0[dim])
@@ -601,8 +602,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         if dec_fill_fract:
             fill_fract *= 0.01  # uses decimal for fill fraction values, more reasonable slopes
         # apply linear fit
-        k_0 = {2: 0.5, 3: 1.0 / 300.0}
-        k_vals = (k_vals - k_0[dim]) / k_0[dim]
         if force_y_int:
             slope, _ = lin_fit(fill_fract, k_vals, dim)
             print(slope)
