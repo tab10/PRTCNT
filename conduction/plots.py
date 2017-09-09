@@ -447,9 +447,9 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
     plt.close()
 
 
-def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True, legend=True, exclude_vals='',
-                        tunneling=False, max_tube_num=100000, force_y_int=False, y_max=None,
-                        units=False, dec_fill_fract=False, w_err=True):
+def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
+                        tunneling=False, max_tube_num=100000, force_y_int=False, y_max=None, dec_fill_fract=True,
+                        w_err=True):
     """w_err - weighted linear fit based on k error bars from configurations"""
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         ######
@@ -518,7 +518,8 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
     def lin_fit(x, y, dim):
         '''Fits a linear fit of the form mx+b to the data'''
         dim_dict = {2: 0.5, 3: 1.0 / 3.0}
-        fitfunc = lambda params, x: params[0] * x + dim_dict[dim]  # create fitting function of form mx+no_tubes_const
+        k_0 = {2: 0.5, 3: 1.0 / 300.0}
+        fitfunc = lambda params, x: k_0[dim] * (params[0] * x + 1)  # create fitting function of form mx+no_tubes_const
         errfunc = lambda p, x, y: fitfunc(p, x) - y  # create error function for least squares fit
 
         init_a = 0.5  # find initial value for a (gradient)
@@ -529,7 +530,6 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         f = fitfunc(p1, x)  # create a fit with those parameters
         return p1, f
 
-    scaling_factor = 87.0  # FOR UNITS
     exclude_vals = list(map(str, exclude_vals))  # array of numbers
     exclude_vals = [x + '_' for x in exclude_vals]
     folds = []  # list of all folder name strings
@@ -598,19 +598,11 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         fill_fract = fill_fract[unq_idx]
         k_vals = k_vals[unq_idx]
         k_err = k_err[unq_idx]
-        # divide by k0?
-        if div_by_k0:
-            k0 = k_vals[0]
-            k_vals = k_vals / k_vals[0]
-        # add units (if requested)
-        if units:
-            k_vals *= scaling_factor  # adds W/m*K units based on polystyrene matrix as measured by Matt Houck
-            k_err *= scaling_factor
         if dec_fill_fract:
             fill_fract *= 0.01  # uses decimal for fill fraction values, more reasonable slopes
         # apply linear fit
         if force_y_int:
-            dim_dict = {2: 0.5, 3: 1.0 / 300.0}
+            k_0 = {2: 0.5, 3: 1.0 / 300.0}
             slope, _ = lin_fit(fill_fract, k_vals, dim)
             print(slope)
             raise SystemExit
@@ -627,14 +619,16 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         else:
             if w_err:
                 k_err_weights = 1.0 / k_err
-                p, V = np.polyfit(fill_fract, k_vals, 1, cov=True, w=k_err_weights)
+                p, V = np.polyfit(fill_fract, (k_vals - k_0[dim]) / k_0[dim], 1, cov=True, w=k_err_weights)
             else:
-                p, V = np.polyfit(fill_fract, k_vals, 1, cov=True, w=k_err)
+                p, V = np.polyfit(fill_fract, (k_vals - k_0[dim]) / k_0[dim], 1, cov=True, w=k_err)
             slope = p[0]
             intercept = p[1]
             d_slope = np.sqrt(V[0][0])
             d_yint = np.sqrt(V[1][1])
-            notused_slope, notused_intercept, r_value, p_value, std_err = stats.linregress(fill_fract, k_vals)
+            notused_slope, notused_intercept, r_value, p_value, std_err = stats.linregress(fill_fract,
+                                                                                           (k_vals - k_0[dim]) / k_0[
+                                                                                               dim])
             x_fit = np.linspace(min(fill_fract), max(fill_fract), num=50)
             y_fit = slope * x_fit + intercept
             # d_slope = np.abs(slope) * np.sqrt(((1 / r_value ** 2) - 1) / (num_configs - 2))
@@ -659,13 +653,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, div_by_k0=True
         plt.xlabel('Volume fraction')
     else:
         plt.xlabel('Volume fraction %')
-    if div_by_k0:
-        plt.ylabel('Thermal conductivity $k/k_0$')
-    else:
-        if units:
-            plt.ylabel('Thermal conductivity k (W/(M*K))')
-        else:
-            plt.ylabel('Thermal conductivity k')
+        plt.ylabel('Thermal conductivity (k-k_0)/k_0')
     if legend:
         plt.legend(loc=2)
     plt.tight_layout()
