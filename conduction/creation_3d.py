@@ -115,7 +115,8 @@ class Grid3D_onlat(object):
                     self.phi.append(phi)
                     self.tube_squares.append(tube_squares)
                     if i == 0:
-                        self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func,
+                                                         inert_vol)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique_3d_nodiags(tube_squares)
                         while not uni_flag:
@@ -142,7 +143,8 @@ class Grid3D_onlat(object):
                             self.phi.append(phi)
                             self.tube_squares.append(tube_squares)
                             uni_flag = self.check_tube_and_vol_unique_3d_nodiags(tube_squares)
-                        self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_3d([x_l, y_l, z_l, x_r, y_r, z_r], tube_squares, disable_func,
+                                                         inert_vol)
             logging.info("Tube generation complete")
             logging.info("Corrected %d overlapping tube endpoints" % counter)
             # get number of squares filled
@@ -155,7 +157,7 @@ class Grid3D_onlat(object):
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_3d(rules_test)
-            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func)
+            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_3d(disable_func, inert_vol)
         # self.calc_p_cn_m_3d()
         self.avg_tube_len, self.std_tube_len, self.tube_lengths = self.check_tube_lengths()
         logging.info("Actual tube length avg+std: %.4f +- %.4f" % (self.avg_tube_len, self.std_tube_len))
@@ -323,7 +325,7 @@ class Grid3D_onlat(object):
                         # generated, running through bd function
         return tube_check_l, tube_check_r, bd
 
-    def generate_vol_check_array_3d(self, disable_func):
+    def generate_vol_check_array_3d(self, disable_func, inert_vol):
         """To be used with tube volume
         Generates a boundary/volume lookup array (0 nothing, 1 boundary, -1 volume)"""
         bd_vol = np.zeros((self.size + 1, self.size + 1, self.size + 1), dtype=int)
@@ -342,8 +344,12 @@ class Grid3D_onlat(object):
             index[self.tube_coords[i][3], self.tube_coords[i][4], self.tube_coords[i][5]] = i + 1
             # THESE ARE OFFSET BY ONE
             for j in range(1, len(self.tube_squares[i]) - 1):
+                if inert_vol:
+                    vol_val = -1
+                else:
+                    vol_val = 0
                 bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
-                    2]] = -1  # volume points
+                    2]] = vol_val  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1], self.tube_squares[i][j][
                     2]] = i + 1  # THESE ARE OFFSET BY ONE
                 # add boundary tags
@@ -364,7 +370,7 @@ class Grid3D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares, disable_func):
+    def add_tube_vol_check_array_3d(self, new_tube_coords, new_tube_squares, disable_func, inert_vol):
         "Adds tube to the current check arrays"
         index_val = len(self.tube_coords)  # NO OFFSET, ALREADY +1
         if disable_func:
@@ -379,8 +385,12 @@ class Grid3D_onlat(object):
         self.tube_check_index[new_tube_coords[3], new_tube_coords[4], new_tube_coords[5]] = index_val
         if new_tube_squares is not None:
             for j in range(1, len(new_tube_squares) - 1):
+                if inert_vol:
+                    vol_val = -1
+                else:
+                    vol_val = 0
                 self.tube_check_bd_vol[
-                    new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = -1  # volume points
+                    new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = vol_val  # volume points
                 self.tube_check_index[
                     new_tube_squares[j][0], new_tube_squares[j][1], new_tube_squares[j][2]] = index_val
 

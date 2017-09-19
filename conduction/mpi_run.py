@@ -161,9 +161,7 @@ if __name__ == "__main__":
         kapitza = False
         inert_vol = True
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
-                     'functionalized ends. CNTs cannot cross in space. Limit of infinite kapitza resistance.')
-        logging.error('THIS MODEL SHOULD NOT BE USED DUE TO ISSUES WITH TRAPPED WALKERS IN CNT CLUSTERS')
-        raise SystemExit
+                     'functionalized ends. CNTs CANNOT cross in space. Limit of infinite kapitza resistance.')
     elif model == 'tunneling_wo_vol':
         tube_radius = 0.0
         prob_m_cn = 0.0

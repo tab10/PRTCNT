@@ -175,7 +175,7 @@ def parallel_method(grid_size, tube_length, tube_radius, num_tubes, orientation,
 
     if rank == 0:
         if gen_plots:
-            plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir)
+            plots.plot_three_d_random_walk_setup(grid, quiet, plot_save_dir, inert_vol)
     else:
         grid = None
 
