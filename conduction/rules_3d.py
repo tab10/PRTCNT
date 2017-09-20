@@ -123,13 +123,13 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         else:
             exit()
     elif not kapitza:  # tunneling with/without inert volume models
-        if inert_vol:
-            cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
-            cur_index = grid.tube_check_index[
-                            cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
-        else:
-            cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
-            cur_index = None
+        # if inert_vol:
+        #     cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
+        #     cur_index = grid.tube_check_index[
+        #                     cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
+        # else:
+        cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
+        cur_index = None
         if cur_type == 0:  # matrix cell
             final_pos = tunneling_matrix(grid, moves_3d, cur_pos, cur_index)
             walker.add_pos(final_pos)
