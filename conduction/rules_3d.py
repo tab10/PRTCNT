@@ -268,7 +268,7 @@ def tunneling_vol(grid, moves_3d, cur_pos, cur_idx, inert_vol):
     if candidate_type == -1:  # wants to enter volume
         final_pos = cur_pos  # stay put
     else:
-            final_pos = candidate_pos
+        final_pos = candidate_pos
     return final_pos
 
 
