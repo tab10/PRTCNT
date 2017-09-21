@@ -160,6 +160,7 @@ if __name__ == "__main__":
         prob_m_cn = 0.0
         kapitza = False
         inert_vol = True
+        disable_func = False
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
                      'functionalized ends. CNTs CANNOT cross in space. Limit of infinite kapitza resistance.')
     elif model == 'tunneling_wo_vol':
@@ -167,8 +168,10 @@ if __name__ == "__main__":
         prob_m_cn = 0.0
         kapitza = False
         inert_vol = False
+        disable_func = False
         logging.info('Simulation model: tunneling without volume. CNTs only have '
-                     'functionalized ends. CNTs can cross in space. Limit of infinite kapitza resistance.')
+                     'functionalized ends. CNTs CANNOT cross in space. Models the tunneling case when'
+                     'there is no excluded volume effect. Limit of infinite kapitza resistance.')
     else:
         logging.error('Incorrect simulation model specified.')
         raise SystemExit

@@ -65,7 +65,7 @@ class Grid2D_onlat(object):
                     self.tube_coords_r.append([x_r, y_r])
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, inert_vol)
                     if i >= 1:
                         uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                         # uni_flag = self.check_tube_unique(self.tube_coords, False)
@@ -86,7 +86,7 @@ class Grid2D_onlat(object):
                             self.theta.append(theta)
                             uni_flag = self.check_tube_unique_2d_arraymethod([x_l, y_l, x_r, y_r])
                             # uni_flag = self.check_tube_unique(self.tube_coords, False)
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], None, disable_func, inert_vol)
                 logging.info("Corrected %d overlapping tube endpoints" % counter)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
         else:
@@ -110,7 +110,7 @@ class Grid2D_onlat(object):
                     self.tube_squares.append(tube_squares)
                     self.theta.append(theta)
                     if i == 0:
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, inert_vol)
                     if i >= 1:
                         uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
@@ -134,7 +134,7 @@ class Grid2D_onlat(object):
                             # uni_flag = self.check_tube_and_vol_unique(self.tube_squares, False)
                             uni_flag = self.check_tube_and_vol_unique_2d_arraymethod(tube_squares)
                         # uni_flag must have been true to get here, so write it to the array
-                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func)
+                        self.add_tube_vol_check_array_2d([x_l, y_l, x_r, y_r], tube_squares, disable_func, inert_vol)
                 logging.info("Corrected %d overlapping tube endpoints and/or volume points" % counter)
             # get number of squares filled
             cube_count = 0  # each cube has area 1
@@ -145,7 +145,7 @@ class Grid2D_onlat(object):
             logging.info("Filling fraction is %.2f %%" % (fill_fract * 100.0))
             backend.save_fill_frac(plot_save_dir, fill_fract)
             self.tube_check_l, self.tube_check_r, self.tube_check_bd = self.generate_tube_check_array_2d()
-            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func)
+            self.tube_check_bd_vol, self.tube_check_index = self.generate_vol_check_array_2d(disable_func, inert_vol)
             self.tube_check_bd_vol = self.add_boundaries_2d(self.tube_check_bd_vol)
         # self.tube_bds, self.tube_bds_lkup = self.generate_tube_boundary_array_2d()
         # self.calc_p_cn_m_2d()
@@ -273,11 +273,15 @@ class Grid2D_onlat(object):
                     # running through bd function
         return tube_check_l, tube_check_r, bd
 
-    def generate_vol_check_array_2d(self, disable_func):
+    def generate_vol_check_array_2d(self, disable_func, inert_vol):
         """To be used with tube volume
         Generates a boundary/volume lookup array"""
         bd_vol = np.zeros((self.size + 1, self.size + 1), dtype=int)
         index = np.zeros((self.size + 1, self.size + 1), dtype=int)
+        if inert_vol:
+            vol_val = -1
+        else:
+            vol_val = 0
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:
@@ -288,7 +292,7 @@ class Grid2D_onlat(object):
             index[self.tube_coords[i][0], self.tube_coords[i][1]] = i + 1  # THESE ARE OFFSET BY ONE
             index[self.tube_coords[i][2], self.tube_coords[i][3]] = i + 1  # THESE ARE OFFSET BY ONE
             for j in range(1, len(self.tube_squares[i]) - 1):
-                bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = -1  # volume points
+                bd_vol[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = vol_val  # volume points
                 index[self.tube_squares[i][j][0], self.tube_squares[i][j][1]] = i + 1  # THESE ARE OFFSET BY ONE
         return bd_vol, index
 
@@ -339,9 +343,13 @@ class Grid2D_onlat(object):
         self.tube_check_bd_vol = bd_vol
         self.tube_check_index = index
 
-    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func):
+    def add_tube_vol_check_array_2d(self, new_tube_coords, new_tube_squares, disable_func, inert_vol):
         "Adds tube to the current check arrays"
         index_val = len(self.tube_coords)
+        if inert_vol:
+            vol_val = -1
+        else:
+            vol_val = 0
         if disable_func:
             endpoint_val = -1  # treat endpoints as volume, changing the rules in the walk
         else:
@@ -352,7 +360,7 @@ class Grid2D_onlat(object):
         self.tube_check_index[new_tube_coords[2], new_tube_coords[3]] = index_val
         if new_tube_squares is not None:  # None used for tunneling only
             for j in range(1, len(new_tube_squares) - 1):
-                self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = -1  # volume points
+                self.tube_check_bd_vol[new_tube_squares[j][0], new_tube_squares[j][1]] = vol_val  # volume points
                 self.tube_check_index[new_tube_squares[j][0], new_tube_squares[j][1]] = index_val
 
     def check_tube_unique_2d_arraymethod(self, new_tube_squares):

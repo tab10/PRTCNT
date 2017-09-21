@@ -123,18 +123,18 @@ def apply_moves_3d(walker, kapitza, grid, prob_m_cn, inside_cnt, bound):
         else:
             exit()
     elif not kapitza:  # tunneling with/without inert volume models
-        # if inert_vol:
-        #     cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
-        #     cur_index = grid.tube_check_index[
-        #                     cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
-        # else:
-        cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
-        cur_index = None
+        if inert_vol:
+            cur_type = grid.tube_check_bd_vol[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
+            cur_index = grid.tube_check_index[
+                            cur_pos[0], cur_pos[1], cur_pos[2]] - 1  # index>0 of CNT (or 0 for not one)
+        else:
+            cur_type = grid.tube_check_bd[cur_pos[0], cur_pos[1], cur_pos[2]]  # type of square we're on
+            cur_index = None
         if cur_type == 0:  # matrix cell
-            final_pos = tunneling_matrix(grid, moves_3d, cur_pos, cur_index)
+            final_pos = tunneling_matrix(grid, moves_3d, cur_pos, inert_vol)
             walker.add_pos(final_pos)
         elif cur_type == 1:  # endpoint
-            final_pos = tunneling_cntend(grid, jump_moves_3d, cur_pos)
+            final_pos = tunneling_cntend(grid, jump_moves_3d, cur_pos, inert_vol)
             walker.add_pos(final_pos)
         elif cur_type == -1000:  # boundary
             final_pos = apply_bd_cond_3d(grid, moves_3d, cur_pos, bound)
@@ -194,7 +194,6 @@ def kapitza_matrix(grid, moves_3d, cur_pos, prob_m_cn):
     d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
-    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
     if candidate_type == -1:  # CNT volume
         random_num = np.random.random()  # [0.0, 1.0)
         kap_enter = (random_num < prob_m_cn)
@@ -259,45 +258,35 @@ def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, insid
 
 
 def tunneling_vol(grid, moves_3d, cur_pos, cur_idx, inert_vol):
-    # generate random position after removing CNT volume as a choice
-    # possible_locs, num_possible_locs = generate_novol_choices_2d(grid, moves_2d, cur_pos, cur_idx, False)
-    # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-    # must have spawned on a CNT. Kick it out!
-    succeed = False
-    while not succeed:
-        cur_pos_x = np.random.randint(1, grid.size)
-        cur_pos_y = np.random.randint(1, grid.size)
-        cur_pos_z = np.random.randint(1, grid.size)
-        cur_pos = [cur_pos_x, cur_pos_y, cur_pos_z]
-        d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
-        candidate_pos = cur_pos + d_pos
+    # only happens if a walker spawns on a CNT volume pixel
+    d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
+    candidate_pos = cur_pos + d_pos
+    if inert_vol:
         candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
-        if candidate_type != -1:  # NOT CNT volume, go there
+    else:
+        candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+    if candidate_type == -1:  # wants to enter volume
+        final_pos = cur_pos  # stay put
+    else:
             final_pos = candidate_pos
-            succeed = True
     return final_pos
 
 
-def tunneling_matrix(grid, moves_3d, cur_pos, cur_index):
-    # checking that no CNT volume is a possibility
-    # possible_locs, num_possible_locs = generate_novol_choices_3d(grid, moves_3d, cur_pos, cur_index, False,
-    #                                                             return_pos=True)  # turning off Kapitza for tunneling
-    # final_pos = np.asarray(possible_locs[np.random.randint(0, num_possible_locs)])
-    #
+def tunneling_matrix(grid, moves_3d, cur_pos, inert_vol):
     d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
     candidate_pos = cur_pos + d_pos
-    candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
-    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
+    if inert_vol:
+        candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+    else:
+        candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
     if candidate_type == -1:  # CNT volume
-        '''SIT'''
-        final_pos = cur_pos
+        final_pos = cur_pos  # stay put
     else:  # CNT boundary, matrix, end
-        # move there
         final_pos = candidate_pos
     return final_pos
 
 
-def tunneling_cntend(grid, jump_moves_3d, cur_pos):
+def tunneling_cntend(grid, jump_moves_3d, cur_pos, inert_vol):
     # no CNT volume, so this rule remains unchanged from the originals (3/30/17 TB)
     # walk off either end, 12 3D choices always
     choice = np.random.randint(0, 12)
@@ -309,17 +298,49 @@ def tunneling_cntend(grid, jump_moves_3d, cur_pos):
     if (tube_check_val_l > 0) and (tube_check_val_r == 0):
         # check that pixel cannot be a left and right endpoint
         if choice <= 5:  # stay at left end
-            final_pos = cur_pos + d_pos
+            candidate_pos = cur_pos + d_pos
+            if inert_vol:
+                candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            else:
+                candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            if candidate_type == -1:  # CNT volume
+                final_pos = cur_pos  # stay put on end
+            else:
+                final_pos = candidate_pos
         else:  # jump across tube to right end
             # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
-            final_pos = np.asarray(grid.tube_coords_r[tube_check_val_l - 1]) + np.asarray(d_pos)
+            candidate_pos = np.asarray(grid.tube_coords_r[tube_check_val_l - 1]) + np.asarray(d_pos)
+            if inert_vol:
+                candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            else:
+                candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            if candidate_type == -1:  # CNT volume
+                final_pos = cur_pos  # stay put on end
+            else:
+                final_pos = candidate_pos
     elif (tube_check_val_r > 0) and (tube_check_val_l == 0):
         # check that pixel cannot be a left and right endpoint
         if choice <= 5:  # stay at right end
-            final_pos = cur_pos + d_pos
+            candidate_pos = cur_pos + d_pos
+            if inert_vol:
+                candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            else:
+                candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            if candidate_type == -1:  # CNT volume
+                final_pos = cur_pos  # stay put on end
+            else:
+                final_pos = candidate_pos
         else:  # jump across tube to left end
             # -1 BELOW BECAUSE OF +1 OFFSET IN CREATION TO AVOID ZERO INDEX
-            final_pos = np.asarray(grid.tube_coords_l[tube_check_val_r - 1]) + np.asarray(d_pos)
+            candidate_pos = np.asarray(grid.tube_coords_l[tube_check_val_r - 1]) + np.asarray(d_pos)
+            if inert_vol:
+                candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            else:
+                candidate_type = grid.tube_check_bd[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+            if candidate_type == -1:  # CNT volume
+                final_pos = cur_pos  # stay put on end
+            else:
+                final_pos = candidate_pos
     else:
         kill()
     return final_pos
