@@ -147,7 +147,8 @@ if __name__ == "__main__":
         logging.info('Kapitza modeling is OFF')
         prob_m_cn = 0.0
 
-    logging.info('Simulation will run for %d timesteps' % timesteps)
+    logging.info('Simulation parameters:\n%d, P_m-cn=%.2f, %s model, %d total walkers, %d timesteps'
+                 % (dim, prob_m_cn, model, num_walkers, timesteps))
 
     if disable_func:
         logging.info('Functionalization has been disabled, treating ends as volume in rules')

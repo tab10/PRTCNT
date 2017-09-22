@@ -86,8 +86,6 @@ if __name__ == "__main__":
                                                                  'tunneling_wo_vol')
     parser.add_argument('--prob_m_cn', type=float, default=0.5, help='Probability a walker will enter the CNT. '
                                                                      'Only used in kapitza models.')
-    parser.add_argument('--run_to_convergence', type=str, default='False', help='True does this or False runs '
-                                                                              'for number of walkers.')
     parser.add_argument('--restart', type=str, default='False', help='Looks in previous directory for H to extend or '
                                                                     'restart simulation.')
     parser.add_argument('--num_walkers', type=int, default=50000, help='Total walkers to use for simulaton. '
@@ -128,7 +126,6 @@ if __name__ == "__main__":
     save_loc_plots = args.save_loc_plots
     gen_plots = args.gen_plots
     prob_m_cn = args.prob_m_cn
-    run_to_convergence = args.run_to_convergence
     num_walkers = args.num_walkers
     printout_inc = args.printout_inc
     restart = args.restart
@@ -151,7 +148,7 @@ if __name__ == "__main__":
     if model == 'kapitza':
         tube_radius = 0.5
         kapitza = True
-        inert_vol = False
+        inert_vol = False  # fine since rules for kapitza have no inert_vol flags
         logging.info('Simulation model: kapitza. CNTs have volume, functionalized/non-functionalized ends, and '
                      'kapitza resistance')
         logging.info('Using prob_m_cn value of %.4f' % prob_m_cn)
@@ -170,7 +167,7 @@ if __name__ == "__main__":
         inert_vol = False
         disable_func = False
         logging.info('Simulation model: tunneling without volume. CNTs only have '
-                     'functionalized ends. CNTs CANNOT cross in space. Models the tunneling case when'
+                     'functionalized ends. CNTs CAN cross in space. Models the tunneling case when'
                      'there is no excluded volume effect. Limit of infinite kapitza resistance.')
     else:
         logging.error('Incorrect simulation model specified.')
@@ -194,13 +191,13 @@ if __name__ == "__main__":
     if timesteps <= 0:
         logging.error('Invalid timesteps')
         raise SystemExit
-    if run_to_convergence:
-        logging.info('Simulation will run to convergence')
-    else:
-        logging.info('Simulation will run to %d walkers' % num_walkers)
-        if begin_cov_check >= num_walkers:
-            logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
-            num_walkers *= 3
+
+    logging.info('Simulation parameters:\n%d, P_m-cn=%.2f, %s model, %d total walkers, %d timesteps'
+                 % (dim, prob_m_cn, model, num_walkers, timesteps))
+
+    if begin_cov_check >= num_walkers:
+        logging.warning('begin_cov_check is less than or equal to num_walkers, forcing 3*num_walkers')
+        num_walkers *= 3
     logging.info('Grid size of %d is being used' % (grid_size + 1))
     if disable_func:
         logging.info('Functionalization has been disabled, treating ends as volume in rules.')

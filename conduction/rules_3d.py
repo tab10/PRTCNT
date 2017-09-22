@@ -194,6 +194,7 @@ def kapitza_matrix(grid, moves_3d, cur_pos, prob_m_cn):
     d_pos = np.asarray(moves_3d[np.random.randint(0, len(moves_3d))])
     candidate_pos = cur_pos + d_pos
     candidate_type = grid.tube_check_bd_vol[candidate_pos[0], candidate_pos[1], candidate_pos[2]]
+    candidate_idx = grid.tube_check_index[candidate_pos[0], candidate_pos[1], candidate_pos[2]] - 1
     if candidate_type == -1:  # CNT volume
         random_num = np.random.random()  # [0.0, 1.0)
         kap_enter = (random_num < prob_m_cn)

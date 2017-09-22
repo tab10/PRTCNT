@@ -68,21 +68,20 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir, inert_vol):
     tube_x = []
     tube_y = []  # x and y coordinates of tubes unzipped
     for i in range(len(tube_coords)):
-        tube_x.append(tube_coords[i][0::2])
+        tube_x.append(tube_coords[i][0::2])  # concatenates all tubes
         tube_y.append(tube_coords[i][1::2])
     if tube_radius == 0:
-        logging.info("Plotting setup with no tube excluded volume")
+        logging.info("Plotting setup without tube excluded volume")
         for i in range(len(tube_x)):
-            if not inert_vol:
-                plt.plot(tube_x[i], tube_y[i], c=next(colors))
-            plt.scatter(tube_x[i], tube_y[i], c='black', marker=(5, 1))
+            color = next(colors)
+            plt.plot(tube_x[i], tube_y[i], c='black')  # draws black line where vol would be
+            plt.scatter(tube_x[i], tube_y[i], c=color, marker=(5, 1))  # endpoints
     else:
         logging.info("Plotting setup with tube excluded volume")
         for i in range(len(grid.tube_squares)):
             int_x, int_y = list(zip(*grid.tube_squares[i]))
             color = next(colors)
-            if not inert_vol:
-                plt.scatter(int_x[1:-1], int_y[1:-1], c=color)
+            plt.scatter(int_x[1:-1], int_y[1:-1], c=color, marker='s')
             plt.scatter(tube_x[i], tube_y[i], c=color, marker=(5, 1))
     plt.xlim(0, grid_size)
     plt.ylim(0, grid_size)
@@ -113,18 +112,17 @@ def plot_three_d_random_walk_setup(grid, quiet, save_dir, inert_vol):
         tube_y.append(tube_coords[i][1::3])
         tube_z.append(tube_coords[i][2::3])
     if tube_radius == 0:
-        logging.info("Plotting setup with no tube excluded volume")
+        logging.info("Plotting setup without tube excluded volume")
         for i in range(len(tube_x)):
-            if not inert_vol:
-                ax.plot(tube_x[i], tube_y[i], tube_z[i], c=next(colors))
-            ax.scatter(tube_x[i], tube_y[i], tube_z[i], c='black', marker=(5, 1))
+            color = next(colors)
+            ax.plot(tube_x[i], tube_y[i], tube_z[i], c='black')  # draws black line where vol would be
+            ax.scatter(tube_x[i], tube_y[i], tube_z[i], c=color, marker=(5, 1))  # endpoints
     else:
         logging.info("Plotting setup with tube excluded volume")
         for i in range(len(grid.tube_squares)):
             int_x, int_y, int_z = list(zip(*grid.tube_squares[i]))
             color = next(colors)
-            if not inert_vol:
-                ax.scatter(int_x[1:-1], int_y[1:-1], int_z[1:-1], c=color, marker="s")
+            ax.scatter(int_x[1:-1], int_y[1:-1], int_z[1:-1], c=color, marker='s')
             ax.scatter(tube_x[i], tube_y[i], tube_z[i], c=color, marker=(5, 1))
     ax.set_xlim(0, grid_size)
     ax.set_ylim(0, grid_size)
