@@ -73,7 +73,8 @@ def plot_two_d_random_walk_setup(grid, quiet, save_dir, inert_vol):
     if tube_radius == 0:
         logging.info("Plotting setup with no tube excluded volume")
         for i in range(len(tube_x)):
-            plt.plot(tube_x[i], tube_y[i], c=next(colors))
+            if not inert_vol:
+                plt.plot(tube_x[i], tube_y[i], c=next(colors))
             plt.scatter(tube_x[i], tube_y[i], c='black', marker=(5, 1))
     else:
         logging.info("Plotting setup with tube excluded volume")
