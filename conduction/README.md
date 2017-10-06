@@ -8,21 +8,12 @@
                   
 Compatible with Python 2.x/3.x
 
-For serial code, options are given by setting up a config.ini in your choice of save directory
-or else default.ini will be read. For parallel code, options are given on the command line.
-
-Serial code is ran by running "python run.py", for the MPI code
-run "mpirun -np X python mpi_run.py" with X the number of cores available. **80** cores seems good, or requesting 
-10 nodes **exclusively** since a standard node has 8 cores.
-
+To run execute "mpirun -np X python mpi_run.py" with X the number of cores available. **80** cores (or MPI processes) works well.
 Plotting analysis after simulation can be found in plots.py, with stand-alone definitions for individual plots. 
 **ipython** can be used to run them.
 
-On OU's Schooner, add this line to your .profile:
-`module load OpenMPI mpi4py numpy matplotlib`. `#SBATCH -p 2650` gives a 10 core node, `#SBATCH -p 2670`
-gives a 12 core node
 
-Remember you must load conduction before running it, i.e. do not run it in the package directory.
+Conduction must be loaded before running it, i.e. do not run it in the package directory.
 
 
 ##### References

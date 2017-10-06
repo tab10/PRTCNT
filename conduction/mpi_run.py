@@ -159,7 +159,8 @@ if __name__ == "__main__":
         inert_vol = True
         disable_func = False
         logging.info('Simulation model: tunneling with volume. CNTs have (non-functioning/excluded) volume and '
-                     'functionalized ends. CNTs CANNOT cross in space. Limit of infinite kapitza resistance.')
+                     'functionalized ends. CNTs CANNOT cross in space. CNTs cannot enter volume. '
+                     'Limit of infinite kapitza resistance.')
     elif model == 'tunneling_wo_vol':
         tube_radius = 0.0
         prob_m_cn = 0.0
