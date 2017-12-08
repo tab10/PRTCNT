@@ -452,7 +452,8 @@ def plot_heat_flux(quantity, quiet, save_dir, x_list=None):
 def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, exclude_vals='',
                         tunneling=False, max_tube_num=100000, force_y_int=False, y_max=None, dec_fill_fract=True,
                         w_err=True):
-    """w_err - weighted linear fit based on k error bars from configurations"""
+    """Plots REDUCED thermal conductivity k-k_0/k_0 vs. CNT filling fraction or percent
+    w_err - weighted linear fit based on k error bars from configurations"""
     def fill_fraction_tubes(x, orientation, tunneling, grid_size, dim):
         ######
         random_2d_15 = {'0': 0, '10': 2.04, '20': 4.04, '30': 6.15, '40': 8.22, '50': 10.06, '60': 12.21,
@@ -641,7 +642,7 @@ def plot_k_vs_num_tubes(tube_length, num_configs, grid_size, dim, legend=True, e
         fit_label = '%s, slope %.4E, y-int %.4E' % (uni_orientations[i], slope, intercept)
         plt.plot(x_fit, y_fit)  # , label=fit_label)
         g = open("%s_data.txt" % uni_orientations[i], 'w')
-        g.write('fill_fract k k_err\n')
+        g.write('fill_fract k-k_0/k_0 k_err\n')
         for i in range(len(fill_fract)):
             header = '%.4E %.4E %.4E\n' % (fill_fract[i], k_vals[i], k_err[i])
             g.write(header)

@@ -235,8 +235,6 @@ def kapitza_cntvol(grid, moves_3d, kapitza, cur_pos, cur_index, prob_m_cn, insid
         else:  # walk outside tube
             final_pos = np.asarray(candidate_pos)
             inside_cnt = False
-            # final_pos = np.asarray(candidate_pos)
-            # inside_cnt = False
     elif (candidate_type == -1) or (candidate_type == 1):  # CNT volume or end
         if candidate_idx == cur_index:  # want to go to CNT volume in same tube
             final_pos = np.asarray(
